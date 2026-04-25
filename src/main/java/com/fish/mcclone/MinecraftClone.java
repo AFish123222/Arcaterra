@@ -23,11 +23,16 @@ import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.system.MemoryStack.*;
 import static org.lwjgl.system.MemoryUtil.*;
 
+/// # MinecraftClone
+/// 这是JourneyToBaoji的前置项目。本阶段会重新实现并优化Minecraft1.21.5+Fabric+Terrarium+LOD(DH/Voxy/自研文件树LOD)
+///
+/// 作者会同步学习游戏开发知识 并写好JavaDoc
 public class MinecraftClone {
-    private static final boolean FULLSCREEN_MODE = false;
-
+    /// ###### 窗口宽度 width
     private int width = 1024;
+    /// ###### 窗口高度 height
     private int height = 768;
+    /// ###### GLFW窗口句柄 window
     private static long window; // GLFW 窗口句柄
 
     private FloatBuffer fogColor = BufferUtils.createFloatBuffer(4);
@@ -36,13 +41,12 @@ public class MinecraftClone {
     private LevelRenderer levelRenderer;
     private Player player;
 
-    // 鼠标位置跟踪（用于计算 dx/dy）
+    /// 鼠标位置跟踪（用于计算 dx/dy）
     private double lastMouseX, lastMouseY;
-    // 事件队列（模拟 LWJGL 2 的事件轮询）
+    /// 事件队列（模拟 LWJGL 2 的事件轮询）
     private final Queue<int[]> keyEvents = new LinkedList<>();
     private final Queue<int[]> mouseButtonEvents = new LinkedList<>();
 
-    private IntBuffer viewportBuffer = BufferUtils.createIntBuffer(16);
     private IntBuffer selectBuffer = BufferUtils.createIntBuffer(2000);
     private HitResult hitResult = null;
 
@@ -181,6 +185,10 @@ public class MinecraftClone {
     }
 
     public void render(float a) {
+        // ==========================================
+        // 第一阶段：输入处理（不碰任何 OpenGL 渲染状态）
+        // ==========================================
+
         // 1. 计算鼠标移动 delta
         double currentMouseX, currentMouseY;
         try (MemoryStack stack = stackPush()) {
@@ -194,21 +202,18 @@ public class MinecraftClone {
         float yo = (float) (currentMouseY - lastMouseY);
         lastMouseX = currentMouseX;
         lastMouseY = currentMouseY;
-
-        // 2. 游戏逻辑
         player.turn(xo, yo);
-        pick(a);
 
-        // 3. 处理鼠标按钮事件（模拟 Mouse.next()）
+        // 2. 处理鼠标按钮事件
         while (!mouseButtonEvents.isEmpty()) {
             int[] event = mouseButtonEvents.poll();
             int button = event[0];
             boolean pressed = event[1] == GLFW_PRESS;
 
-            if (button == GLFW_MOUSE_BUTTON_2 && pressed) { // 右键（原代码 1）
+            if (button == GLFW_MOUSE_BUTTON_2 && pressed) {
                 if (hitResult != null) level.setTile(hitResult.x, hitResult.y, hitResult.z, 0);
             }
-            if (button == GLFW_MOUSE_BUTTON_1 && pressed) { // 左键（原代码 0）
+            if (button == GLFW_MOUSE_BUTTON_1 && pressed) {
                 if (hitResult != null) {
                     int x = hitResult.x, y = hitResult.y, z = hitResult.z;
                     if (hitResult.f == 0) y--;
@@ -222,34 +227,70 @@ public class MinecraftClone {
             }
         }
 
-        // 4. 处理键盘事件（模拟 Keyboard.next()）
+        // 3. 处理键盘事件
         while (!keyEvents.isEmpty()) {
             int[] event = keyEvents.poll();
             int key = event[0];
             boolean pressed = event[1] == GLFW_PRESS;
-
-            if (key == GLFW_KEY_ENTER && pressed) { // Enter（原代码 28）
-                level.save();
-            }
+            if (key == GLFW_KEY_ENTER && pressed) level.save();
         }
 
-        // 5. OpenGL 渲染
+        // ==========================================
+        // 第二阶段：拾取（用矩阵栈保护状态）
+        // ==========================================
+
+        // 【关键】用 glPushMatrix/glPopMatrix 保存原矩阵，pick 完自动恢复
+        glMatrixMode(GL_PROJECTION);
+        glPushMatrix(); // 保存当前投影矩阵
+        glMatrixMode(GL_MODELVIEW);
+        glPushMatrix(); // 保存当前模型视图矩阵
+
+        pick(a); // 执行拾取
+
+        // 【关键】恢复矩阵（比 glLoadIdentity() 更安全）
+        glMatrixMode(GL_PROJECTION);
+        glPopMatrix(); // 恢复 pick 前的投影矩阵
+        glMatrixMode(GL_MODELVIEW);
+        glPopMatrix(); // 恢复 pick 前的模型视图矩阵
+
+        // ==========================================
+        // 第三阶段：正式渲染（状态完全可控）
+        // ==========================================
+
+        // 1. 清屏 + 强制重置基础状态
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        setupCamera(a);
+        glEnable(GL_TEXTURE_2D);
+        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_LESS);
         glEnable(GL_CULL_FACE);
-        glEnable(GL_FOG);
-        glFogi(GL_FOG_MODE, GL_LINEAR);
-        glFogf(GL_FOG_DENSITY, 0.2F);
-        glFogfv(GL_FOG_COLOR, fogColor);//
+        glCullFace(GL_BACK); // 明确剔除背面
+
+        // 2. 设置摄像机
+        setupCamera(a);
+
+        // 3. 渲染地形（分两层：无雾/有雾，对应原代码逻辑）
+        // 第一层：无雾（通常是天空或远处？）
         glDisable(GL_FOG);
         levelRenderer.render(player, 0);
-        glEnable(GL_FOG);
-        levelRenderer.render(player, 1);
-        glDisable(GL_TEXTURE_2D);
-        if (hitResult != null) levelRenderer.renderHit(hitResult);
-        glDisable(GL_FOG);
 
-        // 6. 交换缓冲区 + 轮询事件
+        // 第二层：有雾（通常是近处地形）
+        glEnable(GL_FOG);
+        glFogi(GL_FOG_MODE, GL_LINEAR);
+        glFogf(GL_FOG_START, 0.0F); // 明确雾效起始距离
+        glFogf(GL_FOG_END, 100.0F); // 明确雾效结束距离
+        glFogfv(GL_FOG_COLOR, fogColor);
+        levelRenderer.render(player, 1);
+
+        // 4. 渲染选中框（不需要纹理和雾）
+        glDisable(GL_TEXTURE_2D);
+        glDisable(GL_FOG);
+        if (hitResult != null) {
+            levelRenderer.renderHit(hitResult);
+        }
+
+        // ==========================================
+        // 第四阶段：结束帧
+        // ==========================================
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
