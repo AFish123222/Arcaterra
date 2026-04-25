@@ -4,6 +4,9 @@ import java.io.IOException;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import javax.swing.JOptionPane;
+
+import com.fish.mcclone.level.Level;
+import com.fish.mcclone.level.LevelRenderer;
 import org.lwjgl.BufferUtils;
 // 以下失败的import是lwjgl2, 可使用lwjglx兼容层解决
 import org.lwjgl.LWJGLException;
