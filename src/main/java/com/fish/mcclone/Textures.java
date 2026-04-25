@@ -8,7 +8,9 @@ import java.util.HashMap;
 import javax.imageio.ImageIO;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.util.glu.GLU;
+
+import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL30.glGenerateMipmap;
 
 public class Textures {
     private static HashMap<String, Integer> idMap = new HashMap<String, Integer>();
@@ -39,7 +41,21 @@ public class Textures {
                 rawPixels[i] = a << 24 | b << 16 | g << 8 | r;
             }
             pixels.asIntBuffer().put(rawPixels);
-            GLU.gluBuild2DMipmaps(3553, 6408, w, h, 6408, 5121, pixels);
+//            GLU.gluBuild2DMipmaps(3553, 6408, w, h, 6408, 5121, pixels);
+            // 1. 上传第 0 层（基础层）纹理
+            glTexImage2D(
+                    GL_TEXTURE_2D,    // target: 3553 → GL_TEXTURE_2D
+                    0,                 // level: 基础层（mipmap 第 0 层）
+                    GL_RGBA,           // internalformat: 6408 → GL_RGBA（十进制 0x1908 = 6408）
+                    w, h,              // width, height
+                    0,                 // border: 必须为 0
+                    GL_RGBA,           // format: 6408 → GL_RGBA
+                    GL_UNSIGNED_BYTE,  // type: 5121 → GL_UNSIGNED_BYTE（十进制 0x1401 = 5121）
+                    pixels             // pixels: 纹理数据缓冲区
+            );
+
+// 2. 自动生成所有 mipmap 层
+            glGenerateMipmap(GL_TEXTURE_2D);
             return id;
         } catch (IOException e) {
             throw new RuntimeException("!!");
