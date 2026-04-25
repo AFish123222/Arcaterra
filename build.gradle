@@ -15,6 +15,7 @@ project.ext.lwjglNatives = "natives-windows"
 
 repositories {
     mavenCentral()
+    maven {url "https://jitpack.io"}
 }
 
 dependencies {
