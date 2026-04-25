@@ -27,7 +27,7 @@ public class Chunk {
 
     private int lists = -1;
 
-    private static int texture = Textures.loadTexture("/terrain.png", 9728); //NotFound就会报null
+    private static final int texture = Textures.loadTexture("/terrain.png", 9728); //NotFound就会报null
 
     private static Tesselator t = new Tesselator();
 

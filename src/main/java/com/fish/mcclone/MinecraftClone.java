@@ -3,6 +3,7 @@ package com.fish.mcclone;
 import com.fish.mcclone.level.Chunk;
 import com.fish.mcclone.level.Level;
 import com.fish.mcclone.level.LevelRenderer;
+import com.fish.util.PrinterUtils;
 import org.joml.Matrix4f;
 import org.lwjgl.*;
 import org.lwjgl.glfw.*;
@@ -184,6 +185,7 @@ public class MinecraftClone {
         player.tick();
     }
 
+    /// 帧渲染
     public void render(float a) {
         // ==========================================
         // 第一阶段：输入处理（不碰任何 OpenGL 渲染状态）
@@ -262,8 +264,9 @@ public class MinecraftClone {
         glEnable(GL_TEXTURE_2D);
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LESS);
-        glEnable(GL_CULL_FACE);
-        glCullFace(GL_BACK); // 明确剔除背面
+//        glEnable(GL_CULL_FACE);
+//        glCullFace(GL_BACK); // 明确剔除背面
+//        glDisable(GL_CULL_FACE);//为修复bug-1,先看看是否搞反正反面
 
         // 2. 设置摄像机
         setupCamera(a);
@@ -272,6 +275,7 @@ public class MinecraftClone {
         // 第一层：无雾（通常是天空或远处？）
         glDisable(GL_FOG);
         levelRenderer.render(player, 0);
+        levelRenderer.render(player, 1);
 
         // 第二层：有雾（通常是近处地形）
         glEnable(GL_FOG);

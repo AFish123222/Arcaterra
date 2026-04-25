@@ -58,10 +58,11 @@ public class LevelRenderer implements LevelListener {
     }
 
     public void render(Player player, int layer) {
+
         Chunk.rebuiltThisFrame = 0;
         Frustum frustum = Frustum.getFrustum();
         for (int i = 0; i < this.chunks.length; i++) {
-            if (frustum.cubeInFrustum((this.chunks[i]).aabb))
+//            if (frustum.cubeInFrustum((this.chunks[i]).aabb)) //没这个条件直接崩
                 this.chunks[i].render(layer);
         }
     }
