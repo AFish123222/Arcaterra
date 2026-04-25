@@ -1,73 +1,145 @@
 package com.fish.mcclone;
 
-import java.io.IOException;
-import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
-import javax.swing.JOptionPane;
-
+import com.fish.mcclone.level.Chunk;
 import com.fish.mcclone.level.Level;
 import com.fish.mcclone.level.LevelRenderer;
-import org.lwjgl.BufferUtils;
-// 以下失败的import是lwjgl2, 可使用lwjglx兼容层解决
-import org.lwjgl.LWJGLException;
-import org.lwjgl.input.Keyboard;
-import org.lwjgl.input.Mouse;
-import org.lwjgl.opengl.Display;
-import org.lwjgl.opengl.DisplayMode;
-import org.lwjgl.opengl.GL11;
-//import org.lwjgl.util.glu.GLU;
-import org.lwjglx.util.glu.GLU;
+import org.joml.Matrix4f;
+import org.lwjgl.*;
+import org.lwjgl.glfw.*;
+import org.lwjgl.opengl.*;
+import org.lwjgl.system.*;
+import org.lwjgl.opengl.GLUtil.*;
+
+import java.io.IOException;
+import java.nio.DoubleBuffer;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+import java.util.*;
+import javax.swing.JOptionPane;
+
+import static org.lwjgl.glfw.Callbacks.*;
+import static org.lwjgl.glfw.GLFW.*;
+import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.system.MemoryStack.*;
+import static org.lwjgl.system.MemoryUtil.*;
 
 public class MinecraftClone {
     private static final boolean FULLSCREEN_MODE = false;
 
-    private int width;
-
-    private int height;
+    private int width = 1024;
+    private int height = 768;
+    private static long window; // GLFW 窗口句柄
 
     private FloatBuffer fogColor = BufferUtils.createFloatBuffer(4);
-
     private Timer timer = new Timer(60.0F);
-
     private Level level;
-
     private LevelRenderer levelRenderer;
-
     private Player player;
 
-    public void init() throws LWJGLException, IOException {
+    // 鼠标位置跟踪（用于计算 dx/dy）
+    private double lastMouseX, lastMouseY;
+    // 事件队列（模拟 LWJGL 2 的事件轮询）
+    private final Queue<int[]> keyEvents = new LinkedList<>();
+    private final Queue<int[]> mouseButtonEvents = new LinkedList<>();
+
+    private IntBuffer viewportBuffer = BufferUtils.createIntBuffer(16);
+    private IntBuffer selectBuffer = BufferUtils.createIntBuffer(2000);
+    private HitResult hitResult = null;
+
+    public static long getWindow() {
+        return window;
+    }
+
+    public void init() throws IOException {
+        // 1. 初始化 GLFW
+        if (!glfwInit()) {
+            throw new IllegalStateException("Failed to initialize GLFW");
+        }
+
+        // 2. 配置窗口属性
+        glfwDefaultWindowHints();
+        glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+        glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+
+        // 3. 创建窗口
+        window = glfwCreateWindow(width, height, "RubyDung", NULL, NULL);
+        if (window == NULL) {
+            throw new RuntimeException("Failed to create GLFW window");
+        }
+
+        // 4. 设置事件回调
+        setupCallbacks();
+
+        // 5. 窗口居中
+        try (MemoryStack stack = stackPush()) {
+            IntBuffer pWidth = stack.mallocInt(1);
+            IntBuffer pHeight = stack.mallocInt(1);
+            glfwGetWindowSize(window, pWidth, pHeight);
+            GLFWVidMode vidmode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+            glfwSetWindowPos(
+                    window,
+                    (vidmode.width() - pWidth.get(0)) / 2,
+                    (vidmode.height() - pHeight.get(0)) / 2
+            );
+        }
+
+        // 6. 初始化 OpenGL 上下文
+        glfwMakeContextCurrent(window);
+        glfwSwapInterval(1); // 启用 V-Sync
+        glfwShowWindow(window);
+        GL.createCapabilities();
+
+        // 7. 初始化鼠标（抓取模式 + 初始位置）
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        try (MemoryStack stack = stackPush()) {
+            DoubleBuffer x = stack.mallocDouble(1);
+            DoubleBuffer y = stack.mallocDouble(1);
+            glfwGetCursorPos(window, x, y);
+            lastMouseX = x.get(0);
+            lastMouseY = y.get(0);
+        }
+
+        // 8. 原有游戏逻辑初始化
         int col = 920330;
-        float fr = 0.5F;
-        float fg = 0.8F;
-        float fb = 1.0F;
-        this.fogColor.put(new float[] { (col >> 16 & 0xFF) / 255.0F, (col >> 8 & 0xFF) / 255.0F, (col & 0xFF) / 255.0F, 1.0F });
-        this.fogColor.flip();
-        Display.setDisplayMode(new DisplayMode(1024, 768));
-        Display.create();
-        Keyboard.create();
-        Mouse.create();
-        this.width = Display.getDisplayMode().getWidth();
-        this.height = Display.getDisplayMode().getHeight();
-        GL11.glEnable(3553);
-        GL11.glShadeModel(7425);
-        GL11.glClearColor(fr, fg, fb, 0.0F);
-        GL11.glClearDepth(1.0D);
-        GL11.glEnable(2929);
-        GL11.glDepthFunc(515);
-        GL11.glMatrixMode(5889);
-        GL11.glLoadIdentity();
-        GL11.glMatrixMode(5888);
-        this.level = new Level(256, 256, 64);
-        this.levelRenderer = new LevelRenderer(this.level);
-        this.player = new Player(this.level);
-        Mouse.setGrabbed(true);
+        float fr = 0.5F, fg = 0.8F, fb = 1.0F;
+        fogColor.put(new float[]{(col >> 16 & 0xFF) / 255.0F, (col >> 8 & 0xFF) / 255.0F, (col & 0xFF) / 255.0F, 1.0F}).flip();
+
+        glEnable(GL_TEXTURE_2D);
+        glShadeModel(GL_SMOOTH);
+        glClearColor(fr, fg, fb, 0.0F);
+        glClearDepth(1.0D);
+        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_LESS);
+        glMatrixMode(GL_PROJECTION);
+        glLoadIdentity();
+        glMatrixMode(GL_MODELVIEW);
+
+        level = new Level(256, 256, 64);
+        levelRenderer = new LevelRenderer(level);
+        player = new Player(level);
+    }
+
+    private void setupCallbacks() {
+        // 键盘事件回调（存入队列）
+        glfwSetKeyCallback(window, (win, key, scancode, action, mods) -> {
+            if (action == GLFW_PRESS || action == GLFW_RELEASE) {
+                keyEvents.add(new int[]{key, action});
+            }
+        });
+
+        // 鼠标按钮事件回调（存入队列）
+        glfwSetMouseButtonCallback(window, (win, button, action, mods) -> {
+            if (action == GLFW_PRESS || action == GLFW_RELEASE) {
+                mouseButtonEvents.add(new int[]{button, action});
+            }
+        });
     }
 
     public void destroy() {
-        this.level.save();
-        Mouse.destroy();
-        Keyboard.destroy();
-        Display.destroy();
+        level.save();
+        glfwFreeCallbacks(window);
+        glfwDestroyWindow(window);
+        glfwTerminate();
     }
 
     public void run() {
@@ -77,17 +149,21 @@ public class MinecraftClone {
             JOptionPane.showMessageDialog(null, e.toString(), "Failed to start RubyDung", 0);
             System.exit(0);
         }
+
         long lastTime = System.currentTimeMillis();
         int frames = 0;
+
         try {
-            while (!Keyboard.isKeyDown(1) && !Display.isCloseRequested()) {
-                this.timer.advanceTime();
-                for (int i = 0; i < this.timer.ticks; i++)
-                    tick();
-                render(this.timer.a);
+            // 主循环（退出条件：窗口关闭或 ESC 按下）
+            while (!glfwWindowShouldClose(window) && glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS) {
+                timer.advanceTime();
+                for (int i = 0; i < timer.ticks; i++) tick();
+                render(timer.a);
+
+                // FPS 计数
                 frames++;
                 while (System.currentTimeMillis() >= lastTime + 1000L) {
-                    System.out.println(String.valueOf(frames) + " fps, " + Chunk.updates);
+                    System.out.println(frames + " fps, " + Chunk.updates);
                     Chunk.updates = 0;
                     lastTime += 1000L;
                     frames = 0;
@@ -101,136 +177,235 @@ public class MinecraftClone {
     }
 
     public void tick() {
-        this.player.tick();
+        player.tick();
     }
 
+    public void render(float a) {
+        // 1. 计算鼠标移动 delta
+        double currentMouseX, currentMouseY;
+        try (MemoryStack stack = stackPush()) {
+            DoubleBuffer x = stack.mallocDouble(1);
+            DoubleBuffer y = stack.mallocDouble(1);
+            glfwGetCursorPos(window, x, y);
+            currentMouseX = x.get(0);
+            currentMouseY = y.get(0);
+        }
+        float xo = (float) (currentMouseX - lastMouseX);
+        float yo = (float) (currentMouseY - lastMouseY);
+        lastMouseX = currentMouseX;
+        lastMouseY = currentMouseY;
+
+        // 2. 游戏逻辑
+        player.turn(xo, yo);
+        pick(a);
+
+        // 3. 处理鼠标按钮事件（模拟 Mouse.next()）
+        while (!mouseButtonEvents.isEmpty()) {
+            int[] event = mouseButtonEvents.poll();
+            int button = event[0];
+            boolean pressed = event[1] == GLFW_PRESS;
+
+            if (button == GLFW_MOUSE_BUTTON_2 && pressed) { // 右键（原代码 1）
+                if (hitResult != null) level.setTile(hitResult.x, hitResult.y, hitResult.z, 0);
+            }
+            if (button == GLFW_MOUSE_BUTTON_1 && pressed) { // 左键（原代码 0）
+                if (hitResult != null) {
+                    int x = hitResult.x, y = hitResult.y, z = hitResult.z;
+                    if (hitResult.f == 0) y--;
+                    if (hitResult.f == 1) y++;
+                    if (hitResult.f == 2) z--;
+                    if (hitResult.f == 3) z++;
+                    if (hitResult.f == 4) x--;
+                    if (hitResult.f == 5) x++;
+                    level.setTile(x, y, z, 1);
+                }
+            }
+        }
+
+        // 4. 处理键盘事件（模拟 Keyboard.next()）
+        while (!keyEvents.isEmpty()) {
+            int[] event = keyEvents.poll();
+            int key = event[0];
+            boolean pressed = event[1] == GLFW_PRESS;
+
+            if (key == GLFW_KEY_ENTER && pressed) { // Enter（原代码 28）
+                level.save();
+            }
+        }
+
+        // 5. OpenGL 渲染
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        setupCamera(a);
+        glEnable(GL_CULL_FACE);
+        glEnable(GL_FOG);
+        glFogi(GL_FOG_MODE, GL_LINEAR);
+        glFogf(GL_FOG_DENSITY, 0.2F);
+        glFogfv(GL_FOG_COLOR, fogColor);//
+        glDisable(GL_FOG);
+        levelRenderer.render(player, 0);
+        glEnable(GL_FOG);
+        levelRenderer.render(player, 1);
+        glDisable(GL_TEXTURE_2D);
+        if (hitResult != null) levelRenderer.renderHit(hitResult);
+        glDisable(GL_FOG);
+
+        // 6. 交换缓冲区 + 轮询事件
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+    }
+
+    // 以下辅助方法仅替换了 GL 常量，逻辑未变
     private void moveCameraToPlayer(float a) {
-        GL11.glTranslatef(0.0F, 0.0F, -0.3F);
-        GL11.glRotatef(this.player.xRot, 1.0F, 0.0F, 0.0F);
-        GL11.glRotatef(this.player.yRot, 0.0F, 1.0F, 0.0F);
-        float x = this.player.xo + (this.player.x - this.player.xo) * a;
-        float y = this.player.yo + (this.player.y - this.player.yo) * a;
-        float z = this.player.zo + (this.player.z - this.player.zo) * a;
-        GL11.glTranslatef(-x, -y, -z);
+        glTranslatef(0.0F, 0.0F, -0.3F);
+        glRotatef(player.xRot, 1.0F, 0.0F, 0.0F);
+        glRotatef(player.yRot, 0.0F, 1.0F, 0.0F);
+        float x = player.xo + (player.x - player.xo) * a;
+        float y = player.yo + (player.y - player.yo) * a;
+        float z = player.zo + (player.z - player.zo) * a;
+        glTranslatef(-x, -y, -z);
     }
 
     private void setupCamera(float a) {
-        GL11.glMatrixMode(5889);
-        GL11.glLoadIdentity();
-        GLU.gluPerspective(70.0F, this.width / this.height, 0.05F, 1000.0F);
-        GL11.glMatrixMode(5888);
-        GL11.glLoadIdentity();
+//        glMatrixMode(GL_PROJECTION);
+//        glLoadIdentity();
+//        GLU.gluPerspective(70.0F, (float) width / height, 0.05F, 1000.0F);
+//        glMatrixMode(GL_MODELVIEW);
+//        glLoadIdentity();
+//        moveCameraToPlayer(a);
+        // 1. 用 JOML 创建透视投影矩阵
+        Matrix4f perspectiveMatrix = new Matrix4f();
+        perspectiveMatrix.perspective(
+                (float) Math.toRadians(70.0), // 视场角（原 gluPerspective 是角度，需转弧度）
+                (float) width / height,        // 宽高比（与原参数一致）
+                0.05f,                         // 近裁剪面（与原参数一致）
+                1000.0f                        // 远裁剪面（与原参数一致）
+        );
+
+        // 2. 将 JOML 矩阵转换为 OpenGL 可用的 FloatBuffer
+        FloatBuffer matrixBuffer = BufferUtils.createFloatBuffer(16);
+        perspectiveMatrix.get(matrixBuffer); // JOML 矩阵是列主序，与 OpenGL 完全兼容
+
+        // 3. 加载到 OpenGL 投影矩阵栈
+        glMatrixMode(GL_PROJECTION);
+        glLoadMatrixf(matrixBuffer);
+
+        // 4. 后续模型视图矩阵设置（原逻辑完全不变）
+        glMatrixMode(GL_MODELVIEW);
+        glLoadIdentity();
         moveCameraToPlayer(a);
     }
-
-    private IntBuffer viewportBuffer = BufferUtils.createIntBuffer(16);
 
     private void setupPickCamera(float a, int x, int y) {
-        GL11.glMatrixMode(5889);
-        GL11.glLoadIdentity();
-        this.viewportBuffer.clear();
-        GL11.glGetInteger(2978, this.viewportBuffer);
-        this.viewportBuffer.flip();
-        this.viewportBuffer.limit(16);
-        GLU.gluPickMatrix(x, y, 5.0F, 5.0F, this.viewportBuffer);
-        GLU.gluPerspective(70.0F, this.width / this.height, 0.05F, 1000.0F);
-        GL11.glMatrixMode(5888);
-        GL11.glLoadIdentity();
+//        glMatrixMode(GL_PROJECTION);
+//        glLoadIdentity();
+//        viewportBuffer.clear();
+//        glGetIntegerv(GL_VIEWPORT, viewportBuffer);
+//        viewportBuffer.flip();
+//        viewportBuffer.limit(16);
+//        GLU.gluPickMatrix(x, y, 5.0F, 5.0F, viewportBuffer);
+//        GLU.gluPerspective(70.0F, (float) width / height, 0.05F, 1000.0F);
+//        glMatrixMode(GL_MODELVIEW);
+//        glLoadIdentity();
+//        moveCameraToPlayer(a);
+        // 1. 读取视口参数（从 viewportBuffer 中获取 x, y, width, height）
+        viewportBuffer.clear();
+        glGetIntegerv(GL_VIEWPORT, viewportBuffer);
+        viewportBuffer.flip();
+        int vpX = viewportBuffer.get();
+        int vpY = viewportBuffer.get();
+        int vpWidth = viewportBuffer.get();
+        int vpHeight = viewportBuffer.get();
+
+        // 2. 用 JOML 实现 gluPickMatrix 逻辑
+        Matrix4f pickMatrix = new Matrix4f();
+        // 平移：将拾取区域中心移到视口中心
+        pickMatrix.translate(
+                (vpWidth - 2.0f * (x - vpX)) / vpWidth,
+                (vpHeight - 2.0f * (y - vpY)) / vpHeight,
+                0.0f
+        );
+        // 缩放：将拾取区域（5x5像素）缩放到整个视口大小
+        pickMatrix.scale(
+                vpWidth / 5.0f,
+                vpHeight / 5.0f,
+                1.0f
+        );
+
+        // 3. 用 JOML 实现 gluPerspective 逻辑（注意：JOML 用弧度）
+        Matrix4f perspectiveMatrix = new Matrix4f();
+        perspectiveMatrix.perspective(
+                (float) Math.toRadians(70.0), // 视场角（角度转弧度）
+                (float) width / height,        // 宽高比
+                0.05f,                         // 近裁剪面
+                1000.0f                        // 远裁剪面
+        );
+
+        // 4. 合并矩阵：Perspective * Pick（对应原 GLU 调用顺序）
+        Matrix4f projMatrix = new Matrix4f();
+        projMatrix.set(perspectiveMatrix).mul(pickMatrix);
+
+        // 5. 将最终矩阵加载到 OpenGL 投影矩阵栈
+        FloatBuffer fb = BufferUtils.createFloatBuffer(16);
+        projMatrix.get(fb); // JOML 矩阵是列主序，与 OpenGL 兼容
+        glMatrixMode(GL_PROJECTION);
+        glLoadMatrixf(fb);
+
+        // 6. 后续模型视图矩阵设置（原逻辑不变）
+        glMatrixMode(GL_MODELVIEW);
+        glLoadIdentity();
         moveCameraToPlayer(a);
     }
 
-    private IntBuffer selectBuffer = BufferUtils.createIntBuffer(2000);
-
-    private HitResult hitResult = null;
-
     private void pick(float a) {
-        this.selectBuffer.clear();
-        GL11.glSelectBuffer(this.selectBuffer);
-        GL11.glRenderMode(7170);
-        setupPickCamera(a, this.width / 2, this.height / 2);
-        this.levelRenderer.pick(this.player);
-        int hits = GL11.glRenderMode(7168);
-        this.selectBuffer.flip();
-        this.selectBuffer.limit(this.selectBuffer.capacity());
+        selectBuffer.clear();
+        glSelectBuffer(selectBuffer);
+        glRenderMode(GL_SELECT);
+        setupPickCamera(a, width / 2, height / 2);
+        levelRenderer.pick(player);
+        int hits = glRenderMode(GL_RENDER);
+        selectBuffer.flip();
+        selectBuffer.limit(selectBuffer.capacity());
         long closest = 0L;
         int[] names = new int[10];
         int hitNameCount = 0;
         for (int i = 0; i < hits; i++) {
-            int nameCount = this.selectBuffer.get();
-            long minZ = this.selectBuffer.get();
-            this.selectBuffer.get();
+            int nameCount = selectBuffer.get();
+            long minZ = selectBuffer.get();
+            selectBuffer.get();
             long dist = minZ;
             if (dist < closest || i == 0) {
                 closest = dist;
                 hitNameCount = nameCount;
-                for (int j = 0; j < nameCount; j++)
-                    names[j] = this.selectBuffer.get();
+                for (int j = 0; j < nameCount; j++) names[j] = selectBuffer.get();
             } else {
-                for (int j = 0; j < nameCount; j++)
-                    this.selectBuffer.get();
+                for (int j = 0; j < nameCount; j++) selectBuffer.get();
             }
         }
-        if (hitNameCount > 0) {
-            this.hitResult = new HitResult(names[0], names[1], names[2], names[3], names[4]);
-        } else {
-            this.hitResult = null;
-        }
-    }
-
-    public void render(float a) {
-        float xo = Mouse.getDX();
-        float yo = Mouse.getDY();
-        this.player.turn(xo, yo);
-        pick(a);
-        while (Mouse.next()) {
-            if (Mouse.getEventButton() == 1 && Mouse.getEventButtonState())
-                if (this.hitResult != null)
-                    this.level.setTile(this.hitResult.x, this.hitResult.y, this.hitResult.z, 0);
-            if (Mouse.getEventButton() == 0 && Mouse.getEventButtonState())
-                if (this.hitResult != null) {
-                    int x = this.hitResult.x;
-                    int y = this.hitResult.y;
-                    int z = this.hitResult.z;
-                    if (this.hitResult.f == 0)
-                        y--;
-                    if (this.hitResult.f == 1)
-                        y++;
-                    if (this.hitResult.f == 2)
-                        z--;
-                    if (this.hitResult.f == 3)
-                        z++;
-                    if (this.hitResult.f == 4)
-                        x--;
-                    if (this.hitResult.f == 5)
-                        x++;
-                    this.level.setTile(x, y, z, 1);
-                }
-        }
-        while (Keyboard.next()) {
-            if (Keyboard.getEventKey() == 28 && Keyboard.getEventKeyState())
-                this.level.save();
-        }
-        GL11.glClear(16640);
-        setupCamera(a);
-        GL11.glEnable(2884);
-        GL11.glEnable(2912);
-        GL11.glFogi(2917, 2048);
-        GL11.glFogf(2914, 0.2F);
-        GL11.glFog(2918, this.fogColor);
-        GL11.glDisable(2912);
-        this.levelRenderer.render(this.player, 0);
-        GL11.glEnable(2912);
-        this.levelRenderer.render(this.player, 1);
-        GL11.glDisable(3553);
-        if (this.hitResult != null)
-            this.levelRenderer.renderHit(this.hitResult);
-        GL11.glDisable(2912);
-        Display.update();
+        hitResult = hitNameCount > 0 ? new HitResult(names[0], names[1], names[2], names[3], names[4]) : null;
     }
 
     public static void checkError() {
-        int e = GL11.glGetError();
-        if (e != 0)
-            throw new IllegalStateException(GLU.gluErrorString(e));
+        int e = glGetError();
+        if (e != 0) throw new IllegalStateException(getGLErrorString(e));
+    }
+
+    // OpenGL 错误码映射表（替代 GLU.gluErrorString）
+    private static final Map<Integer, String> GL_ERROR_MESSAGES;
+    static {
+        Map<Integer, String> errors = new HashMap<>();
+        errors.put(GL_NO_ERROR, "No error");
+        errors.put(GL_INVALID_ENUM, "Invalid enum parameter");
+        errors.put(GL_INVALID_VALUE, "Invalid value parameter");
+        errors.put(GL_INVALID_OPERATION, "Invalid operation");
+        errors.put(GL_STACK_OVERFLOW, "Stack overflow");
+        errors.put(GL_STACK_UNDERFLOW, "Stack underflow");
+        errors.put(GL_OUT_OF_MEMORY, "Out of memory");
+        GL_ERROR_MESSAGES = Collections.unmodifiableMap(errors);
+    }
+    private static String getGLErrorString(int errorCode) {
+        return GL_ERROR_MESSAGES.getOrDefault(
+                errorCode,
+                "Unknown OpenGL error (code: 0x" + Integer.toHexString(errorCode) + ")"
+        );
     }
 }
