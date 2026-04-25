@@ -3,7 +3,15 @@ package com.fish.mcclone.level;
 import com.fish.mcclone.HitResult;
 import com.fish.mcclone.Player;
 import com.fish.mcclone.phys.AABB;
+import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
+import org.joml.FrustumIntersection;
+import org.lwjgl.system.MemoryStack;
+
+import java.nio.FloatBuffer;
+
+import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.system.MemoryStack.stackPush;
 
 public class LevelRenderer implements LevelListener {
     private static final int CHUNK_SIZE = 16;
@@ -61,35 +69,123 @@ public class LevelRenderer implements LevelListener {
     public void pick(Player player) {
         float r = 3.0F;
         AABB box = player.bb.grow(r, r, r);
-        int x0 = (int)box.x0;
-        int x1 = (int)(box.x1 + 1.0F);
-        int y0 = (int)box.y0;
-        int y1 = (int)(box.y1 + 1.0F);
-        int z0 = (int)box.z0;
-        int z1 = (int)(box.z1 + 1.0F);
-        GL11.glInitNames();
+        int x0 = (int) box.x0;
+        int x1 = (int) (box.x1 + 1.0F);
+        int y0 = (int) box.y0;
+        int y1 = (int) (box.y1 + 1.0F);
+        int z0 = (int) box.z0;
+        int z1 = (int) (box.z1 + 1.0F);
+
+        // 优化1：获取视锥体用于剔除（避免处理视野外的方块）
+        FrustumIntersection frustum = getCurrentFrustum();
+
+        glInitNames();
+
+        // 优化2：复用 Tessellator，减少 init/flush 次数
+        this.t.init();
+
         for (int x = x0; x < x1; x++) {
-            GL11.glPushName(x);
+            glPushName(x);
             for (int y = y0; y < y1; y++) {
-                GL11.glPushName(y);
+                glPushName(y);
                 for (int z = z0; z < z1; z++) {
-                    GL11.glPushName(z);
-                    if (this.level.isSolidTile(x, y, z)) {
-                        GL11.glPushName(0);
-                        for (int i = 0; i < 6; i++) {
-                            GL11.glPushName(i);
-                            this.t.init();
-                            Tile.rock.renderFace(this.t, x, y, z, i);
-                            this.t.flush();
-                            GL11.glPopName();
-                        }
-                        GL11.glPopName();
+                    // 优化3：视锥体剔除 + 固体方块判断，提前跳过
+                    if (!isBoxInFrustum(frustum, x, y, z) || !this.level.isSolidTile(x, y, z)) {
+                        continue;
                     }
-                    GL11.glPopName();
+
+                    glPushName(z);
+                    glPushName(0); // 保持原名字栈结构（方块类型标记）
+
+                    // 优化4：简化面渲染（仅几何，无纹理/光照）
+                    for (int i = 0; i < 6; i++) {
+                        glPushName(i);
+                        renderSimpleFace(x, y, z, i); // 替代复杂的 Tile.rock.renderFace
+                        glPopName();
+                    }
+
+                    glPopName();
+                    glPopName();
                 }
-                GL11.glPopName();
+                glPopName();
             }
-            GL11.glPopName();
+            glPopName();
+        }
+
+        this.t.flush(); // 优化2：最后统一 flush
+    }
+
+// ------------------------------ 辅助优化方法 ------------------------------
+
+    /**
+     * 获取当前视锥体（用于剔除视野外方块）
+     */
+    private FrustumIntersection getCurrentFrustum() {
+        try (MemoryStack stack = stackPush()) {
+            FloatBuffer projBuf = stack.mallocFloat(16);
+            FloatBuffer modelBuf = stack.mallocFloat(16);
+
+            glGetFloatv(GL_PROJECTION_MATRIX, projBuf);
+            glGetFloatv(GL_MODELVIEW_MATRIX, modelBuf);
+
+            Matrix4f proj = new Matrix4f(projBuf);
+            Matrix4f model = new Matrix4f(modelBuf);
+
+            return new FrustumIntersection(proj.mul(model));
+        }
+    }
+
+    /**
+     * 判断方块是否在视锥体内
+     */
+    private boolean isBoxInFrustum(FrustumIntersection frustum, int x, int y, int z) {
+        // 方块AABB：从 (x,y,z) 到 (x+1,y+1,z+1)
+        return frustum.testAab(x, y, z, x + 1.0f, y + 1.0f, z + 1.0f);
+    }
+
+    /**
+     * 简化的方块面渲染（仅几何，用于拾取）
+     */
+    private void renderSimpleFace(int x, int y, int z, int face) {
+        // 直接用简单的四边形替代复杂的 Tile 渲染（拾取不需要纹理）
+        // 这里的顶点坐标对应 Minecraft 方块的 6 个面
+        switch (face) {
+            case 0: // 下底面 (y-)
+                t.vertex(x, y, z);
+                t.vertex(x + 1, y, z);
+                t.vertex(x + 1, y, z + 1);
+                t.vertex(x, y, z + 1);
+                break;
+            case 1: // 上顶面 (y+)
+                t.vertex(x, y + 1, z);
+                t.vertex(x, y + 1, z + 1);
+                t.vertex(x + 1, y + 1, z + 1);
+                t.vertex(x + 1, y + 1, z);
+                break;
+            case 2: // 北面 (z-)
+                t.vertex(x, y, z);
+                t.vertex(x, y + 1, z);
+                t.vertex(x + 1, y + 1, z);
+                t.vertex(x + 1, y, z);
+                break;
+            case 3: // 南面 (z+)
+                t.vertex(x, y, z + 1);
+                t.vertex(x + 1, y, z + 1);
+                t.vertex(x + 1, y + 1, z + 1);
+                t.vertex(x, y + 1, z + 1);
+                break;
+            case 4: // 西面 (x-)
+                t.vertex(x, y, z);
+                t.vertex(x, y, z + 1);
+                t.vertex(x, y + 1, z + 1);
+                t.vertex(x, y + 1, z);
+                break;
+            case 5: // 东面 (x+)
+                t.vertex(x + 1, y, z);
+                t.vertex(x + 1, y + 1, z);
+                t.vertex(x + 1, y + 1, z + 1);
+                t.vertex(x + 1, y, z + 1);
+                break;
         }
     }
 
