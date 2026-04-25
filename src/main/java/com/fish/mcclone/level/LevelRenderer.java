@@ -1,8 +1,8 @@
 package com.fish.mcclone.level;
 
-import com.mojang.rubydung.HitResult;
-import com.mojang.rubydung.Player;
-import com.mojang.rubydung.phys.AABB;
+import com.fish.mcclone.HitResult;
+import com.fish.mcclone.Player;
+import com.fish.mcclone.phys.AABB;
 import org.lwjgl.opengl.GL11;
 
 public class LevelRenderer implements LevelListener {

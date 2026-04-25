@@ -1,6 +1,6 @@
 package com.fish.mcclone.level;
 
-import com.mojang.rubydung.phys.AABB;
+import com.fish.mcclone.phys.AABB;
 import java.nio.FloatBuffer;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
@@ -68,8 +68,8 @@ public class Frustum {
         this._proj.clear();
         this._modl.clear();
         this._clip.clear();
-        GL11.glGetFloat(2983, this._proj);
-        GL11.glGetFloat(2982, this._modl);
+        GL11.glGetFloat(2983);
+        GL11.glGetFloat(2982);
         this._proj.flip().limit(16);
         this._proj.get(this.proj);
         this._modl.flip().limit(16);

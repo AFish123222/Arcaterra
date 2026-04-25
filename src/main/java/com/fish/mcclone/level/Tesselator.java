@@ -33,11 +33,14 @@ public class Tesselator {
         this.vertexBuffer.flip();
         this.texCoordBuffer.flip();
         this.colorBuffer.flip();
-        GL11.glVertexPointer(3, 0, this.vertexBuffer);
+//        GL11.glVertexPointer(3, 0, this.vertexBuffer);
+        GL11.glVertexPointer(3, 0,0, this.vertexBuffer);
         if (this.hasTexture)
-            GL11.glTexCoordPointer(2, 0, this.texCoordBuffer);
+            GL11.glTexCoordPointer(2, 0,0, this.texCoordBuffer);
+//            GL11.glTexCoordPointer(2, 0, this.texCoordBuffer);
         if (this.hasColor)
-            GL11.glColorPointer(3, 0, this.colorBuffer);
+            GL11.glColorPointer(3, 0,0, this.colorBuffer);
+//            GL11.glColorPointer(3, 0, this.colorBuffer);
         GL11.glEnableClientState(32884);
         if (this.hasTexture)
             GL11.glEnableClientState(32888);

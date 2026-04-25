@@ -1,9 +1,9 @@
 package com.fish.mcclone;
 
-import com.mojang.rubydung.level.Level;
-import com.mojang.rubydung.phys.AABB;
-import java.util.List;
-import org.lwjgl.input.Keyboard;
+import com.fish.mcclone.level.Level;
+import com.fish.mcclone.phys.AABB;
+
+import static org.lwjgl.glfw.GLFW.glfwGetKey;
 
 public class Player {
     private Level level;
@@ -70,17 +70,40 @@ public class Player {
         this.zo = this.z;
         float xa = 0.0F;
         float ya = 0.0F;
-        if (Keyboard.isKeyDown(19))
+//        if (Keyboard.isKeyDown(19))
+//            resetPos();
+//        if (Keyboard.isKeyDown(200) || Keyboard.isKeyDown(17))
+//            ya--;
+//        if (Keyboard.isKeyDown(208) || Keyboard.isKeyDown(31))
+//            ya++;
+//        if (Keyboard.isKeyDown(203) || Keyboard.isKeyDown(30))
+//            xa--;
+//        if (Keyboard.isKeyDown(205) || Keyboard.isKeyDown(32))
+//            xa++;
+//        if (Keyboard.isKeyDown(57) || Keyboard.isKeyDown(219))
+//            if (this.onGround)
+//                this.yd = 0.12F;
+        if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
             resetPos();
-        if (Keyboard.isKeyDown(200) || Keyboard.isKeyDown(17))
+
+// 原键码 200(上箭头) / 17(W) → GLFW_KEY_UP / GLFW_KEY_W
+        if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
             ya--;
-        if (Keyboard.isKeyDown(208) || Keyboard.isKeyDown(31))
+
+// 原键码 208(下箭头) / 31(S) → GLFW_KEY_DOWN / GLFW_KEY_S
+        if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
             ya++;
-        if (Keyboard.isKeyDown(203) || Keyboard.isKeyDown(30))
+
+// 原键码 203(左箭头) / 30(A) → GLFW_KEY_LEFT / GLFW_KEY_A
+        if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
             xa--;
-        if (Keyboard.isKeyDown(205) || Keyboard.isKeyDown(32))
+
+// 原键码 205(右箭头) / 32(D) → GLFW_KEY_RIGHT / GLFW_KEY_D
+        if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
             xa++;
-        if (Keyboard.isKeyDown(57) || Keyboard.isKeyDown(219))
+
+// 原键码 57(空格) / 219([) → GLFW_KEY_SPACE / GLFW_KEY_LEFT_BRACKET
+        if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_LEFT_BRACKET) == GLFW_PRESS)
             if (this.onGround)
                 this.yd = 0.12F;
         moveRelative(xa, ya, this.onGround ? 0.02F : 0.005F);
