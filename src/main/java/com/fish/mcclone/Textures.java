@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.HashMap;
+import java.util.Objects;
 import javax.imageio.ImageIO;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
@@ -27,7 +28,7 @@ public class Textures {
             bind(id);
             GL11.glTexParameteri(3553, 10241, mode);
             GL11.glTexParameteri(3553, 10240, mode);
-            BufferedImage img = ImageIO.read(Textures.class.getResourceAsStream(resourceName));
+            BufferedImage img = ImageIO.read(Objects.requireNonNull(Textures.class.getResourceAsStream(resourceName)));
             int w = img.getWidth();
             int h = img.getHeight();
             ByteBuffer pixels = BufferUtils.createByteBuffer(w * h * 4);

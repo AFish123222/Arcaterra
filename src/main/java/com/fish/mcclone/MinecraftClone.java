@@ -296,64 +296,96 @@ public class MinecraftClone {
     }
 
     private void setupPickCamera(float a, int x, int y) {
-//        glMatrixMode(GL_PROJECTION);
-//        glLoadIdentity();
+//        // 1. 读取视口参数（从 viewportBuffer 中获取 x, y, width, height）
 //        viewportBuffer.clear();
 //        glGetIntegerv(GL_VIEWPORT, viewportBuffer);
 //        viewportBuffer.flip();
-//        viewportBuffer.limit(16);
-//        GLU.gluPickMatrix(x, y, 5.0F, 5.0F, viewportBuffer);
-//        GLU.gluPerspective(70.0F, (float) width / height, 0.05F, 1000.0F);
+//        int vpX = viewportBuffer.get();
+//        int vpY = viewportBuffer.get();
+//        int vpWidth = viewportBuffer.get();
+//        int vpHeight = viewportBuffer.get();
+//
+//        // 2. 用 JOML 实现 gluPickMatrix 逻辑
+//        Matrix4f pickMatrix = new Matrix4f();
+//        // 平移：将拾取区域中心移到视口中心
+//        pickMatrix.translate(
+//                (vpWidth - 2.0f * (x - vpX)) / vpWidth,
+//                (vpHeight - 2.0f * (y - vpY)) / vpHeight,
+//                0.0f
+//        );
+//        // 缩放：将拾取区域（5x5像素）缩放到整个视口大小
+//        pickMatrix.scale(
+//                vpWidth / 5.0f,
+//                vpHeight / 5.0f,
+//                1.0f
+//        );
+//
+//        // 3. 用 JOML 实现 gluPerspective 逻辑（注意：JOML 用弧度）
+//        Matrix4f perspectiveMatrix = new Matrix4f();
+//        perspectiveMatrix.perspective(
+//                (float) Math.toRadians(70.0), // 视场角（角度转弧度）
+//                (float) width / height,        // 宽高比
+//                0.05f,                         // 近裁剪面
+//                1000.0f                        // 远裁剪面
+//        );
+//
+//        // 4. 合并矩阵：Perspective * Pick（对应原 GLU 调用顺序）
+//        Matrix4f projMatrix = new Matrix4f();
+//        projMatrix.set(perspectiveMatrix).mul(pickMatrix);
+//
+//        // 5. 将最终矩阵加载到 OpenGL 投影矩阵栈
+//        FloatBuffer fb = BufferUtils.createFloatBuffer(16);
+//        projMatrix.get(fb); // JOML 矩阵是列主序，与 OpenGL 兼容
+//        glMatrixMode(GL_PROJECTION);
+//        glLoadMatrixf(fb);
+//
+//        // 6. 后续模型视图矩阵设置（原逻辑不变）
 //        glMatrixMode(GL_MODELVIEW);
 //        glLoadIdentity();
 //        moveCameraToPlayer(a);
-        // 1. 读取视口参数（从 viewportBuffer 中获取 x, y, width, height）
-        viewportBuffer.clear();
-        glGetIntegerv(GL_VIEWPORT, viewportBuffer);
-        viewportBuffer.flip();
-        int vpX = viewportBuffer.get();
-        int vpY = viewportBuffer.get();
-        int vpWidth = viewportBuffer.get();
-        int vpHeight = viewportBuffer.get();
+        // 1. 使用 MemoryStack 临时分配视口缓冲区（线程安全，自动释放）
+        try (MemoryStack stack = stackPush()) {
+            IntBuffer viewportBuffer = stack.mallocInt(4); // GL_VIEWPORT 固定 4 个 int
 
-        // 2. 用 JOML 实现 gluPickMatrix 逻辑
-        Matrix4f pickMatrix = new Matrix4f();
-        // 平移：将拾取区域中心移到视口中心
-        pickMatrix.translate(
-                (vpWidth - 2.0f * (x - vpX)) / vpWidth,
-                (vpHeight - 2.0f * (y - vpY)) / vpHeight,
-                0.0f
-        );
-        // 缩放：将拾取区域（5x5像素）缩放到整个视口大小
-        pickMatrix.scale(
-                vpWidth / 5.0f,
-                vpHeight / 5.0f,
-                1.0f
-        );
+            // 2. 读取视口参数（简化流程，无状态残留）
+            glGetIntegerv(GL_VIEWPORT, viewportBuffer);
+            int vpX = viewportBuffer.get(0); // 直接用索引读，无需移动 position
+            int vpY = viewportBuffer.get(1);
+            int vpWidth = viewportBuffer.get(2);
+            int vpHeight = viewportBuffer.get(3);
 
-        // 3. 用 JOML 实现 gluPerspective 逻辑（注意：JOML 用弧度）
-        Matrix4f perspectiveMatrix = new Matrix4f();
-        perspectiveMatrix.perspective(
-                (float) Math.toRadians(70.0), // 视场角（角度转弧度）
-                (float) width / height,        // 宽高比
-                0.05f,                         // 近裁剪面
-                1000.0f                        // 远裁剪面
-        );
+            // 3. JOML 实现 gluPickMatrix（逻辑不变）
+            Matrix4f pickMatrix = new Matrix4f();
+            pickMatrix.translate(
+                    (vpWidth - 2.0f * (x - vpX)) / vpWidth,
+                    (vpHeight - 2.0f * (y - vpY)) / vpHeight,
+                    0.0f
+            );
+            pickMatrix.scale(vpWidth / 5.0f, vpHeight / 5.0f, 1.0f);
 
-        // 4. 合并矩阵：Perspective * Pick（对应原 GLU 调用顺序）
-        Matrix4f projMatrix = new Matrix4f();
-        projMatrix.set(perspectiveMatrix).mul(pickMatrix);
+            // 4. JOML 实现 gluPerspective（逻辑不变）
+            Matrix4f perspectiveMatrix = new Matrix4f();
+            perspectiveMatrix.perspective(
+                    (float) Math.toRadians(70.0),
+                    (float) width / height,
+                    0.05f,
+                    1000.0f
+            );
 
-        // 5. 将最终矩阵加载到 OpenGL 投影矩阵栈
-        FloatBuffer fb = BufferUtils.createFloatBuffer(16);
-        projMatrix.get(fb); // JOML 矩阵是列主序，与 OpenGL 兼容
-        glMatrixMode(GL_PROJECTION);
-        glLoadMatrixf(fb);
+            // 5. 合并矩阵并加载到 OpenGL（逻辑不变）
+            Matrix4f projMatrix = new Matrix4f();
+            projMatrix.set(perspectiveMatrix).mul(pickMatrix);
 
-        // 6. 后续模型视图矩阵设置（原逻辑不变）
-        glMatrixMode(GL_MODELVIEW);
-        glLoadIdentity();
-        moveCameraToPlayer(a);
+            FloatBuffer fb = BufferUtils.createFloatBuffer(16);
+            projMatrix.get(fb);
+            glMatrixMode(GL_PROJECTION);
+            glLoadMatrixf(fb);
+
+            // 6. 后续模型视图矩阵设置（原逻辑不变）
+            glMatrixMode(GL_MODELVIEW);
+            glLoadIdentity();
+            moveCameraToPlayer(a);
+        }
     }
 
     private void pick(float a) {
@@ -408,4 +440,9 @@ public class MinecraftClone {
                 "Unknown OpenGL error (code: 0x" + Integer.toHexString(errorCode) + ")"
         );
     }
+
+    static void main() {
+        new MinecraftClone().run();
+    }
+
 }
