@@ -3,7 +3,10 @@ package com.fish.mcclone;
 import com.fish.mcclone.level.Level;
 import com.fish.mcclone.phys.AABB;
 
-import static org.lwjgl.glfw.GLFW.glfwGetKey;
+import java.util.List;
+
+import static com.fish.mcclone.MinecraftClone.getWindow;
+import static org.lwjgl.glfw.GLFW.*;
 
 public class Player {
     private Level level;
@@ -65,6 +68,7 @@ public class Player {
     }
 
     public void tick() {
+        long window = getWindow();
         this.xo = this.x;
         this.yo = this.y;
         this.zo = this.z;
