@@ -198,6 +198,14 @@ public class MinecraftClone {
 
     /// 帧渲染
     public void render(float a) {
+        // 性能优化 必开
+        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_LESS);
+        glEnable(GL_CULL_FACE);   // 背面剔除，看不见的面直接不渲染
+        glCullFace(GL_BACK);
+        glDisable(GL_TEXTURE_2D);
+        glDisable(GL_FOG);       // 暂时关雾，省性能
+
         // 鼠标移动 + Y轴反转
         double currentMouseX, currentMouseY;
         try (MemoryStack stack = stackPush()) {
