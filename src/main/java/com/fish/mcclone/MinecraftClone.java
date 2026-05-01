@@ -190,7 +190,7 @@ public class MinecraftClone {
 
     /// 帧渲染
     public void render(float a) {
-        // 鼠标控制（Y轴已反转）
+        // 鼠标移动 + Y轴反转
         double currentMouseX, currentMouseY;
         try (MemoryStack stack = stackPush()) {
             DoubleBuffer x = stack.mallocDouble(1);
@@ -205,47 +205,53 @@ public class MinecraftClone {
         lastMouseY = currentMouseY;
         player.turn(xo, yo);
 
-        // 限制上下视角，防止相机翻转
+        // 限制俯仰角，防止翻倒
         player.xRot = Math.max(-89, Math.min(89, player.xRot));
 
-        // 清屏
-        glClearColor(0.1f, 0.15f, 0.2f, 1.0f);
+        // 3. 清屏 + 恢复正式渲染状态
+        glClearColor(0.5f, 0.8f, 1.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // 基础状态
-        glDisable(GL_DEPTH_TEST);
-        glDisable(GL_TEXTURE_2D);
-        glDisable(GL_FOG);
+        // 开启关键状态（地形必须）
+        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_LESS);
+        glEnable(GL_TEXTURE_2D);
         glDisable(GL_CULL_FACE);
 
-        // 透视投影
+        // 4. JOML透视投影
         glMatrixMode(GL_PROJECTION);
         glLoadIdentity();
-        Matrix4f proj = new Matrix4f();
-        proj.perspective((float) Math.toRadians(70), (float) width / height, 0.1f, 2000);
-        FloatBuffer buf = BufferUtils.createFloatBuffer(16);
-        proj.get(buf);
-        glLoadMatrixf(buf);
+        Matrix4f projMatrix = new Matrix4f();
+        projMatrix.perspective((float) Math.toRadians(70.0f), (float) width / height, 0.05f, 1000.0f);
+        FloatBuffer matBuffer = BufferUtils.createFloatBuffer(16);
+        projMatrix.get(matBuffer);
+        glLoadMatrixf(matBuffer);
 
-        // 应用相机
+        // 5. 完美第一人称相机
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
         moveCameraToPlayer(a);
 
-        // ======================
-// 经典三点透视 3×3 九宫格九方块
-// 基准中心：玩家脚下 (30,60,50)
-// 九宫格铺满地面，天然三点透视
-// ======================
-        glColor3f(0.3f, 0.7f, 0.2f); // 草地绿色
+        // 6. 渲染真实Chunk地形
+        levelRenderer.render(player, 0);
 
-// 九宫格偏移：3行3列
+        // 雾效 + 第二层地形
+        glEnable(GL_FOG);
+        glFogi(GL_FOG_MODE, GL_LINEAR);
+        glFogf(GL_FOG_START, 30.0f);
+        glFogf(GL_FOG_END, 150.0f);
+        glFogfv(GL_FOG_COLOR, fogColor);
+        levelRenderer.render(player, 1);
+        glDisable(GL_FOG);
+
+        // 7. 渲染九宫格测试方块（保留，做参照）
+        glDisable(GL_TEXTURE_2D);
+        glColor3f(0.3f, 0.7f, 0.2f);
         int[][] grid = {
                 {-1, -1}, {0, -1}, {1, -1},
                 {-1, 0},  {0, 0},  {1, 0},
                 {-1, 1},  {0, 1},  {1, 1}
         };
-
         float baseX = 30;
         float baseY = 60;
         float baseZ = 50;
@@ -254,7 +260,6 @@ public class MinecraftClone {
         for (int[] off : grid) {
             int ox = off[0];
             int oz = off[1];
-
             float x0 = baseX + ox;
             float x1 = baseX + ox + 1;
             float y0 = baseY;
@@ -262,44 +267,28 @@ public class MinecraftClone {
             float z0 = baseZ + oz;
             float z1 = baseZ + oz + 1;
 
-            // 顶面
-            glVertex3f(x0, y1, z0);
-            glVertex3f(x1, y1, z0);
-            glVertex3f(x1, y1, z1);
-            glVertex3f(x0, y1, z1);
-
-            // 底面
-            glVertex3f(x0, y0, z0);
-            glVertex3f(x1, y0, z0);
-            glVertex3f(x1, y0, z1);
-            glVertex3f(x0, y0, z1);
-
-            // 前侧
-            glVertex3f(x0, y0, z1);
-            glVertex3f(x1, y0, z1);
-            glVertex3f(x1, y1, z1);
-            glVertex3f(x0, y1, z1);
-
-            // 后侧
-            glVertex3f(x0, y0, z0);
-            glVertex3f(x1, y0, z0);
-            glVertex3f(x1, y1, z0);
-            glVertex3f(x0, y1, z0);
-
-            // 左侧
-            glVertex3f(x0, y0, z0);
-            glVertex3f(x0, y0, z1);
-            glVertex3f(x0, y1, z1);
-            glVertex3f(x0, y1, z0);
-
-            // 右侧
-            glVertex3f(x1, y0, z0);
-            glVertex3f(x1, y0, z1);
-            glVertex3f(x1, y1, z1);
-            glVertex3f(x1, y1, z0);
+            glVertex3f(x0, y1, z0); glVertex3f(x1, y1, z0); glVertex3f(x1, y1, z1); glVertex3f(x0, y1, z1);
+            glVertex3f(x0, y0, z0); glVertex3f(x1, y0, z0); glVertex3f(x1, y0, z1); glVertex3f(x0, y0, z1);
+            glVertex3f(x0, y0, z1); glVertex3f(x1, y0, z1); glVertex3f(x1, y1, z1); glVertex3f(x0, y1, z1);
+            glVertex3f(x0, y0, z0); glVertex3f(x1, y0, z0); glVertex3f(x1, y1, z0); glVertex3f(x0, y1, z0);
+            glVertex3f(x0, y0, z0); glVertex3f(x0, y0, z1); glVertex3f(x0, y1, z1); glVertex3f(x0, y1, z0);
+            glVertex3f(x1, y0, z0); glVertex3f(x1, y0, z1); glVertex3f(x1, y1, z1); glVertex3f(x1, y1, z0);
         }
         glEnd();
         glColor3f(1.0f, 1.0f, 1.0f);
+
+        // 8. 选中框 + 拾取（原样保留）
+        if (hitResult != null) {
+            glDisable(GL_TEXTURE_2D);
+            levelRenderer.renderHit(hitResult);
+        }
+
+        // 9. 拾取矩阵（原样保留）
+        glMatrixMode(GL_PROJECTION); glPushMatrix();
+        glMatrixMode(GL_MODELVIEW); glPushMatrix();
+        pick(a);
+        glMatrixMode(GL_PROJECTION); glPopMatrix();
+        glMatrixMode(GL_MODELVIEW); glPopMatrix();
 
         glfwSwapBuffers(window);
         glfwPollEvents();
