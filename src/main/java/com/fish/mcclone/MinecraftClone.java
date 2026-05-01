@@ -4,6 +4,7 @@ import com.fish.mcclone.level.Chunk;
 import com.fish.mcclone.level.Level;
 import com.fish.mcclone.level.LevelRenderer;
 import com.fish.util.PrinterUtils;
+import com.fish.util.TextureLoader;
 import org.joml.Matrix4f;
 import org.lwjgl.*;
 import org.lwjgl.glfw.*;
@@ -41,6 +42,8 @@ public class MinecraftClone {
     private Level level;
     private LevelRenderer levelRenderer;
     private Player player;
+
+    private int terrainTexture;
 
     /// 鼠标位置跟踪（用于计算 dx/dy）
     private double lastMouseX, lastMouseY;
@@ -122,6 +125,11 @@ public class MinecraftClone {
         level = new Level(256, 256, 64);
         levelRenderer = new LevelRenderer(level);
         player = new Player(level);
+
+        // 加载并绑定方块纹理
+        terrainTexture = TextureLoader.loadTexture("terrain.png");
+        glEnable(GL_TEXTURE_2D);
+        glBindTexture(GL_TEXTURE_2D, terrainTexture);
     }
 
     private void setupCallbacks() {
@@ -296,15 +304,26 @@ public class MinecraftClone {
 
     // 以下辅助方法仅替换了 GL 常量，逻辑未变
     /// 旋转 平移
+//    private void moveCameraToPlayer(float a) {
+//        // 1. 获取玩家插值位置
+//        float px = player.xo + (player.x - player.xo) * a;
+//        float py = player.yo + (player.y - player.yo) * a;
+//        float pz = player.zo + (player.z - player.zo) * a;
+//
+//        glRotatef(player.xRot, 1, 0, 0);  // 上下抬头/低头
+//        glRotatef(player.yRot, 0, 1, 0);  // 左右转头
+//        glTranslatef(-px, -py, -pz);      // 平移世界
+//    }
     private void moveCameraToPlayer(float a) {
-        // 1. 获取玩家插值位置
+        glLoadIdentity();
+        // 先旋转（绕自身相机原地转）
+        glRotatef(player.xRot, 1, 0, 0);
+        glRotatef(player.yRot, 0, 1, 0);
+        // 后平移世界
         float px = player.xo + (player.x - player.xo) * a;
         float py = player.yo + (player.y - player.yo) * a;
-        float pz = player.zo + (player.z - player.zo) * a;
-
-        glRotatef(player.xRot, 1, 0, 0);  // 上下抬头/低头
-        glRotatef(player.yRot, 0, 1, 0);  // 左右转头
-        glTranslatef(-px, -py, -pz);      // 平移世界
+        float pz = player.zo + (player.z - player.z) * a;
+        glTranslatef(-px, -py, -pz);
     }
 
     private void setupCamera(float a) {

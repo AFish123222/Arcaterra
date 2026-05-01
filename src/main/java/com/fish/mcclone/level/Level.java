@@ -29,12 +29,18 @@ public class Level {
         this.depth = d;
         this.blocks = new byte[w * h * d];
         this.lightDepths = new int[w * h];
-        for (int x = 0; x < w; x++) {
-            for (int y = 0; y < d; y++) {
-                for (int z = 0; z < h; z++) {
-                    int i = (y * this.height + z) * this.width + x;
-                    this.blocks[i] = (byte)((y <= d * 2 / 3) ? 1 : 0);
-                }
+//        for (int x = 0; x < w; x++) {
+//            for (int y = 0; y < d; y++) {
+//                for (int z = 0; z < h; z++) {
+//                    int i = (y * this.height + z) * this.width + x;
+//                    this.blocks[i] = (byte)((y <= d * 2 / 3) ? 1 : 0);
+//                }
+//            }
+//        }
+        // 铺满整片地图：Y=60 生成一层地面方块
+        for (int x = 0; x < width; x++) {
+            for (int z = 0; z < depth; z++) {
+                setTile(x, 60, z, 1); // 1 = 草方块ID
             }
         }
         calcLightDepths(0, 0, w, h);

@@ -2,94 +2,82 @@ package com.fish.mcclone.level;
 
 import java.nio.FloatBuffer;
 import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.GL11;
+import static org.lwjgl.opengl.GL11.*;
 
 public class Tesselator {
     private static final int MAX_VERTICES = 100000;
 
-    private FloatBuffer vertexBuffer = BufferUtils.createFloatBuffer(300000);
-
-    private FloatBuffer texCoordBuffer = BufferUtils.createFloatBuffer(200000);
-
-    private FloatBuffer colorBuffer = BufferUtils.createFloatBuffer(300000);
+    private final FloatBuffer vertexBuffer  = BufferUtils.createFloatBuffer(MAX_VERTICES * 3);
+    private final FloatBuffer texBuffer     = BufferUtils.createFloatBuffer(MAX_VERTICES * 2);
+    private final FloatBuffer colorBuffer   = BufferUtils.createFloatBuffer(MAX_VERTICES * 3);
 
     private int vertices = 0;
+    private float u, v;
+    private float r, g, b;
 
-    private float u;
-
-    private float v;
-
-    private float r;
-
-    private float g;
-
-    private float b;
-
-    private boolean hasColor = false;
-
-    private boolean hasTexture = false;
-
-    public void flush() {
-        this.vertexBuffer.flip();
-        this.texCoordBuffer.flip();
-        this.colorBuffer.flip();
-//        GL11.glVertexPointer(3, 0, this.vertexBuffer);
-        GL11.glVertexPointer(3, 0,0, this.vertexBuffer);
-        if (this.hasTexture)
-            GL11.glTexCoordPointer(2, 0,0, this.texCoordBuffer);
-//            GL11.glTexCoordPointer(2, 0, this.texCoordBuffer);
-        if (this.hasColor)
-            GL11.glColorPointer(3, 0,0, this.colorBuffer);
-//            GL11.glColorPointer(3, 0, this.colorBuffer);
-        GL11.glEnableClientState(32884);
-        if (this.hasTexture)
-            GL11.glEnableClientState(32888);
-        if (this.hasColor)
-            GL11.glEnableClientState(32886);
-        GL11.glDrawArrays(7, 0, this.vertices);
-        GL11.glDisableClientState(32884);
-        if (this.hasTexture)
-            GL11.glDisableClientState(32888);
-        if (this.hasColor)
-            GL11.glDisableClientState(32886);
-        clear();
-    }
-
-    private void clear() {
-        this.vertices = 0;
-        this.vertexBuffer.clear();
-        this.texCoordBuffer.clear();
-        this.colorBuffer.clear();
-    }
+    private boolean useTex = false;
+    private boolean useCol = false;
 
     public void init() {
         clear();
-        this.hasColor = false;
-        this.hasTexture = false;
+        useTex = false;
+        useCol = false;
     }
 
     public void tex(float u, float v) {
-        this.hasTexture = true;
+        useTex = true;
         this.u = u;
         this.v = v;
     }
 
     public void color(float r, float g, float b) {
-        this.hasColor = true;
+        useCol = true;
         this.r = r;
         this.g = g;
         this.b = b;
     }
 
     public void vertex(float x, float y, float z) {
-        this.vertexBuffer.put(this.vertices * 3 + 0, x).put(this.vertices * 3 + 1, y).put(this.vertices * 3 + 2, z);
-        if (this.hasTexture)
-            this.texCoordBuffer.put(this.vertices * 2 + 0, this.u).put(this.vertices * 2 + 1, this.v);
-        if (this.hasColor)
-            this.colorBuffer.put(this.vertices * 3 + 0, this.r).put(this.vertices * 3 + 1, this.g).put(this.vertices * 3 + 2, this.b);
-        this.vertices++;
-        if (this.vertices == 100000)
-            flush();
+        vertexBuffer.put(x).put(y).put(z);
+        if(useTex) texBuffer.put(u).put(v);
+        if(useCol) colorBuffer.put(r).put(g).put(b);
+
+        vertices++;
+        if (vertices >= MAX_VERTICES) flush();
+    }
+
+    public void flush() {
+        if (vertices == 0) return;
+
+        vertexBuffer.flip();
+        texBuffer.flip();
+        colorBuffer.flip();
+
+        glEnableClientState(GL_VERTEX_ARRAY);
+        glVertexPointer(3, GL_FLOAT, 0, vertexBuffer);
+
+        if(useTex) {
+            glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+            glTexCoordPointer(2, GL_FLOAT, 0, texBuffer);
+        }
+        if(useCol) {
+            glEnableClientState(GL_COLOR_ARRAY);
+            glColorPointer(3, GL_FLOAT, 0, colorBuffer);
+        }
+
+        glDrawArrays(GL_QUADS, 0, vertices);
+
+        glDisableClientState(GL_VERTEX_ARRAY);
+        if(useTex) glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+        if(useCol) glDisableClientState(GL_COLOR_ARRAY);
+
+        clear();
+    }
+
+    private void clear() {
+        vertices = 0;
+        vertexBuffer.clear();
+        texBuffer.clear();
+        colorBuffer.clear();
     }
 }
-
