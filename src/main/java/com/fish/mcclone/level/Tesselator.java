@@ -5,7 +5,7 @@ import org.lwjgl.BufferUtils;
 import static org.lwjgl.opengl.GL11.*;
 
 public class Tesselator {
-    private static final int MAX_VERTICES = 100000;
+    private static final int MAX_VERTICES = 200000;
 
     private final FloatBuffer vertexBuffer  = BufferUtils.createFloatBuffer(MAX_VERTICES * 3);
     private final FloatBuffer texBuffer     = BufferUtils.createFloatBuffer(MAX_VERTICES * 2);
