@@ -39,6 +39,7 @@ public class LevelRenderer implements LevelListener {
         for (int x = 0; x < this.xChunks; x++) {
             for (int y = 0; y < this.yChunks; y++) {
                 for (int z = 0; z < this.zChunks; z++) {
+                    if(level.getTile(x,y,z) == 0) continue;
                     int x0 = x * 16;
                     int y0 = y * 16;
                     int z0 = z * 16;
