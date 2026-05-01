@@ -62,7 +62,7 @@ public class LevelRenderer implements LevelListener {
         Chunk.rebuiltThisFrame = 0;
         Frustum frustum = Frustum.getFrustum();
         for (int i = 0; i < this.chunks.length; i++) {
-//            if (frustum.cubeInFrustum((this.chunks[i]).aabb)) //没这个条件直接崩
+            if (frustum.cubeInFrustum((this.chunks[i]).aabb)) //没这个条件直接崩
                 this.chunks[i].render(layer);
         }
     }
@@ -114,6 +114,11 @@ public class LevelRenderer implements LevelListener {
         }
 
         this.t.flush(); // 优化2：最后统一 flush
+
+        // ========== 【必须加在pick方法的最后一行！】 ==========
+        // 强制切回渲染模式，同时获取命中数，彻底退出选择模式
+        int hits = glRenderMode(GL_RENDER);
+        System.out.println("Pick hits: " + hits); // 顺便看拾取有没有生效
     }
 
 // ------------------------------ 辅助优化方法 ------------------------------
