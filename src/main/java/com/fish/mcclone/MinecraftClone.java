@@ -187,36 +187,50 @@ public class MinecraftClone {
 
     /// 帧渲染
     public void render(float a) {
-        // ==========================================
-        // 【终极极简：只做 4 件事，无任何多余逻辑】
-        // ==========================================
-
-        // 1. 强制清屏（深蓝色背景）
+        // ===================== 1. 基础清屏 & 状态重置 =====================
         glClearColor(0.2f, 0.4f, 0.8f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // 2. 强制重置所有矩阵/状态（绝对安全）
-        glMatrixMode(GL_PROJECTION);
-        glLoadIdentity();
-        glOrtho(-1, 1, -1, 1, -1, 1); // 正交投影，永远不会裁剪！
-        glMatrixMode(GL_MODELVIEW);
-        glLoadIdentity();
-
+        // 关闭所有干扰状态
         glDisable(GL_DEPTH_TEST);
         glDisable(GL_CULL_FACE);
         glDisable(GL_FOG);
         glDisable(GL_TEXTURE_2D);
 
-        // 3. 强制画红色方块（占满屏幕）
+        // ===================== 2. 纯 JOML 透视投影矩阵 =====================
+        glMatrixMode(GL_PROJECTION);
+        glLoadIdentity();
+
+        // JOML 创建透视投影（完全替代 gluPerspective）
+        Matrix4f projMatrix = new Matrix4f();
+        projMatrix.perspective(
+                (float) Math.toRadians(70.0f),  // FOV 转弧度
+                (float) width / height,         // 窗口宽高比
+                0.05f,                          // 近裁剪面
+                1000.0f                         // 远裁剪面
+        );
+
+        // 加载 JOML 矩阵到 OpenGL
+        FloatBuffer matBuffer = BufferUtils.createFloatBuffer(16);
+        projMatrix.get(matBuffer);
+        glLoadMatrixf(matBuffer);
+
+        // ===================== 3. 模型视图矩阵（摄像机后移） =====================
+        glMatrixMode(GL_MODELVIEW);
+        glLoadIdentity();
+        glTranslatef(0.0f, 0.0f, -5.0f); // 摄像机向后退 5 格，确保方块在视野内
+
+        // ===================== 4. 绘制红色测试方块 =====================
         glColor3f(1.0f, 0.0f, 0.0f);
         glBegin(GL_QUADS);
         glVertex2f(-0.8f, -0.8f);
         glVertex2f( 0.8f, -0.8f);
-        glVertex2f( 0.8f,  0.8f);
-        glVertex2f(-0.8f,  0.8f);
+        glVertex2f( 0.8f, 0.8f);
+        glVertex2f(-0.8f, 0.8f);
         glEnd();
+        glColor3f(1.0f, 1.0f, 1.0f);
 
-        // 4. 交换缓冲（必须）
+        // ===================== 5. 结束帧 =====================
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
