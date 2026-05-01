@@ -40,6 +40,11 @@ public class Player {
     public Player(Level level) {
         this.level = level;
         resetPos();
+        this.xRot = 60.0F;
+        this.yRot = 60.0F;
+        this.x = 30;
+        this.y = 60;
+        this.z = 50;
     }
 
     private void resetPos() {

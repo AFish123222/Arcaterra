@@ -168,8 +168,11 @@ public class MinecraftClone {
                 // FPS 计数
                 frames++;
                 while (System.currentTimeMillis() >= lastTime + 1000L) {
-                    System.out.println(frames + " fps, " + Chunk.updates);
-                    Chunk.updates = 0;
+//                    System.out.println(frames + " fps, " + Chunk.updates);
+                    System.out.println(frames + " fps, ");
+                    System.out.println(player.xRot + " xRot ");
+                    System.out.println(player.yRot + " yRot ");
+//                    Chunk.updates = 0;
                     lastTime += 1000L;
                     frames = 0;
                 }
@@ -187,7 +190,7 @@ public class MinecraftClone {
 
     /// 帧渲染
     public void render(float a) {
-        // 1. 鼠标移动（已修复Y轴反转）
+        // 鼠标控制（Y轴已反转）
         double currentMouseX, currentMouseY;
         try (MemoryStack stack = stackPush()) {
             DoubleBuffer x = stack.mallocDouble(1);
@@ -202,84 +205,117 @@ public class MinecraftClone {
         lastMouseY = currentMouseY;
         player.turn(xo, yo);
 
-        // 2. 事件处理
-        while (!mouseButtonEvents.isEmpty()) {
-            int[] event = mouseButtonEvents.poll();
-            int button = event[0];
-            boolean pressed = event[1] == GLFW_PRESS;
-            if (button == GLFW_MOUSE_BUTTON_2 && pressed && hitResult != null)
-                level.setTile(hitResult.x, hitResult.y, hitResult.z, 0);
-            if (button == GLFW_MOUSE_BUTTON_1 && pressed && hitResult != null) {
-                int x = hitResult.x, y = hitResult.y, z = hitResult.z;
-                if (hitResult.f == 0) y--; if (hitResult.f == 1) y++;
-                if (hitResult.f == 2) z--; if (hitResult.f == 3) z++;
-                if (hitResult.f == 4) x--; if (hitResult.f == 5) x++;
-                level.setTile(x, y, z, 1);
-            }
-        }
-        while (!keyEvents.isEmpty()) {
-            int[] event = keyEvents.poll();
-            if (event[0] == GLFW_KEY_ENTER && event[1] == GLFW_PRESS) level.save();
-        }
+        // 限制上下视角，防止相机翻转
+        player.xRot = Math.max(-89, Math.min(89, player.xRot));
 
-        // 3. 清屏 + 基础状态
-        glClearColor(0.5f, 0.8f, 1.0f, 1.0f);
+        // 清屏
+        glClearColor(0.1f, 0.15f, 0.2f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glEnable(GL_DEPTH_TEST);
-        glDepthFunc(GL_LESS);
+
+        // 基础状态
+        glDisable(GL_DEPTH_TEST);
+        glDisable(GL_TEXTURE_2D);
+        glDisable(GL_FOG);
         glDisable(GL_CULL_FACE);
 
-        // 4. JOML透视投影
+        // 透视投影
         glMatrixMode(GL_PROJECTION);
         glLoadIdentity();
-        Matrix4f projMatrix = new Matrix4f();
-        projMatrix.perspective((float) Math.toRadians(70.0f), (float) width / height, 0.05f, 1000.0f);
-        FloatBuffer matBuffer = BufferUtils.createFloatBuffer(16);
-        projMatrix.get(matBuffer);
-        glLoadMatrixf(matBuffer);
+        Matrix4f proj = new Matrix4f();
+        proj.perspective((float) Math.toRadians(70), (float) width / height, 0.1f, 2000);
+        FloatBuffer buf = BufferUtils.createFloatBuffer(16);
+        proj.get(buf);
+        glLoadMatrixf(buf);
 
-        // 5. 相机
+        // 应用相机
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
         moveCameraToPlayer(a);
 
-        // 6. 渲染地形（高性能显示列表）
-        glEnable(GL_TEXTURE_2D);
-        levelRenderer.render(player, 0);
+        // ======================
+// 经典三点透视 3×3 九宫格九方块
+// 基准中心：玩家脚下 (30,60,50)
+// 九宫格铺满地面，天然三点透视
+// ======================
+        glColor3f(0.3f, 0.7f, 0.2f); // 草地绿色
 
-        // 雾效
-        glEnable(GL_FOG);
-        glFogi(GL_FOG_MODE, GL_LINEAR);
-        glFogf(GL_FOG_START, 30.0f);
-        glFogf(GL_FOG_END, 150.0f);
-        glFogfv(GL_FOG_COLOR, fogColor);
-        levelRenderer.render(player, 1);
-        glDisable(GL_FOG);
+// 九宫格偏移：3行3列
+        int[][] grid = {
+                {-1, -1}, {0, -1}, {1, -1},
+                {-1, 0},  {0, 0},  {1, 0},
+                {-1, 1},  {0, 1},  {1, 1}
+        };
 
-        // 7. 选中框
-        glDisable(GL_TEXTURE_2D);
-        if (hitResult != null) levelRenderer.renderHit(hitResult);
+        float baseX = 30;
+        float baseY = 60;
+        float baseZ = 50;
 
-        // 8. 安全拾取
-        glMatrixMode(GL_PROJECTION); glPushMatrix();
-        glMatrixMode(GL_MODELVIEW); glPushMatrix();
-        pick(a);
-        glMatrixMode(GL_PROJECTION); glPopMatrix();
-        glMatrixMode(GL_MODELVIEW); glPopMatrix();
+        glBegin(GL_QUADS);
+        for (int[] off : grid) {
+            int ox = off[0];
+            int oz = off[1];
+
+            float x0 = baseX + ox;
+            float x1 = baseX + ox + 1;
+            float y0 = baseY;
+            float y1 = baseY + 1;
+            float z0 = baseZ + oz;
+            float z1 = baseZ + oz + 1;
+
+            // 顶面
+            glVertex3f(x0, y1, z0);
+            glVertex3f(x1, y1, z0);
+            glVertex3f(x1, y1, z1);
+            glVertex3f(x0, y1, z1);
+
+            // 底面
+            glVertex3f(x0, y0, z0);
+            glVertex3f(x1, y0, z0);
+            glVertex3f(x1, y0, z1);
+            glVertex3f(x0, y0, z1);
+
+            // 前侧
+            glVertex3f(x0, y0, z1);
+            glVertex3f(x1, y0, z1);
+            glVertex3f(x1, y1, z1);
+            glVertex3f(x0, y1, z1);
+
+            // 后侧
+            glVertex3f(x0, y0, z0);
+            glVertex3f(x1, y0, z0);
+            glVertex3f(x1, y1, z0);
+            glVertex3f(x0, y1, z0);
+
+            // 左侧
+            glVertex3f(x0, y0, z0);
+            glVertex3f(x0, y0, z1);
+            glVertex3f(x0, y1, z1);
+            glVertex3f(x0, y1, z0);
+
+            // 右侧
+            glVertex3f(x1, y0, z0);
+            glVertex3f(x1, y0, z1);
+            glVertex3f(x1, y1, z1);
+            glVertex3f(x1, y1, z0);
+        }
+        glEnd();
+        glColor3f(1.0f, 1.0f, 1.0f);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
 
     // 以下辅助方法仅替换了 GL 常量，逻辑未变
+    /// 旋转 平移
     private void moveCameraToPlayer(float a) {
-        glTranslatef(0.0F, 0.0F, -0.3F);
-        glRotatef(player.xRot, 1.0F, 0.0F, 0.0F);
-        glRotatef(player.yRot, 0.0F, 1.0F, 0.0F);
-        float x = player.xo + (player.x - player.xo) * a;
-        float y = player.yo + (player.y - player.yo) * a;
-        float z = player.zo + (player.z - player.zo) * a;
-        glTranslatef(-x, -y, -z);
+        // 1. 获取玩家插值位置
+        float px = player.xo + (player.x - player.xo) * a;
+        float py = player.yo + (player.y - player.yo) * a;
+        float pz = player.zo + (player.z - player.zo) * a;
+
+        glRotatef(player.xRot, 1, 0, 0);  // 上下抬头/低头
+        glRotatef(player.yRot, 0, 1, 0);  // 左右转头
+        glTranslatef(-px, -py, -pz);      // 平移世界
     }
 
     private void setupCamera(float a) {
