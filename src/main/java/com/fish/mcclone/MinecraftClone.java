@@ -188,155 +188,35 @@ public class MinecraftClone {
     /// 帧渲染
     public void render(float a) {
         // ==========================================
-        // 第一阶段：输入处理（不碰任何 OpenGL 渲染状态）
+        // 【终极极简：只做 4 件事，无任何多余逻辑】
         // ==========================================
 
-        // 1. 计算鼠标移动 delta
-        double currentMouseX, currentMouseY;
-        try (MemoryStack stack = stackPush()) {
-            DoubleBuffer x = stack.mallocDouble(1);
-            DoubleBuffer y = stack.mallocDouble(1);
-            glfwGetCursorPos(window, x, y);
-            currentMouseX = x.get(0);
-            currentMouseY = y.get(0);
-        }
-        float xo = (float) (currentMouseX - lastMouseX);
-        float yo = (float) (currentMouseY - lastMouseY);
-        lastMouseX = currentMouseX;
-        lastMouseY = currentMouseY;
-        player.turn(xo, yo);
-
-        // 2. 处理鼠标按钮事件
-        while (!mouseButtonEvents.isEmpty()) {
-            int[] event = mouseButtonEvents.poll();
-            int button = event[0];
-            boolean pressed = event[1] == GLFW_PRESS;
-
-            if (button == GLFW_MOUSE_BUTTON_2 && pressed) {
-                if (hitResult != null) level.setTile(hitResult.x, hitResult.y, hitResult.z, 0);
-            }
-            if (button == GLFW_MOUSE_BUTTON_1 && pressed) {
-                if (hitResult != null) {
-                    int x = hitResult.x, y = hitResult.y, z = hitResult.z;
-                    if (hitResult.f == 0) y--;
-                    if (hitResult.f == 1) y++;
-                    if (hitResult.f == 2) z--;
-                    if (hitResult.f == 3) z++;
-                    if (hitResult.f == 4) x--;
-                    if (hitResult.f == 5) x++;
-                    level.setTile(x, y, z, 1);
-                }
-            }
-        }
-
-        // 3. 处理键盘事件
-        while (!keyEvents.isEmpty()) {
-            int[] event = keyEvents.poll();
-            int key = event[0];
-            boolean pressed = event[1] == GLFW_PRESS;
-            if (key == GLFW_KEY_ENTER && pressed) level.save();
-        }
-
-        // ==========================================
-        // 第二阶段：拾取（用矩阵栈保护状态）
-        // ==========================================
-
-        // 【关键】用 glPushMatrix/glPopMatrix 保存原矩阵，pick 完自动恢复
-        glMatrixMode(GL_PROJECTION);
-        glPushMatrix(); // 保存当前投影矩阵
-        glMatrixMode(GL_MODELVIEW);
-        glPushMatrix(); // 保存当前模型视图矩阵
-
-//        pick(a); // 执行拾取
-
-        // 【关键】恢复矩阵（比 glLoadIdentity() 更安全）
-        glMatrixMode(GL_PROJECTION);
-        glPopMatrix(); // 恢复 pick 前的投影矩阵
-        glMatrixMode(GL_MODELVIEW);
-        glPopMatrix(); // 恢复 pick 前的模型视图矩阵
-
-        // ==========================================
-        // 第三阶段：正式渲染（状态完全可控）
-        // ==========================================
-
-        // 1. 清屏 + 强制重置基础状态
+        // 1. 强制清屏（深蓝色背景）
+        glClearColor(0.2f, 0.4f, 0.8f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glEnable(GL_TEXTURE_2D);
-        glEnable(GL_DEPTH_TEST);
-        glDepthFunc(GL_LESS);
-//        glEnable(GL_CULL_FACE);
-//        glCullFace(GL_BACK); // 明确剔除背面
-//        glDisable(GL_CULL_FACE);//为修复bug-1,先看看是否搞反正反面
-        // ========== 【强制全局状态重置，必须加】 ==========
-// 深度测试：必须开，否则方块会被天空覆盖
-        glEnable(GL_DEPTH_TEST);
-        glDepthFunc(GL_LESS);
-        glDepthMask(true); // 允许写入深度缓冲
 
-// 面剔除：先关掉，避免正反面搞反了看不到
+        // 2. 强制重置所有矩阵/状态（绝对安全）
+        glMatrixMode(GL_PROJECTION);
+        glLoadIdentity();
+        glOrtho(-1, 1, -1, 1, -1, 1); // 正交投影，永远不会裁剪！
+        glMatrixMode(GL_MODELVIEW);
+        glLoadIdentity();
+
+        glDisable(GL_DEPTH_TEST);
         glDisable(GL_CULL_FACE);
-
-// 雾效：强制关掉，避免把方块染成天空色
         glDisable(GL_FOG);
-
-// 纹理：先关掉，测试用纯色
         glDisable(GL_TEXTURE_2D);
 
-// 渲染模式：强制填充，不是线框/点
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-// 颜色：强制白色，避免被之前的颜色污染
-        glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-// ========================================================
-
-        // 2. 设置摄像机
-        setupCamera(a);
-
-        // ========== 【新增：测试方块代码，直接复制】 ==========
-        glDisable(GL_TEXTURE_2D); // 关掉纹理，用纯色
-        glDisable(GL_FOG);        // 关掉雾效
-        glColor3f(1.0f, 0.0f, 0.0f); // 强制红色，和蓝色天空强对比
-
-    // 画一个在摄像机正前方5格，1x1x1的方块
+        // 3. 强制画红色方块（占满屏幕）
+        glColor3f(1.0f, 0.0f, 0.0f);
         glBegin(GL_QUADS);
-    // 前面（朝向摄像机）
-        glVertex3f(-0.5f, -0.5f, -5.0f);
-        glVertex3f( 0.5f, -0.5f, -5.0f);
-        glVertex3f( 0.5f,  0.5f, -5.0f);
-        glVertex3f(-0.5f,  0.5f, -5.0f);
+        glVertex2f(-0.8f, -0.8f);
+        glVertex2f( 0.8f, -0.8f);
+        glVertex2f( 0.8f,  0.8f);
+        glVertex2f(-0.8f,  0.8f);
         glEnd();
 
-        glColor3f(1.0f, 1.0f, 1.0f); // 恢复白色
-    // ========================================================
-
-
-
-
-
-        // 3. 渲染地形（分两层：无雾/有雾，对应原代码逻辑）
-        // 第一层：无雾（通常是天空或远处？）
-        glDisable(GL_FOG);
-        levelRenderer.render(player, 0);
-        levelRenderer.render(player, 1);
-
-        // 第二层：有雾（通常是近处地形）
-        glEnable(GL_FOG);
-        glFogi(GL_FOG_MODE, GL_LINEAR);
-        glFogf(GL_FOG_START, 0.0F); // 明确雾效起始距离
-        glFogf(GL_FOG_END, 100.0F); // 明确雾效结束距离
-        glFogfv(GL_FOG_COLOR, fogColor);
-        levelRenderer.render(player, 1);
-
-        // 4. 渲染选中框（不需要纹理和雾）
-        glDisable(GL_TEXTURE_2D);
-        glDisable(GL_FOG);
-        if (hitResult != null) {
-            levelRenderer.renderHit(hitResult);
-        }
-
-        // ==========================================
-        // 第四阶段：结束帧
-        // ==========================================
+        // 4. 交换缓冲（必须）
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
