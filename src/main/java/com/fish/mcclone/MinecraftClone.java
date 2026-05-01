@@ -247,7 +247,7 @@ public class MinecraftClone {
         glMatrixMode(GL_MODELVIEW);
         glPushMatrix(); // 保存当前模型视图矩阵
 
-        pick(a); // 执行拾取
+//        pick(a); // 执行拾取
 
         // 【关键】恢复矩阵（比 glLoadIdentity() 更安全）
         glMatrixMode(GL_PROJECTION);
@@ -267,9 +267,51 @@ public class MinecraftClone {
 //        glEnable(GL_CULL_FACE);
 //        glCullFace(GL_BACK); // 明确剔除背面
 //        glDisable(GL_CULL_FACE);//为修复bug-1,先看看是否搞反正反面
+        // ========== 【强制全局状态重置，必须加】 ==========
+// 深度测试：必须开，否则方块会被天空覆盖
+        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_LESS);
+        glDepthMask(true); // 允许写入深度缓冲
+
+// 面剔除：先关掉，避免正反面搞反了看不到
+        glDisable(GL_CULL_FACE);
+
+// 雾效：强制关掉，避免把方块染成天空色
+        glDisable(GL_FOG);
+
+// 纹理：先关掉，测试用纯色
+        glDisable(GL_TEXTURE_2D);
+
+// 渲染模式：强制填充，不是线框/点
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+// 颜色：强制白色，避免被之前的颜色污染
+        glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+// ========================================================
 
         // 2. 设置摄像机
         setupCamera(a);
+
+        // ========== 【新增：测试方块代码，直接复制】 ==========
+        glDisable(GL_TEXTURE_2D); // 关掉纹理，用纯色
+        glDisable(GL_FOG);        // 关掉雾效
+        glColor3f(1.0f, 0.0f, 0.0f); // 强制红色，和蓝色天空强对比
+
+    // 画一个在摄像机正前方5格，1x1x1的方块
+        glBegin(GL_QUADS);
+    // 前面（朝向摄像机）
+        glVertex3f(-0.5f, -0.5f, -5.0f);
+        glVertex3f( 0.5f, -0.5f, -5.0f);
+        glVertex3f( 0.5f,  0.5f, -5.0f);
+        glVertex3f(-0.5f,  0.5f, -5.0f);
+        glEnd();
+
+        glColor3f(1.0f, 1.0f, 1.0f); // 恢复白色
+    // ========================================================
+
+
+
+
 
         // 3. 渲染地形（分两层：无雾/有雾，对应原代码逻辑）
         // 第一层：无雾（通常是天空或远处？）
