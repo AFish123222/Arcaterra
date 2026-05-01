@@ -187,7 +187,7 @@ public class MinecraftClone {
 
     /// 帧渲染
     public void render(float a) {
-        // 鼠标位置计算
+        // 1. 鼠标移动计算（已修复Y轴反转）
         double currentMouseX, currentMouseY;
         try (MemoryStack stack = stackPush()) {
             DoubleBuffer x = stack.mallocDouble(1);
@@ -197,28 +197,55 @@ public class MinecraftClone {
             currentMouseY = y.get(0);
         }
         float xo = (float) (currentMouseX - lastMouseX);
-        float yo = (float) -(currentMouseY - lastMouseY);
+        float yo = -(float) (currentMouseY - lastMouseY);
         lastMouseX = currentMouseX;
         lastMouseY = currentMouseY;
         player.turn(xo, yo);
 
-        // 清屏
-        glClearColor(0.2f, 0.4f, 0.8f, 1.0f);
+        // 2. 鼠标按键事件
+        while (!mouseButtonEvents.isEmpty()) {
+            int[] event = mouseButtonEvents.poll();
+            int button = event[0];
+            boolean pressed = event[1] == GLFW_PRESS;
+
+            if (button == GLFW_MOUSE_BUTTON_2 && pressed) {
+                if (hitResult != null) level.setTile(hitResult.x, hitResult.y, hitResult.z, 0);
+            }
+            if (button == GLFW_MOUSE_BUTTON_1 && pressed) {
+                if (hitResult != null) {
+                    int x = hitResult.x, y = hitResult.y, z = hitResult.z;
+                    if (hitResult.f == 0) y--;
+                    if (hitResult.f == 1) y++;
+                    if (hitResult.f == 2) z--;
+                    if (hitResult.f == 3) z++;
+                    if (hitResult.f == 4) x--;
+                    if (hitResult.f == 5) x++;
+                    level.setTile(x, y, z, 1);
+                }
+            }
+        }
+
+        // 3. 键盘事件
+        while (!keyEvents.isEmpty()) {
+            int[] event = keyEvents.poll();
+            int key = event[0];
+            boolean pressed = event[1] == GLFW_PRESS;
+            if (key == GLFW_KEY_ENTER && pressed) level.save();
+        }
+
+        // 4. 清屏 + 基础OpenGL状态
+        glClearColor(0.5f, 0.8f, 1.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // 基础GL状态：开启深度测试，支持3D
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LESS);
         glDepthMask(true);
-
         glDisable(GL_CULL_FACE);
         glDisable(GL_FOG);
-        glDisable(GL_TEXTURE_2D);
 
-        // ========== JOML 透视投影 ==========
+        // 5. JOML 透视投影
         glMatrixMode(GL_PROJECTION);
         glLoadIdentity();
-
         Matrix4f projMatrix = new Matrix4f();
         projMatrix.perspective(
                 (float) Math.toRadians(70.0f),
@@ -226,32 +253,49 @@ public class MinecraftClone {
                 0.05f,
                 1000.0f
         );
-
         FloatBuffer matBuffer = BufferUtils.createFloatBuffer(16);
         projMatrix.get(matBuffer);
         glLoadMatrixf(matBuffer);
 
-        // ========== 玩家相机视角 ==========
+        // 6. 玩家相机
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
         moveCameraToPlayer(a);
 
-        // 画红色测试方块（固定在前方5格）
-        glColor3f(1.0f, 0.0f, 0.0f);
-        glBegin(GL_QUADS);
-        glVertex3f(-0.8f, -0.8f, -5.0f);
-        glVertex3f( 0.8f, -0.8f, -5.0f);
-        glVertex3f( 0.8f,  0.8f, -5.0f);
-        glVertex3f(-0.8f,  0.8f, -5.0f);
-        glEnd();
-        glColor3f(1.0f, 1.0f, 1.0f);
+        // 7. 渲染地形
+        glEnable(GL_TEXTURE_2D);
+        glDisable(GL_FOG);
+        levelRenderer.render(player, 0);
 
-        // 暂时注释地形和拾取，先稳相机
-        // levelRenderer.render(player, 0);
+        glEnable(GL_FOG);
+        glFogi(GL_FOG_MODE, GL_LINEAR);
+        glFogf(GL_FOG_START, 30.0f);
+        glFogf(GL_FOG_END, 150.0f);
+        glFogfv(GL_FOG_COLOR, fogColor);
+        levelRenderer.render(player, 1);
+        glDisable(GL_FOG);
 
-        // 完全禁用拾取，避免矩阵污染
-        // pick(a);
+        // 8. 选中框
+        glDisable(GL_TEXTURE_2D);
+        if (hitResult != null) {
+            levelRenderer.renderHit(hitResult);
+        }
 
+        // ========== 安全拾取：用矩阵栈完全隔离，不污染主画面 ==========
+        glMatrixMode(GL_PROJECTION);
+        glPushMatrix();
+        glMatrixMode(GL_MODELVIEW);
+        glPushMatrix();
+
+        pick(a);
+
+        glMatrixMode(GL_PROJECTION);
+        glPopMatrix();
+        glMatrixMode(GL_MODELVIEW);
+        glPopMatrix();
+        // ============================================================
+
+        // 交换缓冲
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
