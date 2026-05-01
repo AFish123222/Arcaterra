@@ -128,6 +128,7 @@ public class MinecraftClone {
 
         // 加载并绑定方块纹理
         terrainTexture = TextureLoader.loadTexture("terrain.png");
+        Chunk.texture = TextureLoader.loadTexture("terrain.png");
         glEnable(GL_TEXTURE_2D);
         glBindTexture(GL_TEXTURE_2D, terrainTexture);
     }
@@ -312,16 +313,6 @@ public class MinecraftClone {
 
     // 以下辅助方法仅替换了 GL 常量，逻辑未变
     /// 旋转 平移
-//    private void moveCameraToPlayer(float a) {
-//        // 1. 获取玩家插值位置
-//        float px = player.xo + (player.x - player.xo) * a;
-//        float py = player.yo + (player.y - player.yo) * a;
-//        float pz = player.zo + (player.z - player.zo) * a;
-//
-//        glRotatef(player.xRot, 1, 0, 0);  // 上下抬头/低头
-//        glRotatef(player.yRot, 0, 1, 0);  // 左右转头
-//        glTranslatef(-px, -py, -pz);      // 平移世界
-//    }
     private void moveCameraToPlayer(float a) {
         glLoadIdentity();
         // 先旋转（绕自身相机原地转）
@@ -365,53 +356,6 @@ public class MinecraftClone {
     }
 
     private void setupPickCamera(float a, int x, int y) {
-//        // 1. 读取视口参数（从 viewportBuffer 中获取 x, y, width, height）
-//        viewportBuffer.clear();
-//        glGetIntegerv(GL_VIEWPORT, viewportBuffer);
-//        viewportBuffer.flip();
-//        int vpX = viewportBuffer.get();
-//        int vpY = viewportBuffer.get();
-//        int vpWidth = viewportBuffer.get();
-//        int vpHeight = viewportBuffer.get();
-//
-//        // 2. 用 JOML 实现 gluPickMatrix 逻辑
-//        Matrix4f pickMatrix = new Matrix4f();
-//        // 平移：将拾取区域中心移到视口中心
-//        pickMatrix.translate(
-//                (vpWidth - 2.0f * (x - vpX)) / vpWidth,
-//                (vpHeight - 2.0f * (y - vpY)) / vpHeight,
-//                0.0f
-//        );
-//        // 缩放：将拾取区域（5x5像素）缩放到整个视口大小
-//        pickMatrix.scale(
-//                vpWidth / 5.0f,
-//                vpHeight / 5.0f,
-//                1.0f
-//        );
-//
-//        // 3. 用 JOML 实现 gluPerspective 逻辑（注意：JOML 用弧度）
-//        Matrix4f perspectiveMatrix = new Matrix4f();
-//        perspectiveMatrix.perspective(
-//                (float) Math.toRadians(70.0), // 视场角（角度转弧度）
-//                (float) width / height,        // 宽高比
-//                0.05f,                         // 近裁剪面
-//                1000.0f                        // 远裁剪面
-//        );
-//
-//        // 4. 合并矩阵：Perspective * Pick（对应原 GLU 调用顺序）
-//        Matrix4f projMatrix = new Matrix4f();
-//        projMatrix.set(perspectiveMatrix).mul(pickMatrix);
-//
-//        // 5. 将最终矩阵加载到 OpenGL 投影矩阵栈
-//        FloatBuffer fb = BufferUtils.createFloatBuffer(16);
-//        projMatrix.get(fb); // JOML 矩阵是列主序，与 OpenGL 兼容
-//        glMatrixMode(GL_PROJECTION);
-//        glLoadMatrixf(fb);
-//
-//        // 6. 后续模型视图矩阵设置（原逻辑不变）
-//        glMatrixMode(GL_MODELVIEW);
-//        glLoadIdentity();
-//        moveCameraToPlayer(a);
         // 1. 使用 MemoryStack 临时分配视口缓冲区（线程安全，自动释放）
         try (MemoryStack stack = stackPush()) {
             IntBuffer viewportBuffer = stack.mallocInt(4); // GL_VIEWPORT 固定 4 个 int

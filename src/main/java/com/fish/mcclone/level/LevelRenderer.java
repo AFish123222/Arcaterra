@@ -29,7 +29,7 @@ public class LevelRenderer implements LevelListener {
     Tesselator t;
 
     public LevelRenderer(Level level) {
-        this.t = new Tesselator();
+        this.t = Tesselator.getInstance();
         this.level = level;
         level.addListener(this);
         this.xChunks = level.width / 16;
@@ -59,15 +59,13 @@ public class LevelRenderer implements LevelListener {
     }
 
     public void render(Player player, int layer) {
+        // ========== 全地图只绑定1次纹理（替代每个Chunk绑定） ==========
+        glEnable(GL_TEXTURE_2D);
+        glBindTexture(GL_TEXTURE_2D, Chunk.texture); // 统一绑定
 
-//        Chunk.rebuiltThisFrame = 0;
-//        Frustum frustum = Frustum.getFrustum();
-        for (int i = 0; i < this.chunks.length; i++) {
-            //debug//////////////
-
-            //debug//////////////////
-//            if (frustum.cubeInFrustum((this.chunks[i]).aabb)) //没这个条件直接崩
-                this.chunks[i].render(layer);
+        // 遍历Chunk时，传入玩家坐标
+        for (Chunk chunk : chunks) {
+            chunk.render(layer, player.x, player.z);
         }
     }
 
