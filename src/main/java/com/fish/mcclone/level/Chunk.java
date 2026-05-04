@@ -4,7 +4,7 @@ import com.fish.mcclone.block.Block;
 import com.fish.mcclone.phys.AABB;
 import static org.lwjgl.opengl.GL11.*;
 
-public abstract class Chunk {
+public class Chunk {
     public static int texture = 0;
     public final Level level;
 
@@ -170,5 +170,5 @@ public abstract class Chunk {
     public void setDirty() { lodDirty = true; }
 
     // 重写：渲染简化LOD
-    protected abstract void renderLod();
+    protected void renderLod() {};
 }
