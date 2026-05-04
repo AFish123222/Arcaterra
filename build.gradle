@@ -55,3 +55,16 @@ dependencies {
 test {
     useJUnitPlatform()
 }
+
+// 任务：打包可运行Jar
+jar {
+    // 主类全限定名！改成你的主类
+    manifest {
+        attributes 'Main-Class': 'com.fish.mcclone.MinecraftClone'
+    }
+    // 把依赖全部打进Jar里（FatJar）
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    duplicatesStrategy = 'INCLUDE'
+}

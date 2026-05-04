@@ -6,14 +6,11 @@ import static org.lwjgl.opengl.GL11.*;
 
 public class Tesselator {
     // ======================
-    // 单例模式核心（你要的实现）
+    // 单例模式
     // ======================
     private static Tesselator instance;
-
-    // 私有构造，禁止外部创建
     private Tesselator() {}
 
-    // ✅ 你要的 getInstance() 方法实现
     public static Tesselator getInstance() {
         if (instance == null) {
             instance = new Tesselator();
@@ -22,56 +19,113 @@ public class Tesselator {
     }
 
     // ======================
-    // 高性能渲染参数
+    // 核心缓冲区（修复：添加texBuffer）
     // ======================
     private static final int MAX_VERTICES = 50000;
     private final FloatBuffer vertexBuffer = BufferUtils.createFloatBuffer(MAX_VERTICES * 3);
     private final FloatBuffer colorBuffer = BufferUtils.createFloatBuffer(MAX_VERTICES * 3);
-    private int vertices;
+    private final FloatBuffer texBuffer = BufferUtils.createFloatBuffer(MAX_VERTICES * 2); // ✅ 修复纹理坐标缓冲区
 
-    // 初始化缓冲区
+    // 状态变量
+    private int vertices;
+    private float u, v;
+    private boolean useTex = false;
+    private boolean useCol = false; // ✅ 修复缺失的颜色状态
+    private float r, g, b; // 颜色缓存
+
+    // ======================
+    // 初始化（修复：重置所有状态）
+    // ======================
     public void init() {
         vertices = 0;
+        useTex = false;
+        useCol = false;
         vertexBuffer.clear();
         colorBuffer.clear();
+        texBuffer.clear(); // ✅ 清空纹理缓冲区
     }
 
-    // 设置颜色
+    // ======================
+    // 纹理坐标（16×16图集专用）
+    // ======================
+    public void tex(float u, float v) {
+        useTex = true;
+        this.u = u;
+        this.v = v;
+    }
+
+    // ======================
+    // 颜色设置
+    // ======================
     public void color(float r, float g, float b) {
-        colorBuffer.put(r).put(g).put(b);
+        useCol = true;
+        this.r = r;
+        this.g = g;
+        this.b = b;
     }
 
-    // 提交顶点
+    // ======================
+    // 提交顶点（修复：无重复写入、无报错）
+    // ======================
     public void vertex(float x, float y, float z) {
+        // 写入顶点
         vertexBuffer.put(x).put(y).put(z);
+
+        // 写入纹理坐标（启用时）
+        if (useTex) {
+            texBuffer.put(u).put(v);
+        }
+
+        // 写入颜色（启用时）
+        if (useCol) {
+            colorBuffer.put(r).put(g).put(b);
+        }
+
         vertices++;
 
-        // 满了才刷新，减少GPU调用
+        // 缓冲区满自动刷新（防溢出）
         if (vertices >= MAX_VERTICES) {
             flush();
+            init();
         }
     }
 
-    // 刷新渲染
+    // ======================
+    // 刷新渲染（修复：纹理缓冲区flip+状态正确管理）
+    // ======================
     public void flush() {
         if (vertices == 0) return;
 
+        // 翻转所有缓冲区（必须！）
         vertexBuffer.flip();
         colorBuffer.flip();
+        if (useTex) texBuffer.flip(); // ✅ 修复纹理缓冲区翻转
 
-        // OpenGL 渲染配置
+        // 启用顶点数组
         glEnableClientState(GL_VERTEX_ARRAY);
         glVertexPointer(3, GL_FLOAT, 0, vertexBuffer);
 
-        glEnableClientState(GL_COLOR_ARRAY);
-        glColorPointer(3, GL_FLOAT, 0, colorBuffer);
+        // 启用颜色数组
+        if (useCol) {
+            glEnableClientState(GL_COLOR_ARRAY);
+            glColorPointer(3, GL_FLOAT, 0, colorBuffer);
+        }
 
+        // 启用纹理坐标数组（核心！适配16×16纹理）
+        if (useTex) {
+            glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+            glTexCoordPointer(2, GL_FLOAT, 0, texBuffer);
+        }
+
+        // 绘制四边形
         glDrawArrays(GL_QUADS, 0, vertices);
 
-        // 关闭状态
+        // 禁用所有数组（状态还原）
         glDisableClientState(GL_VERTEX_ARRAY);
-        glDisableClientState(GL_COLOR_ARRAY);
+        if (useCol) glDisableClientState(GL_COLOR_ARRAY);
+        if (useTex) glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 
+        // 重置状态
         init();
     }
 }

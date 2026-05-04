@@ -3,7 +3,6 @@ package com.fish.mcclone;
 import com.fish.mcclone.level.Chunk;
 import com.fish.mcclone.level.Level;
 import com.fish.mcclone.level.LevelRenderer;
-import com.fish.util.PrinterUtils;
 import com.fish.util.TextureLoader;
 import org.joml.Matrix4f;
 import org.lwjgl.*;
@@ -70,7 +69,7 @@ public class MinecraftClone {
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
         // 3. 创建窗口
-        window = glfwCreateWindow(width, height, "RubyDung", NULL, NULL);
+        window = glfwCreateWindow(width, height, "MInecraftClone", NULL, NULL);
         if (window == NULL) {
             throw new RuntimeException("Failed to create GLFW window");
         }
@@ -126,11 +125,9 @@ public class MinecraftClone {
         levelRenderer = new LevelRenderer(level);
         player = new Player(level);
 
-        // 加载并绑定方块纹理
+        // 加载方块纹理
         terrainTexture = TextureLoader.loadTexture("terrain.png");
         Chunk.texture = TextureLoader.loadTexture("terrain.png");
-        glEnable(GL_TEXTURE_2D);
-        glBindTexture(GL_TEXTURE_2D, terrainTexture);
     }
 
     private void setupCallbacks() {
@@ -199,6 +196,8 @@ public class MinecraftClone {
 
     /// 帧渲染
     public void render(float a) {
+        GL11.glEnable(GL11.GL_TEXTURE_2D);
+        GL11.glBindTexture(GL11.GL_TEXTURE_2D, terrainTexture);
         // 性能优化 必开
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LESS);
@@ -309,6 +308,8 @@ public class MinecraftClone {
 
         glfwSwapBuffers(window);
         glfwPollEvents();
+
+        GL11.glDisable(GL11.GL_TEXTURE_2D);
     }
 
     // 以下辅助方法仅替换了 GL 常量，逻辑未变
@@ -454,7 +455,7 @@ public class MinecraftClone {
         );
     }
 
-    static void main() {
+    public static void main(String[] args) {
         new MinecraftClone().run();
     }
 
