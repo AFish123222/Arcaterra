@@ -2,10 +2,8 @@ package com.fish.mcclone.level;
 
 import java.nio.FloatBuffer;
 
-import com.fish.util.PrinterUtils;
 import org.lwjgl.BufferUtils;
 
-import static java.lang.IO.print;
 import static org.lwjgl.opengl.GL11.*;
 
 /// # 渲染器
@@ -51,6 +49,10 @@ public class Tesselator {
         vertexBuffer.clear();
         colorBuffer.clear();
         texBuffer.clear(); // ✅ 清空纹理缓冲区
+    }
+
+    public boolean isUseLineRender() {
+        return useLineRender;
     }
 
     // ======================
@@ -127,29 +129,17 @@ public class Tesselator {
 
 
         if (!useLineRender)  glDrawArrays(GL_QUADS, 0, vertices); // 绘制四边形
+        // 线框
         if (useLineRender) {
             useCol = false;
             useTex = false;
             glColor3i(0,0,0); // black
-//            PrinterUtils.printVertexBuffer(vertexBuffer); // 打印顶点]
-
-            // 191.0000  43.0000 120.0000
-            // 192.0000  43.0000 120.0000
-            // 192.0000  43.0000 121.0000
-            // 191.0000  43.0000 121.0000
-            // 191.0000  43.0000 121.0000
-            // 192.0000  43.0000 121.0000
-            // 192.0000  43.0000 122.0000
-            // 191.0000  43.0000 122.0000
-            // 191.0000  43.0000 122.0000
-            // 192.0000  43.0000 122.0000
-            // 192.0000  43.0000 123.0000
-            // 191.0000  43.0000 123.0000
-            // 190.0000  43.0000 123.0000
-            // 191.0000  43.0000 123.0000
-
+//            PrinterUtils.printVertexBuffer(vertexBuffer); // 打印顶点
             glDrawArrays(GL_LINE_LOOP, 0, vertices);
-        } // 线框
+            // 还原初始状态
+            useCol = true;
+            useTex = true;
+        }
 
         // 禁用所有数组（状态还原）
         glDisableClientState(GL_VERTEX_ARRAY);

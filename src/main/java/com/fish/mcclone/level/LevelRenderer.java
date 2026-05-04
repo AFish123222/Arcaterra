@@ -2,6 +2,7 @@ package com.fish.mcclone.level;
 
 import com.fish.mcclone.HitResult;
 import com.fish.mcclone.Player;
+import com.fish.mcclone.block.Block;
 import com.fish.mcclone.phys.AABB;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
@@ -18,13 +19,7 @@ public class LevelRenderer implements LevelListener {
 
     private Level level;
 
-    private Chunk[] chunks;
 
-    private int xChunks;
-
-    private int yChunks;
-
-    private int zChunks;
 
     Tesselator t;
 
@@ -32,30 +27,7 @@ public class LevelRenderer implements LevelListener {
         this.t = Tesselator.getInstance();
         this.level = level;
         level.addListener(this);
-        this.xChunks = level.width / 16;
-        this.yChunks = level.depth / 16;
-        this.zChunks = level.height / 16;
-        this.chunks = new Chunk[this.xChunks * this.yChunks * this.zChunks];
-        for (int x = 0; x < this.xChunks; x++) {
-            for (int y = 0; y < this.yChunks; y++) {
-                for (int z = 0; z < this.zChunks; z++) {
-                    if(level.getTile(x,y,z) == 0) continue;
-                    int x0 = x * 16;
-                    int y0 = y * 16;
-                    int z0 = z * 16;
-                    int x1 = (x + 1) * 16;
-                    int y1 = (y + 1) * 16;
-                    int z1 = (z + 1) * 16;
-                    if (x1 > level.width)
-                        x1 = level.width;
-                    if (y1 > level.depth)
-                        y1 = level.depth;
-                    if (z1 > level.height)
-                        z1 = level.height;
-                    this.chunks[(x + y * this.xChunks) * this.zChunks + z] = new Chunk(level, x0, y0, z0, x1, y1, z1);
-                }
-            }
-        }
+
     }
 
     public void render(Player player, int layer) {
@@ -64,8 +36,9 @@ public class LevelRenderer implements LevelListener {
         glBindTexture(GL_TEXTURE_2D, Chunk.texture); // 统一绑定
 
         // 遍历Chunk时，传入玩家坐标
-        for (Chunk chunk : chunks) {
-            chunk.render(layer, player.x, player.z);
+        for (Chunk chunk : level.chunks) {
+            // chunk may null
+            chunk.render(layer, player.x, player.z, player.y);
         }
     }
 
@@ -92,8 +65,8 @@ public class LevelRenderer implements LevelListener {
             for (int y = y0; y < y1; y++) {
                 glPushName(y);
                 for (int z = z0; z < z1; z++) {
-                    // 优化3：视锥体剔除 + 固体方块判断，提前跳过
-                    if (!isBoxInFrustum(frustum, x, y, z) || !this.level.isSolidTile(x, y, z)) {
+                    // 优化3：视锥体剔除 + 空气判断，提前跳过
+                    if (!isBoxInFrustum(frustum, x, y, z) || this.level.shouldIsAir(x, y, z)) {
                         continue;
                     }
 
@@ -220,16 +193,16 @@ public class LevelRenderer implements LevelListener {
             y0 = 0;
         if (z0 < 0)
             z0 = 0;
-        if (x1 >= this.xChunks)
-            x1 = this.xChunks - 1;
-        if (y1 >= this.yChunks)
-            y1 = this.yChunks - 1;
-        if (z1 >= this.zChunks)
-            z1 = this.zChunks - 1;
+        if (x1 >= level.xChunks)
+            x1 = level.xChunks - 1;
+        if (y1 >= level.yChunks)
+            y1 = level.yChunks - 1;
+        if (z1 >= level.zChunks)
+            z1 = level.zChunks - 1;
         for (int x = x0; x <= x1; x++) {
             for (int y = y0; y <= y1; y++) {
                 for (int z = z0; z <= z1; z++)
-                    this.chunks[(x + y * this.xChunks) * this.zChunks + z].setDirty();
+                    level.chunks[(x + y * level.xChunks) * level.zChunks + z].setDirty();
             }
         }
     }
