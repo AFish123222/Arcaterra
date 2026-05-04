@@ -2,6 +2,7 @@ package com.fish.util;
 
 import org.lwjgl.BufferUtils;
 
+import java.nio.BufferUnderflowException;
 import java.nio.FloatBuffer;
 
 import static org.lwjgl.opengl.GL11.*;
@@ -30,10 +31,21 @@ public class PrinterUtils {
     /**
      * 辅助：格式化打印 4x4 矩阵
      */
-    private static void printMatrix(FloatBuffer buffer) {
+    public static void printMatrix(FloatBuffer buffer) {
         for (int i = 0; i < 4; i++) {
             System.out.printf("[%8.4f %8.4f %8.4f %8.4f]\n",
                     buffer.get(), buffer.get(), buffer.get(), buffer.get());
+        }
+    }
+
+    /// 打印顶点数组
+    public static void printVertexBuffer(FloatBuffer buffer) {
+        for (int i = 0; i < buffer.capacity(); i++) {
+            try{
+                System.out.printf("%8.4f ", buffer.get());
+            }catch(Exception e){
+                if(e instanceof BufferUnderflowException) {}
+            }
         }
     }
 }
