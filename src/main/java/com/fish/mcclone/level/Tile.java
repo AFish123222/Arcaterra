@@ -1,114 +1,45 @@
 package com.fish.mcclone.level;
 
-import static org.lwjgl.opengl.GL11.*;
+import com.fish.mcclone.block.Block;
 
 public class Tile {
-    // ======================
-    // 16×16 纹理图集常量（核心！适配你的纹理）
-    // ======================
-    private static final float UV_STEP = 1.0f / 16.0f;
+    public static Tile grass = new Tile(0);
+    public static Tile rock = new Tile(1);
 
-    // ======================
-    // 方块类型（静态实例）
-    // ======================
-    public static final Tile grass = new Tile(0, 0);   // 草方块 纹理(0,0)
-    public static final Tile rock = new Tile(1, 0);    // 石头    纹理(1,0)
+    public int tex;
 
-    // 方块纹理坐标
-    private final float u0, v0, u1, v1;
-
-    // ======================
-    // 构造：传入纹理行列（16×16图集）
-    // ======================
-    private Tile(int texX, int texY) {
-        this.u0 = texX * UV_STEP;
-        this.v0 = texY * UV_STEP;
-        this.u1 = (texX + 1) * UV_STEP;
-        this.v1 = (texY + 1) * UV_STEP;
+    public Tile(int t) {
+        tex = t;
     }
 
-    // ======================
-    // 渲染完整方块（兼容Chunk批量渲染）
-    // ======================
+    // 🔥 核心修复：从Chunk获取固体状态，替代老的level.isSolidTile
     public void render(Tesselator t, Level level, int layer, int x, int y, int z) {
-        // 只渲染暴露的面（性能优化，不渲染被挡住的面）
-        if (!level.isSolidTile(x, y + 1, z)) renderFace(t, 0, x, y, z); // 上
-        if (!level.isSolidTile(x, y - 1, z)) renderFace(t, 1, x, y, z); // 下
-        if (!level.isSolidTile(x, y, z - 1)) renderFace(t, 2, x, y, z); // 前
-        if (!level.isSolidTile(x, y, z + 1)) renderFace(t, 3, x, y, z); // 后
-        if (!level.isSolidTile(x - 1, y, z)) renderFace(t, 4, x, y, z); // 左
-        if (!level.isSolidTile(x + 1, y, z)) renderFace(t, 5, x, y, z); // 右
+        Chunk chunk = level.getChunkByWorldPos(x, y, z);
+        if (chunk == null) return;
+
+        // 6个面渲染，使用chunk.isSolid判断
+        if (!chunk.isSolid(x, y + 1, z)) renderFace(t, 0, x, y, z); // 上
+        if (!chunk.isSolid(x, y - 1, z)) renderFace(t, 1, x, y, z); // 下
+        if (!chunk.isSolid(x, y, z - 1)) renderFace(t, 2, x, y, z); // 前
+        if (!chunk.isSolid(x, y, z + 1)) renderFace(t, 3, x, y, z); // 后
+        if (!chunk.isSolid(x - 1, y, z)) renderFace(t, 4, x, y, z); // 左
+        if (!chunk.isSolid(x + 1, y, z)) renderFace(t, 5, x, y, z); // 右
     }
 
-    /// ✅ 核心：renderFace() 渲染单个方块面
-    /// @param face 面ID: 0=上 1=下 2=前 3=后 4=左 5=右
-    /// @param x/y/z 方块坐标
-    /// @param t 渲染器
-    public void renderFace(Tesselator t, int face, int x, int y, int z) {
-        float x0 = x;
-        float x1 = x + 1.0f;
-        float y0 = y;
-        float y1 = y + 1.0f;
-        float z0 = z;
-        float z1 = z + 1.0f;
+    // 单个面渲染（原样保留）
+    public void renderFace(Tesselator t, int f, int x, int y, int z) {
+        float x0 = x + 0.0F;
+        float x1 = x + 1.0F;
+        float y0 = y + 0.0F;
+        float y1 = y + 1.0F;
+        float z0 = z + 0.0F;
+        float z1 = z + 1.0F;
 
-        // 绑定纹理坐标 + 顶点（适配16×16纹理）
-        t.tex(u0, v0);
-        switch (face) {
-            case 0 -> { // 上面
-                t.vertex(x0, y1, z0);
-                t.tex(u1, v0);
-                t.vertex(x1, y1, z0);
-                t.tex(u1, v1);
-                t.vertex(x1, y1, z1);
-                t.tex(u0, v1);
-                t.vertex(x0, y1, z1);
-            }
-            case 1 -> { // 下面
-                t.vertex(x0, y0, z1);
-                t.tex(u1, v0);
-                t.vertex(x1, y0, z1);
-                t.tex(u1, v1);
-                t.vertex(x1, y0, z0);
-                t.tex(u0, v1);
-                t.vertex(x0, y0, z0);
-            }
-            case 2 -> { // 前面
-                t.vertex(x0, y0, z0);
-                t.tex(u1, v0);
-                t.vertex(x1, y0, z0);
-                t.tex(u1, v1);
-                t.vertex(x1, y1, z0);
-                t.tex(u0, v1);
-                t.vertex(x0, y1, z0);
-            }
-            case 3 -> { // 后面
-                t.vertex(x0, y1, z1);
-                t.tex(u1, v0);
-                t.vertex(x1, y1, z1);
-                t.tex(u1, v1);
-                t.vertex(x1, y0, z1);
-                t.tex(u0, v1);
-                t.vertex(x0, y0, z1);
-            }
-            case 4 -> { // 左面
-                t.vertex(x0, y0, z1);
-                t.tex(u1, v0);
-                t.vertex(x0, y0, z0);
-                t.tex(u1, v1);
-                t.vertex(x0, y1, z0);
-                t.tex(u0, v1);
-                t.vertex(x0, y1, z1);
-            }
-            case 5 -> { // 右面
-                t.vertex(x1, y1, z1);
-                t.tex(u1, v0);
-                t.vertex(x1, y1, z0);
-                t.tex(u1, v1);
-                t.vertex(x1, y0, z0);
-                t.tex(u0, v1);
-                t.vertex(x1, y0, z1);
-            }
-        }
+        if (f == 0) { t.vertex(x0, y1, z0); t.vertex(x0, y1, z1); t.vertex(x1, y1, z1); t.vertex(x1, y1, z0); }
+        if (f == 1) { t.vertex(x0, y0, z0); t.vertex(x1, y0, z0); t.vertex(x1, y0, z1); t.vertex(x0, y0, z1); }
+        if (f == 2) { t.vertex(x0, y0, z0); t.vertex(x0, y1, z0); t.vertex(x1, y1, z0); t.vertex(x1, y0, z0); }
+        if (f == 3) { t.vertex(x1, y0, z1); t.vertex(x1, y1, z1); t.vertex(x0, y1, z1); t.vertex(x0, y0, z1); }
+        if (f == 4) { t.vertex(x0, y0, z1); t.vertex(x0, y1, z1); t.vertex(x0, y1, z0); t.vertex(x0, y0, z0); }
+        if (f == 5) { t.vertex(x1, y0, z0); t.vertex(x1, y1, z0); t.vertex(x1, y1, z1); t.vertex(x1, y0, z1); }
     }
 }

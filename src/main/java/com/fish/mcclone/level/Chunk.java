@@ -5,194 +5,151 @@ import com.fish.mcclone.phys.AABB;
 import static org.lwjgl.opengl.GL11.*;
 
 public class Chunk {
-    // 静态纹理变量
     public static int texture = 0;
+    public final Level level;
 
-    Level level;
-    public AABB aabb;
-
-    // 区块世界坐标边界
+    // 区块世界坐标/尺寸 (标准化，支持树状LOD)
     public final int x0, y0, z0;
     public final int x1, y1, z1;
+    public final int SIZE_X, SIZE_Y, SIZE_Z;
 
-    // 区块核心：16x16x16 方块数组（区块内坐标，0~15）
-    private short[] blocks = new short[16 * 16 * 16];
-    private static final int SIZE = 16;
+    // ====================== 核心：Chunk 独立方块存储 ======================
+    private final short[] blocks;
+    private static final int BASE_SIZE = 16; // 基础区块尺寸(叶子节点)
+
+    // ====================== LOD 预留字段（未来直接用） ======================
+    protected int lodLevel = 0;          // LOD层级(0=原始16x, 1=32x, 2=64x...)
+    protected Object lodMesh;            // LOD网格缓存(VertexBuffer/VAO)
+    protected boolean lodDirty = true;   // LOD脏标记(修改方块后重建LOD)
+    protected Chunk parent;              // 父LOD区块(树状结构)
+    protected Chunk[] children;          // 子LOD区块(八叉树)
+
+    // 渲染/地形
     private final int groundLevel;
+    public final AABB aabb;
 
-    // 标记是否全空气（优化用）
-    private boolean isAllOfAir;
-
+    // ====================== 构造函数（支持任意尺寸，为LODChunk准备） ======================
     public Chunk(Level level, int x0, int y0, int z0, int x1, int y1, int z1) {
         this.level = level;
-        this.x0 = x0;
-        this.y0 = y0;
-        this.z0 = z0;
-        this.x1 = x1;
-        this.y1 = y1;
-        this.z1 = z1;
-        this.aabb = new AABB(x0, y0, z0, x1, y1, z1);
-        this.groundLevel = level.depth * 2 / 3;
+        this.x0 = x0; this.y0 = y0; this.z0 = z0;
+        this.x1 = x1; this.y1 = y1; this.z1 = z1;
+        this.SIZE_X = x1-x0; this.SIZE_Y = y1-y0; this.SIZE_Z = z1-z0;
+        this.aabb = new AABB(x0,y0,z0,x1,y1,z1);
+        this.groundLevel = level.groundY;
 
-        // 初始化区块地形（必加，否则blocks无数据）
-        this.initSet();
+        // 独立方块数组：16x16x16（基础区块，LOD叶子节点）
+        this.blocks = new short[BASE_SIZE * BASE_SIZE * BASE_SIZE];
+
+        // 初始化地面（自己的方块数据）
+        initTerrain();
     }
 
-    /// 区块初始地形（正确生成地面）
-    private void initSet() {
-        // 遍历区块内坐标 0~15
-        for (int inChunkX = 0; inChunkX < SIZE; inChunkX++) {
-            for (int inChunkZ = 0; inChunkZ < SIZE; inChunkZ++) {
-                // 转换：区块内Y坐标 → 世界Y坐标
-                int worldY = level.groundY - y0;
-                if (worldY >= 0 && worldY < SIZE) {
-                    initSetTile(inChunkX, worldY, inChunkZ);
+    // ====================== 独立地形生成 ======================
+    private void initTerrain() {
+        for (int rx=0; rx<BASE_SIZE; rx++) {
+            for (int rz=0; rz<BASE_SIZE; rz++) {
+                int worldY = groundLevel;
+                int ry = worldY - y0;
+                if (ry >=0 && ry < BASE_SIZE) {
+                    setBlockLocal(rx, ry, rz, Block.GRASS);
                 }
             }
         }
     }
 
-    /// 初始化方块（区块内坐标）
-    private void initSetTile(int inChunkX, int inChunkY, int inChunkZ) {
-        setTile(inChunkX, inChunkY, inChunkZ, Block.GRASS);
+    // ====================== 独立方块操作（本地坐标 0~15） ======================
+    public void setBlockLocal(int rx, int ry, int rz, int id) {
+        if (rx<0||ry<0||rz<0||rx>=BASE_SIZE||ry>=BASE_SIZE||rz>=BASE_SIZE) return;
+        blocks[(ry * BASE_SIZE + rz) * BASE_SIZE + rx] = (short) id;
+        lodDirty = true; // 方块修改 → LOD脏
     }
 
-    /// 放置方块（✅ 核心修复：使用区块内坐标计算索引）
-    public void setTile(int x, int y, int z, int block) {
-        // 区块内坐标越界判断
-        if (x < 0 || y < 0 || z < 0 || x >= SIZE || y >= SIZE || z >= SIZE) {
-            System.out.println("方块越界 Chunk: " + x + " " + y + " " + z);
-            return;
-        }
-        // 区块内坐标索引（16x16x16，无越界）
-        int index = (y * SIZE + z) * SIZE + x;
-        blocks[index] = (short) block;
-
-        // 通知世界更新
-        int worldX = x0 + x;
-        int worldY = y0 + y;
-        int worldZ = z0 + z;
-        level.calcLightDepths(worldX, worldZ, 1, 1);
-        level.levelListeners.forEach(l -> l.tileChanged(worldX, worldY, worldZ));
+    public int getBlockLocal(int rx, int ry, int rz) {
+        if (rx<0||ry<0||rz<0||rx>=BASE_SIZE||ry>=BASE_SIZE||rz>=BASE_SIZE) return 0;
+        return blocks[(ry * BASE_SIZE + rz) * BASE_SIZE + rx] & 0xFF;
     }
 
-    // ==============================================
-    // 🔥 核心：只渲染玩家所在的区块
-    // ==============================================
-    public void render(int layer, float playerX, float playerY, float playerZ) {
-        // 非玩家所在区块 → 直接跳过，不渲染
-        if (!isPlayerInsideChunk(playerX, playerY, playerZ)) {
-            return;
-        }
+    // 世界坐标 → 本地坐标 获取方块
+    public int getBlockWorld(int x, int y, int z) {
+        return getBlockLocal(x-x0, y-y0, z-z0);
+    }
+
+    // ====================== 核心渲染：只渲染玩家区块 ======================
+    public void render(int layer, float px, float py, float pz) {
+        // 非玩家区块 → 跳过
+        if (!isPlayerInside(px,py,pz)) return;
+
+        // ====================== 未来：优先渲染LOD ======================
+        // if(lodLevel > 0) { renderLod(); return; }
 
         Tesselator t = Tesselator.getInstance();
         t.init();
 
-        // 遍历区块内所有方块
-        for (int z = z0; z < z1; z++) {
-            for (int y = y0; y < y1; y++) {
-                for (int x = x0; x < x1; x++) {
-                    int blockId = getTile(x, y, z);
-                    if (blockId == 0) continue;
+        for (int x=x0; x<x1; x++) {
+            for (int y=y0; y<y1; y++) {
+                for (int z=z0; z<z1; z++) {
+                    int id = getBlockWorld(x,y,z);
+                    if (id == 0) continue;
 
-                    // 只渲染暴露的面（优化）
-                    boolean isExposed = !isSolidTile(x+1,y,z) || !isSolidTile(x-1,y,z) ||
-                            !isSolidTile(x,y+1,z) || !isSolidTile(x,y-1,z) ||
-                            !isSolidTile(x,y,z+1) || !isSolidTile(x,y,z-1);
-                    if (!isExposed) continue;
+                    // 暴露面剔除
+                    boolean exposed = !isSolid(x+1,y,z)||!isSolid(x-1,y,z)||
+                            !isSolid(x,y+1,z)||!isSolid(x,y-1,z)||
+                            !isSolid(x,y,z+1)||!isSolid(x,y,z-1);
+                    if (!exposed) continue;
 
-                    // 渲染草方块/石头
-                    int tex = (y < groundLevel) ? 0 : 1;
-                    if (tex == 0) {
-                        Tile.rock.render(t, level, layer, x, y, z);
-                    } else {
-                        Tile.grass.render(t, level, layer, x, y, z);
-                    }
+                    // 渲染方块
+                    if (y < groundLevel) Tile.rock.render(t,level,layer,x,y,z);
+                    else Tile.grass.render(t,level,layer,x,y,z);
                 }
             }
         }
 
         t.flush();
-        // 渲染当前区块的红色边界
-        renderChunkBorder(playerX, playerZ, playerY);
+        renderDebugBounds(px,py,pz);
     }
 
-    /// 获取方块（✅ 核心修复：世界坐标转区块内坐标）
-    public int getTile(int worldX, int worldY, int worldZ) {
-        // 世界坐标转区块内坐标
-        int x = worldX - x0;
-        int y = worldY - y0;
-        int z = worldZ - z0;
-
-        // 区块内越界 → 空气
-        if (x < 0 || y < 0 || z < 0 || x >= SIZE || y >= SIZE || z >= SIZE) {
-            return 0;
-        }
-
-        int index = (y * SIZE + z) * SIZE + x;
-        return blocks[index] & 0xFF;
+    // ====================== LOD 渲染占位（未来实现） ======================
+    protected void renderLod() {
+        // 未来：渲染简化的LOD网格
     }
 
-    // 判断固体方块
-    public boolean isSolidTile(int x, int y, int z) {
-        return getTile(x, y, z) != 0;
+    // ====================== 工具方法 ======================
+    public boolean isSolid(int x, int y, int z) {
+        return getBlockWorld(x,y,z) != 0;
     }
 
-    public boolean isLightBlocker(int x, int y, int z) {
-        return isSolidTile(x, y, z);
+    private boolean isPlayerInside(float px, float py, float pz) {
+        return px>=x0 && px<x1 && py>=y0 && py<y1 && pz>=z0 && pz<z1;
     }
 
-    // ==============================================
-    // 判断玩家是否在当前区块内（精确判断）
-    // ==============================================
-    private boolean isPlayerInsideChunk(float playerX, float playerY, float playerZ) {
-        return playerX >= x0 && playerX < x1
-                && playerY >= y0 && playerY < y1
-                && playerZ >= z0 && playerZ < z1;
-    }
-
-    // ==============================================
-    // 红色线框渲染区块边界（仅玩家所在区块显示）
-    // ==============================================
-    public void renderChunkBorder(float playerX, float playerZ, float playerY) {
-        glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT);
+    // 红色调试线框
+    private void renderDebugBounds(float px,float py,float pz) {
+        if (!isPlayerInside(px,py,pz)) return;
+        glPushAttrib(GL_ENABLE_BIT|GL_CURRENT_BIT);
         glDisable(GL_TEXTURE_2D);
-        glColor3f(1.0f, 0.0f, 0.0f);
-        glLineWidth(2.0f);
+        glColor3f(1,0,0);
+        glLineWidth(2);
         glBegin(GL_LINES);
-
         // 底面
-        glVertex3f(x0, y0, z0); glVertex3f(x1, y0, z0);
-        glVertex3f(x1, y0, z0); glVertex3f(x1, y0, z1);
-        glVertex3f(x1, y0, z1); glVertex3f(x0, y0, z1);
-        glVertex3f(x0, y0, z1); glVertex3f(x0, y0, z0);
-
+        glVertex3f(x0,y0,z0);glVertex3f(x1,y0,z0);
+        glVertex3f(x1,y0,z0);glVertex3f(x1,y0,z1);
+        glVertex3f(x1,y0,z1);glVertex3f(x0,y0,z1);
+        glVertex3f(x0,y0,z1);glVertex3f(x0,y0,z0);
         // 顶面
-        glVertex3f(x0, y1, z0); glVertex3f(x1, y1, z0);
-        glVertex3f(x1, y1, z0); glVertex3f(x1, y1, z1);
-        glVertex3f(x1, y1, z1); glVertex3f(x0, y1, z1);
-        glVertex3f(x0, y1, z1); glVertex3f(x0, y1, z0);
-
-        // 垂直边
-        glVertex3f(x0, y0, z0); glVertex3f(x0, y1, z0);
-        glVertex3f(x1, y0, z0); glVertex3f(x1, y1, z0);
-        glVertex3f(x1, y0, z1); glVertex3f(x1, y1, z1);
-        glVertex3f(x0, y0, z1); glVertex3f(x0, y1, z1);
-
+        glVertex3f(x0,y1,z0);glVertex3f(x1,y1,z0);
+        glVertex3f(x1,y1,z0);glVertex3f(x1,y1,z1);
+        glVertex3f(x1,y1,z1);glVertex3f(x0,y1,z1);
+        glVertex3f(x0,y1,z1);glVertex3f(x0,y1,z0);
+        // 垂直
+        glVertex3f(x0,y0,z0);glVertex3f(x0,y1,z0);
+        glVertex3f(x1,y0,z0);glVertex3f(x1,y1,z0);
+        glVertex3f(x1,y0,z1);glVertex3f(x1,y1,z1);
+        glVertex3f(x0,y0,z1);glVertex3f(x0,y1,z1);
         glEnd();
         glPopAttrib();
     }
 
-    // 兼容旧方法
-    public void render(int layer) {
-        render(layer, 0, 0, 0);
-    }
-
-    public void setDirty() {}
-
-    // 无用/废弃方法（清理）
-    public boolean isTile(int x, int y, int z) { return getTile(x, y, z) == 1; }
-    public static boolean shouldIsAir(int worldX, int worldY, int worldZ) { return false; }
-    public static boolean shouldIsLightBlocker(int x, int y, int z) { return false; }
-    public void calcLightDepths(int x0, int y0, int x1, int y1) {}
+    // 兼容方法
+    public void render(int layer) { render(layer,0,0,0); }
+    public void setDirty() { lodDirty = true; }
 }
