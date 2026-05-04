@@ -6,24 +6,25 @@ import static org.lwjgl.opengl.GL11.*;
 
 public class Chunk {
     public static int texture = 0;
-    public final Level level;
+    // ========== 渲染半径配置 ==========
+    public static final int RENDER_RADIUS = 32;
+    public static final int RENDER_RADIUS_SQ = RENDER_RADIUS * RENDER_RADIUS;
 
-    // 区块世界坐标/尺寸
+    public final Level level;
     public final int x0, y0, z0;
     public final int x1, y1, z1;
     private static final int BASE_SIZE = 16;
 
-    // 区块独立方块数据
     private final short[] blocks;
     private final int groundLevel;
     public final AABB aabb;
 
-    // ====================== LOD 树预留字段（你要的完整版本） ======================
-    protected int lodLevel = 0;          // LOD层级(0=原始16x, 1=32x, 2=64x...)
-    protected Object lodMesh;            // LOD网格缓存(VAO/VBO)
-    protected boolean lodDirty = true;    // LOD脏标记(方块修改后重建)
-    protected Chunk parent;              // 父LOD区块(树状结构)
-    protected Chunk[] children;          // 子LOD区块(八叉树8个子节点)
+    // ====================== LOD 预留字段 ======================
+    protected int lodLevel = 0;
+    protected Object lodMesh;
+    protected boolean lodDirty = true;
+    protected Chunk parent;
+    protected Chunk[] children;
 
     public Chunk(Level level, int x0, int y0, int z0, int x1, int y1, int z1) {
         this.level = level;
@@ -36,12 +37,10 @@ public class Chunk {
         this.aabb = new AABB(x0, y0, z0, x1, y1, z1);
         this.groundLevel = level.groundY;
 
-        // 初始化16x16x16方块数组
         this.blocks = new short[BASE_SIZE * BASE_SIZE * BASE_SIZE];
         initTerrain();
     }
 
-    // 生成地面草方块
     private void initTerrain() {
         for (int rx = 0; rx < BASE_SIZE; rx++) {
             for (int rz = 0; rz < BASE_SIZE; rz++) {
@@ -54,42 +53,40 @@ public class Chunk {
         }
     }
 
-    // 本地坐标设置方块
     public void setBlockLocal(int rx, int ry, int rz, int id) {
         if (rx < 0 || ry < 0 || rz < 0 || rx >= BASE_SIZE || ry >= BASE_SIZE || rz >= BASE_SIZE) return;
         blocks[(ry * BASE_SIZE + rz) * BASE_SIZE + rx] = (short) id;
-        lodDirty = true; // 方块修改 → 标记LOD需要重建
+        lodDirty = true;
     }
 
-    // 本地坐标获取方块
     public int getBlockLocal(int rx, int ry, int rz) {
         if (rx < 0 || ry < 0 || rz < 0 || rx >= BASE_SIZE || ry >= BASE_SIZE || rz >= BASE_SIZE) return 0;
         return blocks[(ry * BASE_SIZE + rz) * BASE_SIZE + rx] & 0xFF;
     }
 
-    // 世界坐标获取方块
     public int getBlockWorld(int x, int y, int z) {
         return getBlockLocal(x - x0, y - y0, z - z0);
     }
 
-    // ==============================================
-    // 核心渲染
-    // 1. 渲染方块
-    // 2. 所有方块：细黑线框
-    // 3. 玩家区块：粗红框
-    // ==============================================
     public void render(int layer, float playerX, float playerY, float playerZ) {
+        // ========== 距离裁剪：超出渲染半径直接不渲染 ==========
+        float chunkCenterX = (x0 + x1) * 0.5f;
+        float chunkCenterZ = (z0 + z1) * 0.5f;
+        float dx = chunkCenterX - playerX;
+        float dz = chunkCenterZ - playerZ;
+        if (dx * dx + dz * dz > RENDER_RADIUS_SQ) {
+            return;
+        }
+
         Tesselator t = Tesselator.getInstance();
         t.init();
 
-        // 渲染区块内所有方块
         for (int x = x0; x < x1; x++) {
             for (int y = y0; y < y1; y++) {
                 for (int z = z0; z < z1; z++) {
                     int id = getBlockWorld(x, y, z);
                     if (id == 0) continue;
 
-                    // 暴露面剔除
                     boolean exposed = !isSolid(x+1,y,z) || !isSolid(x-1,y,z) ||
                             !isSolid(x,y+1,z) || !isSolid(x,y-1,z) ||
                             !isSolid(x,y,z+1) || !isSolid(x,y,z-1);
@@ -105,10 +102,10 @@ public class Chunk {
         }
         t.flush();
 
-        // 所有实体方块：细黑色线框
+        // 渲染所有方块细黑框
         renderAllBlockWireframe();
 
-        // 玩家所在区块：粗红色外框
+        // 玩家所在区块粗红框
         if (isPlayerInChunk(playerX, playerY, playerZ)) {
             renderChunkRedBorder();
         }
@@ -118,12 +115,12 @@ public class Chunk {
         return getBlockWorld(x, y, z) != 0;
     }
 
-    // 判断玩家是否在当前区块
     private boolean isPlayerInChunk(float px, float py, float pz) {
-        return px >= x0 && px < x1 && py >= y0 && py < y1 && pz >= z0 && pz < z1;
+        return px >= x0 && px < x1 &&
+                py >= y0 && py < y1 &&
+                pz >= z0 && pz < z1;
     }
 
-    // 绘制单个方块的黑色线框
     private void renderAllBlockWireframe() {
         glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT);
         glDisable(GL_TEXTURE_2D);
@@ -144,27 +141,24 @@ public class Chunk {
         glPopAttrib();
     }
 
-    // 绘制单个1×1×1立方体线框
     private void drawCube(int x, int y, int z) {
         float x1 = x + 1, y1 = y + 1, z1 = z + 1;
-        // 底面
         glVertex3f(x,y,z); glVertex3f(x1,y,z);
         glVertex3f(x1,y,z); glVertex3f(x1,y,z1);
         glVertex3f(x1,y,z1); glVertex3f(x,y,z1);
         glVertex3f(x,y,z1); glVertex3f(x,y,z);
-        // 顶面
+
         glVertex3f(x,y1,z); glVertex3f(x1,y1,z);
         glVertex3f(x1,y1,z); glVertex3f(x1,y1,z1);
         glVertex3f(x1,y1,z1); glVertex3f(x,y1,z1);
         glVertex3f(x,y1,z1); glVertex3f(x,y1,z);
-        // 竖边
+
         glVertex3f(x,y,z); glVertex3f(x,y1,z);
         glVertex3f(x1,y,z); glVertex3f(x1,y1,z);
         glVertex3f(x1,y,z1); glVertex3f(x1,y1,z1);
         glVertex3f(x,y,z1); glVertex3f(x,y1,z1);
     }
 
-    // 绘制玩家区块的红色粗外框
     private void renderChunkRedBorder() {
         glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT);
         glDisable(GL_TEXTURE_2D);
@@ -173,17 +167,16 @@ public class Chunk {
         glColor3f(1.0f, 0.0f, 0.0f);
 
         glBegin(GL_LINES);
-        // 底面
         glVertex3f(x0,y0,z0); glVertex3f(x1,y0,z0);
         glVertex3f(x1,y0,z0); glVertex3f(x1,y0,z1);
         glVertex3f(x1,y0,z1); glVertex3f(x0,y0,z1);
         glVertex3f(x0,y0,z1); glVertex3f(x0,y0,z0);
-        // 顶面
+
         glVertex3f(x0,y1,z0); glVertex3f(x1,y1,z0);
         glVertex3f(x1,y1,z0); glVertex3f(x1,y1,z1);
         glVertex3f(x1,y1,z1); glVertex3f(x0,y1,z1);
         glVertex3f(x0,y1,z1); glVertex3f(x0,y1,z0);
-        // 竖边
+
         glVertex3f(x0,y0,z0); glVertex3f(x0,y1,z0);
         glVertex3f(x1,y0,z0); glVertex3f(x1,y1,z0);
         glVertex3f(x1,y0,z1); glVertex3f(x1,y1,z1);
@@ -192,7 +185,6 @@ public class Chunk {
         glPopAttrib();
     }
 
-    // 兼容方法
     public void render(int layer) { render(layer, 0, 0, 0); }
     public void setDirty() { lodDirty = true; }
 }
