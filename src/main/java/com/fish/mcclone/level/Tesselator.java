@@ -1,9 +1,14 @@
 package com.fish.mcclone.level;
 
 import java.nio.FloatBuffer;
+
+import com.fish.util.PrinterUtils;
 import org.lwjgl.BufferUtils;
+
+import static java.lang.IO.print;
 import static org.lwjgl.opengl.GL11.*;
 
+/// # 渲染器
 public class Tesselator {
     // ======================
     // 单例模式
@@ -27,15 +32,18 @@ public class Tesselator {
     private final FloatBuffer texBuffer = BufferUtils.createFloatBuffer(MAX_VERTICES * 2); // ✅ 修复纹理坐标缓冲区
 
     // 状态变量
+    /// 顶点计数器
     private int vertices;
     private float u, v;
     private boolean useTex = false;
     private boolean useCol = false; // ✅ 修复缺失的颜色状态
-    private float r, g, b; // 颜色缓存
+    /// 启用线框
+    private boolean useLineRender = true;
+    /// 颜色缓存
+    private float r, g, b;
 
-    // ======================
-    // 初始化（修复：重置所有状态）
-    // ======================
+    /// 初始化（重置所有状态）<br>
+    /// 清空vertexBuffer colorBuffer texBuffer
     public void init() {
         vertices = 0;
         useTex = false;
@@ -81,7 +89,7 @@ public class Tesselator {
             colorBuffer.put(r).put(g).put(b);
         }
 
-        vertices++;
+        vertices++; // 顶点计数器+1
 
         // 缓冲区满自动刷新（防溢出）
         if (vertices >= MAX_VERTICES) {
@@ -117,8 +125,31 @@ public class Tesselator {
             glTexCoordPointer(2, GL_FLOAT, 0, texBuffer);
         }
 
-        // 绘制四边形
-        glDrawArrays(GL_QUADS, 0, vertices);
+
+        if (!useLineRender)  glDrawArrays(GL_QUADS, 0, vertices); // 绘制四边形
+        if (useLineRender) {
+            useCol = false;
+            useTex = false;
+            glColor3i(0,0,0); // black
+//            PrinterUtils.printVertexBuffer(vertexBuffer); // 打印顶点]
+
+            // 191.0000  43.0000 120.0000
+            // 192.0000  43.0000 120.0000
+            // 192.0000  43.0000 121.0000
+            // 191.0000  43.0000 121.0000
+            // 191.0000  43.0000 121.0000
+            // 192.0000  43.0000 121.0000
+            // 192.0000  43.0000 122.0000
+            // 191.0000  43.0000 122.0000
+            // 191.0000  43.0000 122.0000
+            // 192.0000  43.0000 122.0000
+            // 192.0000  43.0000 123.0000
+            // 191.0000  43.0000 123.0000
+            // 190.0000  43.0000 123.0000
+            // 191.0000  43.0000 123.0000
+
+            glDrawArrays(GL_LINE_LOOP, 0, vertices);
+        } // 线框
 
         // 禁用所有数组（状态还原）
         glDisableClientState(GL_VERTEX_ARRAY);

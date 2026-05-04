@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
+/// # 存档
 public class Level {
     public final int width;
     public final int height;

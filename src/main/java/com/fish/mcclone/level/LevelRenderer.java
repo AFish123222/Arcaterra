@@ -120,7 +120,7 @@ public class LevelRenderer implements LevelListener {
         // ========== 【必须加在pick方法的最后一行！】 ==========
         // 强制切回渲染模式，同时获取命中数，彻底退出选择模式
         int hits = glRenderMode(GL_RENDER);
-        System.out.println("Pick hits: " + hits); // 顺便看拾取有没有生效
+//        System.out.println("Pick hits: " + hits); // 顺便看拾取有没有生效
     }
 
 // ------------------------------ 辅助优化方法 ------------------------------
@@ -159,7 +159,7 @@ public class LevelRenderer implements LevelListener {
         // 这里的顶点坐标对应 Minecraft 方块的 6 个面
         switch (face) {
             case 0: // 下底面 (y-)
-                t.vertex(x, y, z);
+                t.vertex(x, y, z); // 给渲染器推顶点
                 t.vertex(x + 1, y, z);
                 t.vertex(x + 1, y, z + 1);
                 t.vertex(x, y, z + 1);

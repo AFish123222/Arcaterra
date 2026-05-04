@@ -40,12 +40,10 @@ public class Tile {
         if (!level.isSolidTile(x + 1, y, z)) renderFace(t, 5, x, y, z); // 右
     }
 
-    // ======================
-    // ✅ 核心：renderFace() 渲染单个方块面
-    // @param face 面ID: 0=上 1=下 2=前 3=后 4=左 5=右
-    // @param x/y/z 方块坐标
-    // @param t 渲染器
-    // ======================
+    /// ✅ 核心：renderFace() 渲染单个方块面
+    /// @param face 面ID: 0=上 1=下 2=前 3=后 4=左 5=右
+    /// @param x/y/z 方块坐标
+    /// @param t 渲染器
     public void renderFace(Tesselator t, int face, int x, int y, int z) {
         float x0 = x;
         float x1 = x + 1.0f;
