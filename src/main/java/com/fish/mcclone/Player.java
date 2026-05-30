@@ -113,7 +113,7 @@ public class Player {
 
 // 原键码 57(空格) / 219([) → GLFW_KEY_SPACE / GLFW_KEY_LEFT_BRACKET
         if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_LEFT_BRACKET) == GLFW_PRESS)
-            if (this.onGround)
+//            if (this.onGround)
                 this.yd = 0.12F;
         moveRelative(xa, ya, this.onGround ? 0.02F : 0.005F);
         this.yd = (float)(this.yd - 0.005D);
