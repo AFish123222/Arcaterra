@@ -7,8 +7,8 @@ import com.fish.mcclone.level.Level;
 public class LODChunk extends Chunk {
     public LODChunk(Level level, int x0, int y0, int z0, int size, int lodLevel) {
         super(level, x0, y0, z0, x0+size, y0+size, z0+size);
-        this.lodLevel = lodLevel;
-        this.children = new Chunk[8]; // 八叉树8个子节点
+//        this.lodLevel = lodLevel;
+//        this.children = new Chunk[8]; // 八叉树8个子节点
     }
 
     // 合并子区块，生成简化LOD网格
