@@ -46,7 +46,7 @@ public class Chunk {
         initTerrain();
     }
 
-    // 生成地面
+    /// 生成地面
     private void initTerrain() {
         for (int rx = 0; rx < BASE_SIZE; rx++) {
             for (int rz = 0; rz < BASE_SIZE; rz++) {
@@ -76,29 +76,89 @@ public class Chunk {
         return getBlockLocal(x - x0, y - y0, z - z0);
     }
 
+    class Cube {
+        // 六个面：仅绘制线框，每个面4条线
+        public static void drawLeft(float x, float y, float z) {    // X- 左面
+            glVertex3f(x, y, z);    glVertex3f(x, y+1, z);
+            glVertex3f(x, y+1, z);  glVertex3f(x, y+1, z+1);
+            glVertex3f(x, y+1, z+1);glVertex3f(x, y, z+1);
+            glVertex3f(x, y, z+1);  glVertex3f(x, y, z);
+        }
+
+        public static void drawRight(float x, float y, float z) {   // X+ 右面
+            glVertex3f(x+1, y, z);  glVertex3f(x+1, y+1, z);
+            glVertex3f(x+1, y+1, z);glVertex3f(x+1, y+1, z+1);
+            glVertex3f(x+1, y+1, z+1);glVertex3f(x+1, y, z+1);
+            glVertex3f(x+1, y, z+1);glVertex3f(x+1, y, z);
+        }
+
+        public static void drawBottom(float x, float y, float z) {  // Y- 底面
+            glVertex3f(x, y, z);    glVertex3f(x+1, y, z);
+            glVertex3f(x+1, y, z);  glVertex3f(x+1, y, z+1);
+            glVertex3f(x+1, y, z+1);glVertex3f(x, y, z+1);
+            glVertex3f(x, y, z+1);  glVertex3f(x, y, z);
+        }
+
+        public static void drawTop(float x, float y, float z) {     // Y+ 顶面
+            glVertex3f(x, y+1, z);  glVertex3f(x+1, y+1, z);
+            glVertex3f(x+1, y+1, z);glVertex3f(x+1, y+1, z+1);
+            glVertex3f(x+1, y+1, z+1);glVertex3f(x, y+1, z+1);
+            glVertex3f(x, y+1, z+1);glVertex3f(x, y+1, z);
+        }
+
+        public static void drawBack(float x, float y, float z) {    // Z- 后面
+            glVertex3f(x, y, z);    glVertex3f(x+1, y, z);
+            glVertex3f(x+1, y, z);  glVertex3f(x+1, y+1, z);
+            glVertex3f(x+1, y+1, z);glVertex3f(x, y+1, z);
+            glVertex3f(x, y+1, z);  glVertex3f(x, y, z);
+        }
+
+        public static void drawFront(float x, float y, float z) {   // Z+ 前面
+            glVertex3f(x, y, z+1);  glVertex3f(x+1, y, z+1);
+            glVertex3f(x+1, y, z+1);glVertex3f(x+1, y+1, z+1);
+            glVertex3f(x+1, y+1, z+1);glVertex3f(x, y+1, z+1);
+            glVertex3f(x, y+1, z+1);glVertex3f(x, y, z+1);
+        }
+    }
     // ====================== 核心渲染 ======================
     public void render(int layer, float playerX, float playerY, float playerZ) {
-        // 距离裁剪
-        float cx = (x0+x1)*0.5f, cz = (z0+z1)*0.5f;
-        float dx = cx-playerX, dz=cz-playerZ;
-        if (dx*dx + dz*dz > RENDER_RADIUS_SQ) return;
+        // block's 线框
+        glPushAttrib(GL_ENABLE_BIT);
+        glDisable(GL_TEXTURE_2D);
+        glLineWidth(1.0f);glColor3f(0,0,0);glBegin(GL_LINES);
+        for (int x=x0; x<x1; x++) {
+            for (int y=y0; y<y1; y++) {
+                for (int z=z0; z<z1; z++) {
+                    if (getBlockWorld(x,y,z)==0) continue; // 跳过空方块
+                    // 可见面渲染
+                    int xn =x+1, yn =y+1, zn =z+1;
+                    if (x>playerX) { //draw Left
+                        Cube.drawLeft(x,y,z,xn,yn,zn);
+                    }else { //draw right
 
-        // 重建贪心网格
-        if (meshDirty) {
-            buildGreedyMesh();
-            meshDirty = false;
+                    }
+
+                    // Front
+                    glVertex3f(x,y,z); glVertex3f(xn,y,z);
+                    glVertex3f(xn,y,z); glVertex3f(xn,y, zn);
+                    glVertex3f(xn,y, zn); glVertex3f(x,y, zn);
+                    glVertex3f(x,y, zn); glVertex3f(x,y,z);
+
+                    glVertex3f(x, yn,z); glVertex3f(xn, yn,z);
+                    glVertex3f(xn, yn,z); glVertex3f(xn, yn, zn);
+
+                    glVertex3f(xn, yn, zn); glVertex3f(x, yn, zn);
+                    glVertex3f(x, yn, zn); glVertex3f(x, yn,z);
+
+                    glVertex3f(x,y,z); glVertex3f(x, yn,z);
+                    glVertex3f(xn,y,z); glVertex3f(xn, yn,z);
+
+                    glVertex3f(xn,y, zn); glVertex3f(xn, yn, zn);
+                    glVertex3f(x,y, zn); glVertex3f(x, yn, zn);
+                }
+            }
         }
-
-        // 渲染贪心网格
-        renderGreedyMesh();
-
-        // 所有方块：细黑线框
-        renderAllBlockWireframe();
-
-        // 玩家区块：粗红线框
-        if (isPlayerInChunk(playerX, playerY, playerZ)) {
-            renderChunkRedBorder();
-        }
+        glEnd();glPopAttrib();
     }
 
     // ====================== 贪心网格化核心 ======================
