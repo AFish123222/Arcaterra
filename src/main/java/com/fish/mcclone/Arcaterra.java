@@ -9,7 +9,6 @@ import org.lwjgl.*;
 import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.*;
 import org.lwjgl.system.*;
-import org.lwjgl.opengl.GLUtil.*;
 
 import java.io.IOException;
 import java.nio.DoubleBuffer;
@@ -24,11 +23,23 @@ import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.system.MemoryStack.*;
 import static org.lwjgl.system.MemoryUtil.*;
 
-/// # MinecraftClone
-/// 这是JourneyToBaoji的前置项目。本阶段会重新实现并优化Minecraft1.21.5+Fabric+Terrarium+LOD(DH/Voxy/自研文件树LOD)
+/// # 桃源Arcaterra
+/// ## 桃源引
+///   大丈夫志在碧海，暮宿苍梧；少年心厌樊笼，梦归南山。<br>
+///   昔中考前，每乘暇日，独驾单车，登彼北塬。时维初夏，序属清和。天风浩荡，自终南而北来；麦浪参差，从足下而远山。绿接青冥，一望无际；波摇翠影，万顷同辉。倚孤树而旷然，望晚山以兴叹，感一身之渺然。<br>
+///   然余身羁俗网，足困尘阡。非无远志，实未能前。欲翻南山之巅，以穷千里之目；奈何双足如缚，竟阻咫尺之途。每北望而长嗟，对清风而自问：何日得脱此樊笼，凌绝顶而览四方？<br>
+///   于是另开户牖，名曰桃源。入此境中，余不慕斗粟，唯求心闲。精研造极，术业穷深；万象之美，浩若烟云。<br>
+///   或问于人，众议纷纭。有默然者，有长叹者，更有笑而嘲曰：“陶元亮其憨，徐霞客其顽。”<br>
+///   余闻之，俯首良久，仰而应曰：
+/// “人生如寄，倏忽百年。或屈于俗，终身不遂己愿；或纵于己，尽付流水高山。吾今虽不能杖履千峰，然心向往之，故为桃源。聊以自足，慰此余年。”<br>
+/// 丙午年五月廿八日 序 <br>
+/// ===================== <br>
+/// 这是继承terrarium的项目，离开了minecraft,我会优化Arcaterra到极致，颜值与速度并存<br>
+/// 我会永远开发一份开源的，哪怕另一份作为商业项目<br>
+/// 本阶段会重新实现并优化Minecraft1.21.5+Fabric+Terrarium+LOD(DH/Voxy/自研文件树LOD)
 ///
-/// 作者会同步学习游戏开发知识 并写好JavaDoc
-public class MinecraftClone {
+/// 作者会同步学习游戏开发知识 并完善JavaDoc，便利开发
+public class Arcaterra {
     /// ###### 窗口宽度 width
     private int width = 1024;
     /// ###### 窗口高度 height
@@ -121,7 +132,7 @@ public class MinecraftClone {
         glLoadIdentity();
         glMatrixMode(GL_MODELVIEW);
 
-        level = new Level(256, 256, 64);
+        level = new Level();
         levelRenderer = new LevelRenderer(level);
         player = new Player(level);
 
@@ -170,6 +181,8 @@ public class MinecraftClone {
                 timer.advanceTime();
                 for (int i = 0; i < timer.ticks; i++) tick();
                 render(timer.a);
+                // player 是你的玩家对象，每一帧必须执行这行代码
+                level.updateChunks(player.x, player.y, player.z);
 
                 // FPS 计数
                 frames++;
@@ -456,7 +469,7 @@ public class MinecraftClone {
     }
 
     public static void main(String[] args) {
-        new MinecraftClone().run();
+        new Arcaterra().run();
     }
 
 }
