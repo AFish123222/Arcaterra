@@ -2,6 +2,8 @@ package com.fish.mcclone.level;
 
 import com.fish.mcclone.block.Block;
 import com.fish.mcclone.phys.AABB;
+
+import static java.lang.Math.sin;
 import static org.lwjgl.opengl.GL11.*;
 
 public class Chunk {
@@ -53,7 +55,7 @@ public class Chunk {
                 int worldY = groundLevel;
                 int ry = worldY - y0;
                 if (ry >= 0 && ry < BASE_SIZE) {
-                    setBlockLocal(rx, ry, rz, Block.GRASS);
+                    setBlockLocal(rx, (int)(sin(ry)), rz, Block.GRASS);
                 }
             }
         }
