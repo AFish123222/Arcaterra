@@ -121,44 +121,54 @@ public class Chunk {
         }
     }
     // ====================== 核心渲染 ======================
+    // ====================== 可见面渲染（核心优化版） ======================
     public void render(int layer, float playerX, float playerY, float playerZ) {
-        // block's 线框
-        glPushAttrib(GL_ENABLE_BIT);
+        // GL 状态：关闭纹理、黑色线框、1px宽度
+        glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT);
         glDisable(GL_TEXTURE_2D);
-        glLineWidth(1.0f);glColor3f(0,0,0);glBegin(GL_LINES);
-        for (int x=x0; x<x1; x++) {
-            for (int y=y0; y<y1; y++) {
-                for (int z=z0; z<z1; z++) {
-                    if (getBlockWorld(x,y,z)==0) continue; // 跳过空方块
-                    // 可见面渲染
-                    int xn =x+1, yn =y+1, zn =z+1;
-                    if (x>playerX) { //draw Left
-                        Cube.drawLeft(x,y,z,xn,yn,zn);
-                    }else { //draw right
+        glDisable(GL_LIGHTING);
+        glLineWidth(1.0f);
+        glColor3f(0, 0, 0);
+        glBegin(GL_LINES);
 
-                    }
+        // 遍历区块内所有方块
+        for (int x = x0; x < x1; x++) {
+            for (int y = y0; y < y1; y++) {
+                for (int z = z0; z < z1; z++) {
+                    // 跳过空气方块
+                    if (getBlockWorld(x, y, z) == 0) continue;
 
-                    // Front
-                    glVertex3f(x,y,z); glVertex3f(xn,y,z);
-                    glVertex3f(xn,y,z); glVertex3f(xn,y, zn);
-                    glVertex3f(xn,y, zn); glVertex3f(x,y, zn);
-                    glVertex3f(x,y, zn); glVertex3f(x,y,z);
+                    // ==============================================
+                    // 1. 遮挡剔除：相邻方块存在 → 该面不渲染
+                    // ==============================================
+                    boolean leftEmpty   = getBlockWorld(x-1, y, z) == 0;   // 左面无遮挡
+                    boolean rightEmpty  = getBlockWorld(x+1, y, z) == 0;   // 右面无遮挡
+                    boolean bottomEmpty = getBlockWorld(x, y-1, z) == 0;   // 底面无遮挡
+                    boolean topEmpty    = getBlockWorld(x, y+1, z) == 0;   // 顶面无遮挡
+                    boolean backEmpty   = getBlockWorld(x, y, z-1) == 0;   // 后面无遮挡
+                    boolean frontEmpty  = getBlockWorld(x, y, z+1) == 0;   // 前面无遮挡
 
-                    glVertex3f(x, yn,z); glVertex3f(xn, yn,z);
-                    glVertex3f(xn, yn,z); glVertex3f(xn, yn, zn);
+                    // ==============================================
+                    // 2. 视角判断：只渲染【朝向玩家】的面
+                    // 规则：玩家在方块右侧 → 渲染左面；玩家在左侧 → 渲染右面（最多3个面）
+                    // ==============================================
+                    // X轴（左右）
+                    if (leftEmpty && playerX > x)      Cube.drawLeft(x, y, z);
+                    if (rightEmpty && playerX < x+1)   Cube.drawRight(x, y, z);
 
-                    glVertex3f(xn, yn, zn); glVertex3f(x, yn, zn);
-                    glVertex3f(x, yn, zn); glVertex3f(x, yn,z);
+                    // Y轴（上下）
+                    if (bottomEmpty && playerY > y)    Cube.drawBottom(x, y, z);
+                    if (topEmpty && playerY < y+1)     Cube.drawTop(x, y, z);
 
-                    glVertex3f(x,y,z); glVertex3f(x, yn,z);
-                    glVertex3f(xn,y,z); glVertex3f(xn, yn,z);
-
-                    glVertex3f(xn,y, zn); glVertex3f(xn, yn, zn);
-                    glVertex3f(x,y, zn); glVertex3f(x, yn, zn);
+                    // Z轴（前后）
+                    if (backEmpty && playerZ > z)      Cube.drawBack(x, y, z);
+                    if (frontEmpty && playerZ < z+1)   Cube.drawFront(x, y, z);
                 }
             }
         }
-        glEnd();glPopAttrib();
+
+        glEnd();
+        glPopAttrib();
     }
 
     // ====================== 贪心网格化核心 ======================
