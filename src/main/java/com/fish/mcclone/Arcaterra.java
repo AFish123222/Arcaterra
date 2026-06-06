@@ -132,7 +132,7 @@ public class Arcaterra {
         glLoadIdentity();
         glMatrixMode(GL_MODELVIEW);
 
-        level = new Level();
+        level = new Level(256,256,64);
         levelRenderer = new LevelRenderer(level);
         player = new Player(level);
 
@@ -181,8 +181,8 @@ public class Arcaterra {
                 timer.advanceTime();
                 for (int i = 0; i < timer.ticks; i++) tick();
                 render(timer.a);
-                // player 是你的玩家对象，每一帧必须执行这行代码
-                level.updateChunks(player.x, player.y, player.z);
+//                // player 是你的玩家对象，每一帧必须执行这行代码
+//                level.updateChunks(player.x, player.y, player.z);
 
                 // FPS 计数
                 frames++;
