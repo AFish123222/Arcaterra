@@ -47,10 +47,12 @@ public class Player {
         this.z = 50;
     }
 
+    /// 死亡重生
     private void resetPos() {
-        float x = (float)Math.random() * this.level.width;
-        float y = (this.level.depth + 10);
-        float z = (float)Math.random() * this.level.height;
+        // 无限地图：随机生成在 0~100 范围，安全高度
+        float x = (float)Math.random() * 100;
+        float y = 100; // 出生在高空，避免卡方块
+        float z = (float)Math.random() * 100;
         setPos(x, y, z);
     }
 

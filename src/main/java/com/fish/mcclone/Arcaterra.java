@@ -132,7 +132,7 @@ public class Arcaterra {
         glLoadIdentity();
         glMatrixMode(GL_MODELVIEW);
 
-        level = new Level(256,256,64);
+        level = new Level();
         levelRenderer = new LevelRenderer(level);
         player = new Player(level);
 
@@ -188,9 +188,9 @@ public class Arcaterra {
                 frames++;
                 while (System.currentTimeMillis() >= lastTime + 1000L) {
 //                    System.out.println(frames + " fps, " + Chunk.updates);
-                    System.out.println(frames + " fps, ");
-                    System.out.println(player.xRot + " xRot ");
-                    System.out.println(player.yRot + " yRot ");
+//                    System.out.println(frames + " fps, ");
+//                    System.out.println(player.xRot + " xRot ");
+//                    System.out.println(player.yRot + " yRot ");
 //                    Chunk.updates = 0;
                     lastTime += 1000L;
                     frames = 0;

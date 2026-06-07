@@ -18,6 +18,8 @@ public class LevelRenderer implements LevelListener {
     private static final int CHUNK_SIZE = 16;
     private Level level;
     Tesselator t;
+    // 缓存视锥体，避免每帧重复分配内存
+    private FrustumIntersection frustumCache = new FrustumIntersection();
 
     public LevelRenderer(Level level) {
         this.t = Tesselator.getInstance();
@@ -26,30 +28,37 @@ public class LevelRenderer implements LevelListener {
     }
 
     public void render(Player player, int layer) {
-        glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT | GL_TEXTURE_BIT | GL_DEPTH_BUFFER_BIT);
-
-        // ✅【固定矩阵：必加！】保存相机矩阵 + 强制重置
+        // 矩阵栈保护（保留原有）
         glMatrixMode(GL_MODELVIEW);
         glPushMatrix();
         glLoadIdentity();
 
-        glDisable(GL_BLEND);
-        glDisable(GL_LIGHTING);
+        // 基础GL状态（保留原有）
         glEnable(GL_TEXTURE_2D);
         glEnable(GL_DEPTH_TEST);
-        glColor3f(1, 1, 1);
+        glDisable(GL_BLEND);
+        glDisable(GL_LIGHTING);
         glBindTexture(GL_TEXTURE_2D, Chunk.texture);
 
+        // ========== 新增：获取全局视锥体 ==========
+        FrustumIntersection frustum = getCurrentFrustum();
+
+        // 遍历区块 + 视锥剔除：屏幕外区块直接跳过渲染
         for (Chunk chunk : level.chunkMap.values()) {
-            if (chunk != null) {
-                chunk.render(layer, player.x, player.y, player.z);
-            }
+            if (chunk == null) continue;
+
+            // 视锥判断：区块包围盒是否在可视范围内
+            boolean inView = frustum.testAab(
+                    chunk.x0, chunk.y0, chunk.z0,
+                    chunk.x1, chunk.y1, chunk.z1
+            );
+            if (!inView) continue; // 屏幕外 → 直接跳过
+
+            chunk.render(layer, player.x, player.y, player.z);
         }
 
-        // ✅【固定矩阵：必加！】恢复相机矩阵
+        // 恢复矩阵（保留原有）
         glPopMatrix();
-
-        glPopAttrib();
     }
 
     public void pick(Player player) {
@@ -71,6 +80,7 @@ public class LevelRenderer implements LevelListener {
             for (int y = y0; y < y1; y++) {
                 glPushName(y);
                 for (int z = z0; z < z1; z++) {
+                    // 🔥 修复2：从Chunk获取方块+判空+正确判断固体（拾取只渲染固体方块）
                     Chunk chunk = level.getChunkByWorldPos(x, y, z);
                     if (chunk == null || !isBoxInFrustum(frustum, x, y, z) || !chunk.isSolid(x, y, z)) {
                         glPopName();
@@ -95,6 +105,7 @@ public class LevelRenderer implements LevelListener {
         }
 
         this.t.flush();
+        // 退出选择模式（必须保留）
         glRenderMode(GL_RENDER);
     }
 
@@ -109,8 +120,9 @@ public class LevelRenderer implements LevelListener {
 
             Matrix4f proj = new Matrix4f(projBuf);
             Matrix4f model = new Matrix4f(modelBuf);
-
-            return new FrustumIntersection(proj.mul(model));
+            // 复用对象，减少GC
+            frustumCache.set(proj.mul(model));
+            return frustumCache;
         }
     }
 
@@ -161,54 +173,46 @@ public class LevelRenderer implements LevelListener {
         }
     }
 
-    // 渲染选中方块高亮框（修复Tile→Block）
+    // 渲染选中方块高亮框
     public void renderHit(HitResult h) {
         GL11.glEnable(GL_BLEND);
         GL11.glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         GL11.glColor4f(1.0F, 1.0F, 1.0F, (float)Math.sin(System.currentTimeMillis() / 100.0D) * 0.2F + 0.4F);
         this.t.init();
-        renderSimpleFace( h.x, h.y, h.z, h.f);
+        Tile.rock.renderFace(this.t, h.x, h.y, h.z, h.f);
         this.t.flush();
         GL11.glDisable(GL_BLEND);
     }
 
-    // ====================== 修复NPE：重写脏区块更新 ======================
+    // 脏区块更新（LOD兼容）
     public void setDirty(int x0, int y0, int z0, int x1, int y1, int z1) {
-        // 计算区块范围
-        int minCX = x0 / CHUNK_SIZE;
-        int maxCX = x1 / CHUNK_SIZE;
-        int minCY = y0 / CHUNK_SIZE;
-        int maxCY = y1 / CHUNK_SIZE;
-        int minCZ = z0 / CHUNK_SIZE;
-        int maxCZ = z1 / CHUNK_SIZE;
+        // 无限地图简化：直接更新周边区块
+        int cx0 = x0 / 16 - 1;
+        int cx1 = x1 / 16 + 1;
+        int cz0 = z0 / 16 - 1;
+        int cz1 = z1 / 16 + 1;
 
-        // 遍历动态区块，不依赖固定数组
-        for (int cx = minCX; cx <= maxCX; cx++) {
-            for (int cy = minCY; cy <= maxCY; cy++) {
-                for (int cz = minCZ; cz <= maxCZ; cz++) {
-                    Chunk chunk = level.getChunkByWorldPos(cx * CHUNK_SIZE, cy * CHUNK_SIZE, cz * CHUNK_SIZE);
-                    if (chunk != null) {
-                        chunk.setDirty();
-                    }
+        for(int cx = cx0; cx <= cx1; cx++){
+            for(int cz = cz0; cz <= cz1; cz++){
+                for(int cy = 0; cy <= 8; cy++){
+                    Chunk chunk = level.getChunkByWorldPos(cx*16, cy*16, cz*16);
+                    if(chunk != null) chunk.setDirty();
                 }
             }
         }
     }
 
-    // 监听器实现（无修改，兼容无限）
+    // 监听器实现
     public void tileChanged(int x, int y, int z) {
         setDirty(x - 1, y - 1, z - 1, x + 1, y + 1, z + 1);
     }
     public void lightColumnChanged(int x, int z, int y0, int y1) {
         setDirty(x - 1, y0 - 1, z - 1, x + 1, y1 + 1, z + 1);
     }
-
-    // 修复：全量刷新遍历动态区块
     public void allChanged() {
-        for (Chunk chunk : level.chunkMap.values()) {
-            if (chunk != null) {
-                chunk.setDirty();
-            }
+        // 无限地图：刷新所有加载的区块
+        for(Chunk chunk : level.chunkMap.values()){
+            if(chunk != null) chunk.setDirty();
         }
     }
 }

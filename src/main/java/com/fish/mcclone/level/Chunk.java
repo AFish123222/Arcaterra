@@ -26,6 +26,9 @@ public class Chunk {
     private final int groundLevel;
     public final AABB aabb;
 
+    // 缓存每个方块的遮挡面 (rx,ry,rz) → 6个面是否可见
+    private final boolean[][][] faceVisible;
+
     private static class Rect {
         int x, z;
         int width;
@@ -50,7 +53,31 @@ public class Chunk {
         this.groundLevel = level.groundY;
 
         this.blocks = new short[BASE_SIZE * BASE_SIZE * BASE_SIZE];
+        // 初始化遮挡缓存：6个面
+        faceVisible = new boolean[BASE_SIZE][BASE_SIZE][BASE_SIZE * 6];
+
         initTerrain();
+        // 首次生成后计算遮挡面
+        recalcFaceVisible();
+    }
+
+    // 仅区块变脏时调用，不每帧执行
+    private void recalcFaceVisible() {
+        for (int rx = 0; rx < BASE_SIZE; rx++) {
+            for (int ry = 0; ry < BASE_SIZE; ry++) {
+                for (int rz = 0; rz < BASE_SIZE; rz++) {
+                    if (getBlockLocal(rx, ry, rz) == 0) continue;
+
+                    // 逐个面判断是否被遮挡
+                    faceVisible[rx][ry][rz*6 + 0] = getBlockLocal(rx-1, ry, rz) == 0; // left
+                    faceVisible[rx][ry][rz*6 + 1] = getBlockLocal(rx+1, ry, rz) == 0; // right
+                    faceVisible[rx][ry][rz*6 + 2] = getBlockLocal(rx, ry-1, rz) == 0; // bottom
+                    faceVisible[rx][ry][rz*6 + 3] = getBlockLocal(rx, ry+1, rz) == 0; // top
+                    faceVisible[rx][ry][rz*6 + 4] = getBlockLocal(rx, ry, rz-1) == 0; // back
+                    faceVisible[rx][ry][rz*6 + 5] = getBlockLocal(rx, ry, rz+1) == 0; // front
+                }
+            }
+        }
     }
 
     private void initTerrain() {
@@ -87,7 +114,9 @@ public class Chunk {
         return getBlockLocal(x - x0, y - y0, z - z0);
     }
 
-    public void setDirty() {}
+    public void setDirty() {
+        recalcFaceVisible(); // 方块变化 → 重新计算遮挡面
+    }
 
     private boolean[][] buildOccupiedMask() {
         boolean[][] mask = new boolean[BASE_SIZE][BASE_SIZE];
@@ -194,12 +223,13 @@ public class Chunk {
                         float y = y0 + ry;
                         float z = z0 + rz;
 
-                        boolean left   = getBlockLocal(rx-1, ry, rz) == 0;
-                        boolean right  = getBlockLocal(rx+1, ry, rz) == 0;
-                        boolean bottom = getBlockLocal(rx, ry-1, rz) == 0;
-                        boolean top    = getBlockLocal(rx, ry+1, rz) == 0;
-                        boolean back   = getBlockLocal(rx, ry, rz-1) == 0;
-                        boolean front  = getBlockLocal(rx, ry, rz+1) == 0;
+                        int idx = rz * 6;
+                        boolean left   = faceVisible[rx][ry][idx + 0];
+                        boolean right  = faceVisible[rx][ry][idx + 1];
+                        boolean bottom = faceVisible[rx][ry][idx + 2];
+                        boolean top    = faceVisible[rx][ry][idx + 3];
+                        boolean back   = faceVisible[rx][ry][idx + 4];
+                        boolean front  = faceVisible[rx][ry][idx + 5];
 
                         if (left) {glVertex3f(x, y, z);glVertex3f(x, y +1, z);glVertex3f(x, y +1, z);glVertex3f(x, y +1, z +1);glVertex3f(x, y +1, z +1);glVertex3f(x, y, z +1);glVertex3f(x, y, z +1);glVertex3f(x, y, z);}
                         if (right) {glVertex3f(x +1, y, z);glVertex3f(x +1, y +1, z);glVertex3f(x +1, y +1, z);glVertex3f(x +1, y +1, z +1);glVertex3f(x +1, y +1, z +1);glVertex3f(x +1, y, z +1);glVertex3f(x +1, y, z +1);glVertex3f(x +1, y, z);}
@@ -226,12 +256,13 @@ public class Chunk {
                             float y = y0 + ry;
                             float z = z0 + rz;
 
-                            boolean left   = getBlockLocal(rx-1, ry, rz) == 0;
-                            boolean right  = getBlockLocal(rx+1, ry, rz) == 0;
-                            boolean bottom = getBlockLocal(rx, ry-1, rz) == 0;
-                            boolean top    = getBlockLocal(rx, ry+1, rz) == 0;
-                            boolean back   = getBlockLocal(rx, ry, rz-1) == 0;
-                            boolean front  = getBlockLocal(rx, ry, rz+1) == 0;
+                            int idx = rz * 6;
+                            boolean left   = faceVisible[rx][ry][idx + 0];
+                            boolean right  = faceVisible[rx][ry][idx + 1];
+                            boolean bottom = faceVisible[rx][ry][idx + 2];
+                            boolean top    = faceVisible[rx][ry][idx + 3];
+                            boolean back   = faceVisible[rx][ry][idx + 4];
+                            boolean front  = faceVisible[rx][ry][idx + 5];
 
                             float u0 = 0, u1 = 1;
                             float v0 = 0, v1 = 1;
