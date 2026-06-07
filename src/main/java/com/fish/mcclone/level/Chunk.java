@@ -125,7 +125,7 @@ public class Chunk {
         recalcFaceVisible();
         // 刷新LOD缓存
         buildOccupiedMask();
-        mergeToRectangles(lodOccupiedMask);
+//        mergeToRectangles(lodOccupiedMask);
     }
 
     private boolean[][] buildOccupiedMask() {
@@ -342,9 +342,9 @@ public class Chunk {
         else if (distSq <= LOD1_DIST_SQ) {
             glBegin(GL_LINES);
             int baseY = groundLevel - y0;
-            for (Rect rect : lodRectList) {
-                drawMergedRect(rect, baseY);
-            }
+//            for (Rect rect : lodRectList) {
+//                drawMergedRect(rect, baseY);
+//            }
             glEnd();
         }
 
