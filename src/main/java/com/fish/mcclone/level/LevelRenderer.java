@@ -26,9 +26,13 @@ public class LevelRenderer implements LevelListener {
     }
 
     public void render(Player player, int layer) {
-        // ============== 🔥 强制保存/重置GL状态（根治闪线） ==============
         glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT | GL_TEXTURE_BIT | GL_DEPTH_BUFFER_BIT);
-        // 重置所有核心状态
+
+        // ✅【固定矩阵：必加！】保存相机矩阵 + 强制重置
+        glMatrixMode(GL_MODELVIEW);
+        glPushMatrix();
+        glLoadIdentity();
+
         glDisable(GL_BLEND);
         glDisable(GL_LIGHTING);
         glEnable(GL_TEXTURE_2D);
@@ -36,15 +40,15 @@ public class LevelRenderer implements LevelListener {
         glColor3f(1, 1, 1);
         glBindTexture(GL_TEXTURE_2D, Chunk.texture);
 
-        // ============== 🔥 临时关闭视锥体剔除（排除误判） ==============
-        // 渲染所有区块，不做剔除
         for (Chunk chunk : level.chunkMap.values()) {
             if (chunk != null) {
                 chunk.render(layer, player.x, player.y, player.z);
             }
         }
 
-        // 恢复状态
+        // ✅【固定矩阵：必加！】恢复相机矩阵
+        glPopMatrix();
+
         glPopAttrib();
     }
 
