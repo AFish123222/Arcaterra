@@ -2,6 +2,8 @@ package com.fish.mcclone.level;
 
 import com.fish.mcclone.block.Block;
 import com.fish.mcclone.phys.AABB;
+
+import static java.lang.IO.println;
 import static org.lwjgl.opengl.GL11.*;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -122,9 +124,9 @@ public class Chunk {
     }
 
     public void setDirty() {
-        recalcFaceVisible();
-        // 刷新LOD缓存
-        buildOccupiedMask();
+//        recalcFaceVisible();
+//        // 刷新LOD缓存
+//        buildOccupiedMask();
 //        mergeToRectangles(lodOccupiedMask);
     }
 
@@ -239,15 +241,16 @@ public class Chunk {
                         float y = y0 + ry;
                         float z = z0 + rz;
 
-                        int idx = rz * 6;
-                        boolean left   = faceVisible[rx][ry][idx + 0];
-                        boolean right  = faceVisible[rx][ry][idx + 1];
-                        boolean bottom = faceVisible[rx][ry][idx + 2];
-                        boolean top    = faceVisible[rx][ry][idx + 3];
-                        boolean back   = faceVisible[rx][ry][idx + 4];
-                        boolean front  = faceVisible[rx][ry][idx + 5];
+                        boolean left   = getBlockLocal(rx-1, ry, rz) == 0;
+                        boolean right  = getBlockLocal(rx+1, ry, rz) == 0;
+                        boolean bottom = getBlockLocal(rx, ry-1, rz) == 0;
+                        boolean top    = getBlockLocal(rx, ry+1, rz) == 0;
+                        boolean back   = getBlockLocal(rx, ry, rz-1) == 0;
+                        boolean front  = getBlockLocal(rx, ry, rz+1) == 0;
 
-                        if (left) {glVertex3f(x, y, z);glVertex3f(x, y +1, z);glVertex3f(x, y +1, z);glVertex3f(x, y +1, z +1);glVertex3f(x, y +1, z +1);glVertex3f(x, y, z +1);glVertex3f(x, y, z +1);glVertex3f(x, y, z);}
+                        if (left) {
+                            println("`");
+                            glVertex3f(x, y, z);glVertex3f(x, y +1, z);glVertex3f(x, y +1, z);glVertex3f(x, y +1, z +1);glVertex3f(x, y +1, z +1);glVertex3f(x, y, z +1);glVertex3f(x, y, z +1);glVertex3f(x, y, z);}
                         if (right) {glVertex3f(x +1, y, z);glVertex3f(x +1, y +1, z);glVertex3f(x +1, y +1, z);glVertex3f(x +1, y +1, z +1);glVertex3f(x +1, y +1, z +1);glVertex3f(x +1, y, z +1);glVertex3f(x +1, y, z +1);glVertex3f(x +1, y, z);}
                         if (bottom) {glVertex3f(x, y, z);glVertex3f(x +1, y, z);glVertex3f(x +1, y, z);glVertex3f(x +1, y, z +1);glVertex3f(x +1, y, z +1);glVertex3f(x, y, z +1);glVertex3f(x, y, z +1);glVertex3f(x, y, z);}
                         if (top) {glVertex3f(x, y +1, z);glVertex3f(x +1, y +1, z);glVertex3f(x +1, y +1, z);glVertex3f(x +1, y +1, z +1);glVertex3f(x +1, y +1, z +1);glVertex3f(x, y +1, z +1);glVertex3f(x, y +1, z +1);glVertex3f(x, y +1, z);}
