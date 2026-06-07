@@ -4,6 +4,7 @@ import com.fish.mcclone.block.Block;
 import com.fish.mcclone.phys.AABB;
 import static org.lwjgl.opengl.GL11.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class Chunk {
@@ -16,6 +17,9 @@ public class Chunk {
     public static final int LOD0_DIST_SQ = LOD0_DIST * LOD0_DIST;
     public static final int LOD1_DIST_SQ = LOD1_DIST * LOD1_DIST;
     public static final int LOD2_DIST_SQ = LOD2_DIST * LOD2_DIST;
+    // LOD1 掩码 + 合并矩形缓存
+    private boolean[][] lodOccupiedMask;
+    private List<Rect> lodRectList;
 
     public final Level level;
     public final int x0, y0, z0;
@@ -55,6 +59,9 @@ public class Chunk {
         this.blocks = new short[BASE_SIZE * BASE_SIZE * BASE_SIZE];
         // 初始化遮挡缓存：6个面
         faceVisible = new boolean[BASE_SIZE][BASE_SIZE][BASE_SIZE * 6];
+        // 原有代码不变，追加：
+        lodOccupiedMask = new boolean[BASE_SIZE][BASE_SIZE];
+        lodRectList = new ArrayList<>();
 
         initTerrain();
         // 首次生成后计算遮挡面
@@ -115,22 +122,30 @@ public class Chunk {
     }
 
     public void setDirty() {
-        recalcFaceVisible(); // 方块变化 → 重新计算遮挡面
+        recalcFaceVisible();
+        // 刷新LOD缓存
+        buildOccupiedMask();
+        mergeToRectangles(lodOccupiedMask);
     }
 
     private boolean[][] buildOccupiedMask() {
-        boolean[][] mask = new boolean[BASE_SIZE][BASE_SIZE];
+        // ✅ 修复：双层循环清空二维boolean数组（删除错误的Arrays.fill）
+        for (int rx = 0; rx < BASE_SIZE; rx++) {
+            for (int rz = 0; rz < BASE_SIZE; rz++) {
+                lodOccupiedMask[rx][rz] = false;
+            }
+        }
         for (int rx = 0; rx < BASE_SIZE; rx++) {
             for (int rz = 0; rz < BASE_SIZE; rz++) {
                 for (int ry = 0; ry < BASE_SIZE; ry++) {
                     if (getBlockLocal(rx, ry, rz) != 0) {
-                        mask[rx][rz] = true;
+                        lodOccupiedMask[rx][rz] = true;
                         break;
                     }
                 }
             }
         }
-        return mask;
+        return lodOccupiedMask;
     }
 
     private List<Rect> mergeToRectangles(boolean[][] mask) {
@@ -213,6 +228,7 @@ public class Chunk {
         if (distSq <= LOD0_DIST_SQ) {
             // 线框边框
             glBegin(GL_LINES);
+            glColor3i( 0,0,0);
             for (int rx = 0; rx < BASE_SIZE; rx++) {
                 for (int ry = 0; ry < BASE_SIZE; ry++) {
                     for (int rz = 0; rz < BASE_SIZE; rz++) {
@@ -322,12 +338,11 @@ public class Chunk {
             }
         }
         // LOD1 贪心合并轮廓
+        // LOD1 中距离：直接使用缓存结果，不再每帧计算
         else if (distSq <= LOD1_DIST_SQ) {
-            boolean[][] occupied = buildOccupiedMask();
-            List<Rect> rectList = mergeToRectangles(occupied);
             glBegin(GL_LINES);
             int baseY = groundLevel - y0;
-            for (Rect rect : rectList) {
+            for (Rect rect : lodRectList) {
                 drawMergedRect(rect, baseY);
             }
             glEnd();
