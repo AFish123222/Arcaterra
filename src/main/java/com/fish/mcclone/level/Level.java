@@ -11,7 +11,7 @@ public class Level {
     public static final int CHUNK_SIZE = 16;
     public static final int WORLD_HEIGHT = 128;
     public static final int LOAD_RADIUS = 5;        // 水平加载半径
-    public static final int UNLOAD_RADIUS = 7;      // 卸载半径（必须>加载半径）
+    public static final int UNLOAD_RADIUS = 2;      // 卸载半径（必须>加载半径）
     public static final int VERTICAL_LOAD_RANGE = 2;// 🔥 修复1：垂直只加载玩家上下2层区块（不是全量）
 
     // ============== DEM 高度图配置 ==============
@@ -139,7 +139,7 @@ public class Level {
             }
         }
         if (unloadCount > 0) {
-            System.out.println("♻️ 卸载远区块: " + unloadCount + " | 剩余区块: " + chunkMap.size());
+            System.out.println("deload: " + unloadCount + " | rest: " + chunkMap.size());
         }
     }
 
