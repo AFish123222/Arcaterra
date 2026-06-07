@@ -54,16 +54,33 @@ public class Chunk {
         initTerrain();
     }
 
-    // 地形生成
+    /// 地形生成
     private void initTerrain() {
         int baseRy = groundLevel - y0;
         if (baseRy < 0 || baseRy >= BASE_SIZE) return;
 
+        // rx,ry,rz均只是区块内坐标
+        int topHeight = 0;
         for (int rx = 0; rx < BASE_SIZE; rx++) {
             for (int rz = 0; rz < BASE_SIZE; rz++) {
-                setBlockLocal(rx, baseRy, rz, Block.GRASS);
+//                int h1 = rx + rz;
+                //START get height
+//                topHeight = Math.max(baseRy, h1);
+                topHeight = getTopHeight();
+                //END get height
+                for (int ry = 0; ry < topHeight; ry++) {
+                    setBlockLocal(rx,ry, rz, Block.GRASS);
+                }
             }
         }
+    }
+
+    // 读取高度图某点
+    private int getTopHeight() {
+        int[] heightMap;
+        // todo
+        int topHeight = 64;
+        return topHeight;
     }
 
     // 方块写入（本地坐标）
@@ -88,12 +105,6 @@ public class Chunk {
     public void setDirty() {}
 
     // ====================== 基础方块面绘制（LOD0 使用） ======================
-    private static void drawLeft(float x, float y, float z)    { glVertex3f(x,y,z);glVertex3f(x,y+1,z);glVertex3f(x,y+1,z);glVertex3f(x,y+1,z+1);glVertex3f(x,y+1,z+1);glVertex3f(x,y,z+1);glVertex3f(x,y,z+1);glVertex3f(x,y,z); }
-    private static void drawRight(float x, float y, float z)   { glVertex3f(x+1,y,z);glVertex3f(x+1,y+1,z);glVertex3f(x+1,y+1,z);glVertex3f(x+1,y+1,z+1);glVertex3f(x+1,y+1,z+1);glVertex3f(x+1,y,z+1);glVertex3f(x+1,y,z+1);glVertex3f(x+1,y,z); }
-    private static void drawBottom(float x, float y, float z)  { glVertex3f(x,y,z);glVertex3f(x+1,y,z);glVertex3f(x+1,y,z);glVertex3f(x+1,y,z+1);glVertex3f(x+1,y,z+1);glVertex3f(x,y,z+1);glVertex3f(x,y,z+1);glVertex3f(x,y,z); }
-    private static void drawTop(float x, float y, float z)     { glVertex3f(x,y+1,z);glVertex3f(x+1,y+1,z);glVertex3f(x+1,y+1,z);glVertex3f(x+1,y+1,z+1);glVertex3f(x+1,y+1,z+1);glVertex3f(x,y+1,z+1);glVertex3f(x,y+1,z+1);glVertex3f(x,y+1,z); }
-    private static void drawBack(float x, float y, float z)    { glVertex3f(x,y,z);glVertex3f(x+1,y,z);glVertex3f(x+1,y,z);glVertex3f(x+1,y+1,z);glVertex3f(x+1,y+1,z);glVertex3f(x,y+1,z);glVertex3f(x,y+1,z);glVertex3f(x,y,z); }
-    private static void drawFront(float x, float y, float z)   { glVertex3f(x,y,z+1);glVertex3f(x+1,y,z+1);glVertex3f(x+1,y,z+1);glVertex3f(x+1,y+1,z+1);glVertex3f(x+1,y+1,z+1);glVertex3f(x,y+1,z+1);glVertex3f(x,y+1,z+1);glVertex3f(x,y,z+1); }
 
     // ====================== LOD1 专用：贪心合并辅助方法 ======================
     /**
@@ -205,37 +216,143 @@ public class Chunk {
         glLineWidth(1.0f);
         glColor3f(0, 0, 0);
 
+        enum State {
+            LINE,TRIANGLE
+        }
+        State state = State.TRIANGLE;
         // LOD0 近距离：完整单方块渲染 + 可见面剔除（高细节）
         if (distSq <= LOD0_DIST_SQ) {
-            glBegin(GL_LINES);
-            for (int rx = 0; rx < BASE_SIZE; rx++) {
-                for (int ry = 0; ry < BASE_SIZE; ry++) {
-                    for (int rz = 0; rz < BASE_SIZE; rz++) {
-                        int block = getBlockLocal(rx, ry, rz);
-                        if (block == 0) continue;
 
-                        float x = x0 + rx;
-                        float y = y0 + ry;
-                        float z = z0 + rz;
+            // 线框模式
+            if (true) {
+                glBegin(GL_LINES);
+                for (int rx = 0; rx < BASE_SIZE; rx++) {
+                    for (int ry = 0; ry < BASE_SIZE; ry++) {
+                        for (int rz = 0; rz < BASE_SIZE; rz++) {
+                            int block = getBlockLocal(rx, ry, rz);
+                            if (block == 0) continue;
 
-                        // 相邻方块遮挡剔除
-                        boolean left   = getBlockLocal(rx-1, ry, rz) == 0;
-                        boolean right  = getBlockLocal(rx+1, ry, rz) == 0;
-                        boolean bottom = getBlockLocal(rx, ry-1, rz) == 0;
-                        boolean top    = getBlockLocal(rx, ry+1, rz) == 0;
-                        boolean back   = getBlockLocal(rx, ry, rz-1) == 0;
-                        boolean front  = getBlockLocal(rx, ry, rz+1) == 0;
+                            float x = x0 + rx;
+                            float y = y0 + ry;
+                            float z = z0 + rz;
 
-                        if (left)  drawLeft(x, y, z);
-                        if (right) drawRight(x, y, z);
-                        if (bottom)drawBottom(x, y, z);
-                        if (top)   drawTop(x, y, z);
-                        if (back)  drawBack(x, y, z);
-                        if (front) drawFront(x, y, z);
+                            // 相邻方块遮挡剔除
+                            boolean left   = getBlockLocal(rx-1, ry, rz) == 0;
+                            boolean right  = getBlockLocal(rx+1, ry, rz) == 0;
+                            boolean bottom = getBlockLocal(rx, ry-1, rz) == 0;
+                            boolean top    = getBlockLocal(rx, ry+1, rz) == 0;
+                            boolean back   = getBlockLocal(rx, ry, rz-1) == 0;
+                            boolean front  = getBlockLocal(rx, ry, rz+1) == 0;
+
+                            // 推顶点绘制
+                            if (left) {glVertex3f(x, y, z);glVertex3f(x, y +1, z);glVertex3f(x, y +1, z);glVertex3f(x, y +1, z +1);glVertex3f(x, y +1, z +1);glVertex3f(x, y, z +1);glVertex3f(x, y, z +1);glVertex3f(x, y, z);}
+                            if (right) {glVertex3f(x +1, y, z);glVertex3f(x +1, y +1, z);glVertex3f(x +1, y +1, z);glVertex3f(x +1, y +1, z +1);glVertex3f(x +1, y +1, z +1);glVertex3f(x +1, y, z +1);glVertex3f(x +1, y, z +1);glVertex3f(x +1, y, z);}
+                            if (bottom) {glVertex3f(x, y, z);glVertex3f(x +1, y, z);glVertex3f(x +1, y, z);glVertex3f(x +1, y, z +1);glVertex3f(x +1, y, z +1);glVertex3f(x, y, z +1);glVertex3f(x, y, z +1);glVertex3f(x, y, z);}
+                            if (top) {glVertex3f(x, y +1, z);glVertex3f(x +1, y +1, z);glVertex3f(x +1, y +1, z);glVertex3f(x +1, y +1, z +1);glVertex3f(x +1, y +1, z +1);glVertex3f(x, y +1, z +1);glVertex3f(x, y +1, z +1);glVertex3f(x, y +1, z);}
+                            if (back) {glVertex3f(x, y, z);glVertex3f(x +1, y, z);glVertex3f(x +1, y, z);glVertex3f(x +1, y +1, z);glVertex3f(x +1, y +1, z);glVertex3f(x, y +1, z);glVertex3f(x, y +1, z);glVertex3f(x, y, z);}
+                            if (front) {glVertex3f(x, y, z +1);glVertex3f(x +1, y, z +1);glVertex3f(x +1, y, z +1);glVertex3f(x +1, y +1, z +1);glVertex3f(x +1, y +1, z +1);glVertex3f(x, y +1, z +1);glVertex3f(x, y +1, z +1);glVertex3f(x, y, z +1);}
+                        }
                     }
                 }
+                glEnd();
+                // 三角面模式 //线框直接当边框
+                if (state == State.TRIANGLE) {
+                    // 统一全局GL状态（一次设置，全程复用）
+                    glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT);
+                    glDisable(GL_TEXTURE_2D);
+                    glDisable(GL_LIGHTING);
+                    glLineWidth(1f);
+                    glColor3f(0.4f,0.65f,0.3f);
+                    glBegin(GL_TRIANGLES);
+                    for (int rx = 0; rx < BASE_SIZE; rx++) {
+                        for (int ry = 0; ry < BASE_SIZE; ry++) {
+                            for (int rz = 0; rz < BASE_SIZE; rz++) {
+                                int block = getBlockLocal(rx, ry, rz);
+                                if (block == 0) continue;
+
+                                float x = x0 + rx;
+                                float y = y0 + ry;
+                                float z = z0 + rz;
+
+                                // 遮挡剔除
+                                boolean left   = getBlockLocal(rx-1, ry, rz) == 0;
+                                boolean right  = getBlockLocal(rx+1, ry, rz) == 0;
+                                boolean bottom = getBlockLocal(rx, ry-1, rz) == 0;
+                                boolean top    = getBlockLocal(rx, ry+1, rz) == 0;
+                                boolean back   = getBlockLocal(rx, ry, rz-1) == 0;
+                                boolean front  = getBlockLocal(rx, ry, rz+1) == 0;
+
+                                float u0 = 0, u1 = 1;
+                                float v0 = 0, v1 = 1;
+
+                                // 左面 X-
+                                if (left) {
+                                    glTexCoord2f(u0, v1); glVertex3f(x, y  , z  );
+                                    glTexCoord2f(u0, v0); glVertex3f(x, y+1, z  );
+                                    glTexCoord2f(u1, v0); glVertex3f(x, y+1, z+1);
+
+                                    glTexCoord2f(u0, v1); glVertex3f(x, y  , z  );
+                                    glTexCoord2f(u1, v0); glVertex3f(x, y+1, z+1);
+                                    glTexCoord2f(u1, v1); glVertex3f(x, y  , z+1);
+                                }
+                                // 右面 X+
+                                if (right) {
+                                    glTexCoord2f(u0, v1); glVertex3f(x+1, y  , z  );
+                                    glTexCoord2f(u1, v0); glVertex3f(x+1, y+1, z+1);
+                                    glTexCoord2f(u0, v0); glVertex3f(x+1, y+1, z  );
+
+                                    glTexCoord2f(u0, v1); glVertex3f(x+1, y  , z  );
+                                    glTexCoord2f(u1, v1); glVertex3f(x+1, y  , z+1);
+                                    glTexCoord2f(u1, v0); glVertex3f(x+1, y+1, z+1);
+                                }
+                                // 下面 Y-
+                                if (bottom) {
+                                    glTexCoord2f(u0, v1); glVertex3f(x  , y, z  );
+                                    glTexCoord2f(u1, v0); glVertex3f(x+1, y, z+1);
+                                    glTexCoord2f(u0, v0); glVertex3f(x+1, y, z  );
+
+                                    glTexCoord2f(u0, v1); glVertex3f(x  , y, z  );
+                                    glTexCoord2f(u1, v1); glVertex3f(x  , y, z+1);
+                                    glTexCoord2f(u1, v0); glVertex3f(x+1, y, z+1);
+                                }
+                                // 上面 Y+
+                                if (top) {
+                                    glTexCoord2f(u0, v1); glVertex3f(x  , y+1, z  );
+                                    glTexCoord2f(u0, v0); glVertex3f(x  , y+1, z+1);
+                                    glTexCoord2f(u1, v0); glVertex3f(x+1, y+1, z+1);
+
+                                    glTexCoord2f(u0, v1); glVertex3f(x  , y+1, z  );
+                                    glTexCoord2f(u1, v0); glVertex3f(x+1, y+1, z+1);
+                                    glTexCoord2f(u1, v1); glVertex3f(x+1, y+1, z  );
+                                }
+                                // 后面 Z-
+                                if (back) {
+                                    glTexCoord2f(u0, v1); glVertex3f(x  , y  , z);
+                                    glTexCoord2f(u0, v0); glVertex3f(x  , y+1, z);
+                                    glTexCoord2f(u1, v0); glVertex3f(x+1, y+1, z);
+
+                                    glTexCoord2f(u0, v1); glVertex3f(x  , y  , z);
+                                    glTexCoord2f(u1, v0); glVertex3f(x+1, y+1, z);
+                                    glTexCoord2f(u1, v1); glVertex3f(x+1, y  , z);
+                                }
+                                // 前面 Z+
+                                if (front) {
+                                    glTexCoord2f(u0, v1); glVertex3f(x  , y  , z+1);
+                                    glTexCoord2f(u1, v0); glVertex3f(x+1, y+1, z+1);
+                                    glTexCoord2f(u0, v0); glVertex3f(x  , y+1, z+1);
+
+                                    glTexCoord2f(u0, v1); glVertex3f(x  , y  , z+1);
+                                    glTexCoord2f(u1, v1); glVertex3f(x+1, y  , z+1);
+                                    glTexCoord2f(u1, v0); glVertex3f(x+1, y+1, z+1);
+                                }
+                            }
+                        }
+                    }
+                    glEnd();
+                    glDisable(GL_TEXTURE_2D);
+                }
             }
-            glEnd();
+
         }
         // LOD1 中距离：【重点】贪心合并大方块，仅绘制外轮廓
         else if (distSq <= LOD1_DIST_SQ) {

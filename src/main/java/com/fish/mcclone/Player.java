@@ -5,7 +5,7 @@ import com.fish.mcclone.phys.AABB;
 
 import java.util.List;
 
-import static com.fish.mcclone.MinecraftClone.getWindow;
+import static com.fish.mcclone.Arcaterra.getWindow;
 import static org.lwjgl.glfw.GLFW.*;
 
 public class Player {
