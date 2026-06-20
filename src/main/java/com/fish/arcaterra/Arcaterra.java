@@ -18,6 +18,7 @@ public class Arcaterra {
     private final int WIDTH = 1280;
     private final int HEIGHT = 720;
     private boolean running;
+    private boolean mouseCaptured = true;
 
     private World world;
     private Player player;
@@ -27,6 +28,8 @@ public class Arcaterra {
         init();
         loop();
         shutdown();
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        mouseCaptured = true;
     }
 
     private void init() {
@@ -80,28 +83,31 @@ public class Arcaterra {
         while (running && !glfwWindowShouldClose(window)) {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+            // 游戏逻辑更新（分帧执行）
             switch (frameTaskStep) {
                 case 0:
                     player.tick();
                     break;
                 case 1:
-                    world.updateChunks(player.x, player.y, player.z);
+                    // 替换原来的 world.updateChunks 为八叉树更新
+                    world.getOctreeManager().update(player.x, player.y, player.z);
                     break;
                 case 2:
-                    rebuildSomeDirtyChunks();
+                    // 重建脏节点（八叉树节点）
+                    world.getOctreeManager().rebuildDirtyNodes(); // 需要你在 OctreeManager 中添加此方法
                     break;
             }
             frameTaskStep = (frameTaskStep + 1) % 3;
 
+            // 渲染
             Renderer.INSTANCE.beginWorldRender();
             glRotatef(-player.xRot, 1, 0, 0);
             glRotatef(-player.yRot, 0, 1, 0);
             glTranslatef(-player.x, -player.y, -player.z);
 
-            for (ChunkPool.ChunkHolder holder : world.getVisibleChunkHolders()) {
-                Chunk c = holder.chunk;
-                c.render(player.x, player.y, player.z);
-            }
+            // 使用八叉树渲染（自动 LOD）
+            world.getOctreeManager().render(player.x, player.y, player.z);
+
             Renderer.INSTANCE.endWorldRender();
 
             glfwSwapBuffers(window);
@@ -126,13 +132,26 @@ public class Arcaterra {
     }
 
     private void keyCallback(long win, int key, int scan, int action, int mods) {
+        //ESC退出
         if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
             running = false;
+        }
+        //ALT释放鼠标
+        if (key == GLFW_KEY_LEFT_ALT || key == GLFW_KEY_RIGHT_ALT) {
+            if (action == GLFW_PRESS) {
+                mouseCaptured = !mouseCaptured;
+                glfwSetInputMode(window, GLFW_CURSOR, mouseCaptured ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
+                if (!mouseCaptured) {
+                    glfwSetCursorPos(window, WIDTH/2.0, HEIGHT/2.0);
+                }
+            }
+            return; // 不传递给 player
         }
         player.handleKey(key, action);
     }
 
     private void mouseMoveCallback(long win, double x, double y) {
+        if (!mouseCaptured) return;//释放鼠标
         float dx = (float) (x - WIDTH / 2.0);
         float dy = (float) (y - HEIGHT / 2.0);
         player.turn(-dx, dy);

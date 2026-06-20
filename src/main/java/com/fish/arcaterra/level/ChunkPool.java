@@ -3,7 +3,8 @@ package com.fish.arcaterra.level;
 import java.util.*;
 
 public class ChunkPool {
-    public static final int LOAD_RADIUS = 6;
+    /// 区块加载半径
+    public static final int LOAD_RADIUS = 10;
     public static final int UNLOAD_RADIUS = LOAD_RADIUS + 3;
     public static final int CHUNK_KEEP_FRAME = 60;
     public static final int LOD0_DIST_SQ = 25600;

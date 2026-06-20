@@ -1,9 +1,11 @@
 package com.fish.arcaterra.level;
 
+import com.fish.arcaterra.octree.OctreeManager;
 import com.fish.arcaterra.phys.AABB;
 import java.util.*;
 
 public class World {
+    private OctreeManager octreeManager;
     public final int groundY = 8;
     private final ChunkPool chunkPool;
     private final LightSystem lightSystem;
@@ -11,6 +13,7 @@ public class World {
     public World() {
         this.chunkPool = new ChunkPool(this);
         this.lightSystem = new LightSystem(groundY);
+        this.octreeManager = new OctreeManager(this);
     }
 
     // 获取或创建区块（用于加载和修改）
@@ -110,5 +113,9 @@ public class World {
 
     public List<ChunkPool.ChunkHolder> getVisibleChunkHolders() {
         return chunkPool.getVisibleChunks();
+    }
+
+    public OctreeManager getOctreeManager() {
+        return octreeManager;
     }
 }
