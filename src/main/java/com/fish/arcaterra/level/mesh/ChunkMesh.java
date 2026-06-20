@@ -1,10 +1,8 @@
-package com.fish.arcaterra;
+package com.fish.arcaterra.level.mesh;
 
-import org.lwjgl.opengl.GL15;
 import static org.lwjgl.opengl.GL15.*;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-import org.lwjgl.system.MemoryUtil;
 
 public class ChunkMesh {
     private int vboId;
