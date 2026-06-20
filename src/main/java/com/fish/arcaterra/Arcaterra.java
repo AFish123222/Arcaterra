@@ -83,36 +83,27 @@ public class Arcaterra {
         while (running && !glfwWindowShouldClose(window)) {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-            // 游戏逻辑更新（分帧执行）
             switch (frameTaskStep) {
                 case 0:
                     player.tick();
                     break;
                 case 1:
-                    // 替换原来的 world.updateChunks 为八叉树更新
-                    world.getOctreeManager().update(player.x, player.y, player.z);
+                    // 更新 LOD 管理器
+                    world.getLodManager().update(player.x, player.y, player.z);
                     break;
                 case 2:
-                    // 重建脏节点（八叉树节点）
-                    world.getOctreeManager().rebuildDirtyNodes(); // 需要你在 OctreeManager 中添加此方法
+                    // 重建一些脏区块（可选，现在 LOD 自己处理重建）
                     break;
             }
             frameTaskStep = (frameTaskStep + 1) % 3;
 
-            // 渲染
             Renderer.INSTANCE.beginWorldRender();
             glRotatef(-player.xRot, 1, 0, 0);
             glRotatef(-player.yRot, 0, 1, 0);
             glTranslatef(-player.x, -player.y, -player.z);
 
-//// 使用八叉树渲染
-//            world.getOctreeManager().render(player.x, player.y, player.z);
-
-// 暂时注释掉旧的区块渲染
- for (ChunkPool.ChunkHolder holder : world.getVisibleChunkHolders()) {
-     Chunk c = holder.chunk;
-     c.render(player.x, player.y, player.z);
- }
+            // 使用 LOD 渲染
+            world.getLodManager().render(player.x, player.y, player.z);
 
             Renderer.INSTANCE.endWorldRender();
 
