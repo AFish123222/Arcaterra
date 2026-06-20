@@ -12,16 +12,14 @@ import static org.lwjgl.opengl.GL11.*;
 
 public class Chunk {
     public static final int SIZE = 16;
-    private static final float[] FACE_QUAD = {
-            0,0,0, 1,0,0, 1,1,0, 0,1,0
-    };
-    private static final int[] FACE_INDEX = {0,1,2, 0,2,3};
-
     private final int cx, cy, cz;
     private final World world;
     private final ChunkMesh mesh;
     private final short[] blocks = new short[SIZE * SIZE * SIZE];
-    public boolean dirty = true;  // 初始为true，需要重建网格
+    public boolean dirty = true;
+
+    // ★ 调试开关：设为 true 则只画线框，false 则正常填充（默认）
+    private static final boolean DEBUG_WIREFRAME_ONLY = false;
 
     public Chunk(int cx, int cy, int cz, World world) {
         this.cx = cx;
@@ -30,7 +28,6 @@ public class Chunk {
         this.world = world;
         this.mesh = new ChunkMesh();
         generateTerrain();
-        // 不在这里调用 rebuildMesh()，由外部统一重建
     }
 
     private void generateTerrain() {
@@ -40,8 +37,8 @@ public class Chunk {
                 for (int ry = 0; ry < SIZE; ry++) {
                     short id = 0;
                     int worldY = cy * SIZE + ry;
-                    if (cy == 0 && ry <= groundY) id = 1;       // 石头
-                    else if (cy == 0 && ry == groundY + 1) id = 2; // 草
+                    if (cy == 0 && ry <= groundY) id = 1;
+                    else if (cy == 0 && ry == groundY + 1) id = 2;
                     setBlock(rx, ry, rz, id);
                 }
             }
@@ -59,12 +56,6 @@ public class Chunk {
         if (rx < 0 || rx >= SIZE || ry < 0 || ry >= SIZE || rz < 0 || rz >= SIZE) return 0;
         int index = rx + ry * SIZE + rz * SIZE * SIZE;
         return blocks[index];
-    }
-
-    // 世界坐标版本（供邻居查询，直接调用 world.getBlockSafe 避免递归）
-    public short getBlockWorld(int wx, int wy, int wz) {
-        // 直接委托给 world 的安全查询，不会创建新区块
-        return world.getBlockSafe(wx, wy, wz);
     }
 
     public void rebuildMesh() {
@@ -88,6 +79,11 @@ public class Chunk {
         dirty = false;
     }
 
+    // 方向枚举
+    private enum Direction {
+        POS_X, NEG_X, POS_Y, NEG_Y, POS_Z, NEG_Z
+    }
+
     private void buildBlockFaces(List<Float> verts, List<Integer> indices) {
         int offset = 0;
         for (int rx = 0; rx < SIZE; rx++) {
@@ -99,29 +95,28 @@ public class Chunk {
                     int wy = cy * SIZE + ry;
                     int wz = cz * SIZE + rz;
 
-                    // 使用 world.getBlockSafe 避免创建新区块
                     if (world.getBlockSafe(wx - 1, wy, wz) == 0) {
-                        addFace(verts, indices, rx, ry, rz, offset);
+                        addFace(verts, indices, rx, ry, rz, Direction.NEG_X, offset);
                         offset += 4;
                     }
                     if (world.getBlockSafe(wx + 1, wy, wz) == 0) {
-                        addFace(verts, indices, rx, ry, rz, offset);
+                        addFace(verts, indices, rx, ry, rz, Direction.POS_X, offset);
                         offset += 4;
                     }
                     if (world.getBlockSafe(wx, wy - 1, wz) == 0) {
-                        addFace(verts, indices, rx, ry, rz, offset);
+                        addFace(verts, indices, rx, ry, rz, Direction.NEG_Y, offset);
                         offset += 4;
                     }
                     if (world.getBlockSafe(wx, wy + 1, wz) == 0) {
-                        addFace(verts, indices, rx, ry, rz, offset);
+                        addFace(verts, indices, rx, ry, rz, Direction.POS_Y, offset);
                         offset += 4;
                     }
                     if (world.getBlockSafe(wx, wy, wz - 1) == 0) {
-                        addFace(verts, indices, rx, ry, rz, offset);
+                        addFace(verts, indices, rx, ry, rz, Direction.NEG_Z, offset);
                         offset += 4;
                     }
                     if (world.getBlockSafe(wx, wy, wz + 1) == 0) {
-                        addFace(verts, indices, rx, ry, rz, offset);
+                        addFace(verts, indices, rx, ry, rz, Direction.POS_Z, offset);
                         offset += 4;
                     }
                 }
@@ -129,30 +124,69 @@ public class Chunk {
         }
     }
 
-    private void addFace(List<Float> v, List<Integer> i, int x, int y, int z, int offset) {
-        for (int j = 0; j < FACE_QUAD.length; j += 3) {
-            v.add(FACE_QUAD[j] + x);
-            v.add(FACE_QUAD[j + 1] + y);
-            v.add(FACE_QUAD[j + 2] + z);
+    private void addFace(List<Float> v, List<Integer> i, int x, int y, int z, Direction dir, int offset) {
+        float[][] faceVerts;
+        switch (dir) {
+            case POS_X:
+                faceVerts = new float[][]{{1,0,0}, {1,0,1}, {1,1,1}, {1,1,0}};
+                break;
+            case NEG_X:
+                faceVerts = new float[][]{{0,0,1}, {0,0,0}, {0,1,0}, {0,1,1}};
+                break;
+            case POS_Y:
+                faceVerts = new float[][]{{0,1,0}, {1,1,0}, {1,1,1}, {0,1,1}};
+                break;
+            case NEG_Y:
+                faceVerts = new float[][]{{0,0,0}, {0,0,1}, {1,0,1}, {1,0,0}};
+                break;
+            case POS_Z:
+                faceVerts = new float[][]{{0,0,1}, {1,0,1}, {1,1,1}, {0,1,1}};
+                break;
+            case NEG_Z:
+                faceVerts = new float[][]{{1,0,0}, {0,0,0}, {0,1,0}, {1,1,0}};
+                break;
+            default: return;
         }
-        for (int idx : FACE_INDEX) i.add(idx + offset);
+        for (float[] vert : faceVerts) {
+            v.add(vert[0] + x);
+            v.add(vert[1] + y);
+            v.add(vert[2] + z);
+        }
+        i.add(offset);
+        i.add(offset + 1);
+        i.add(offset + 2);
+        i.add(offset);
+        i.add(offset + 2);
+        i.add(offset + 3);
     }
 
+    // ★★★ 渲染：支持填充 + 线框叠加（调试用）★★★
     public void render(float px, float py, float pz) {
         if (mesh.indexCount <= 0) return;
+
         glPushMatrix();
         glTranslatef(cx * SIZE, cy * SIZE, cz * SIZE);
-        // 临时颜色：石头灰色，草绿色（仅演示，实际应使用纹理）
-        // 这里因为每个区块可能混合方块，简单全灰
-        glColor3f(0.5f, 0.5f, 0.5f);
+
+        // ★ 临时禁用剔除，让所有面可见（调试用）
+        glDisable(GL_CULL_FACE);
+
+        // 填充颜色（灰色）
+        glColor3f(0.7f, 0.7f, 0.7f);
         mesh.render();
-        glColor3f(1f, 1f, 1f); // 重置
+
+        // 线框叠加（红色）
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        glColor3f(1.0f, 0.0f, 0.0f);
+        mesh.render();
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+        // 恢复剔除（正式版可保留此行）
+        glEnable(GL_CULL_FACE);
+
         glPopMatrix();
     }
 
-    public void destroy() {
-        mesh.destroy();
-    }
+    public void destroy() { mesh.destroy(); }
 
     public int getCx() { return cx; }
     public int getCy() { return cy; }
