@@ -17,7 +17,7 @@ public class World {
         this.chunkPool = new ChunkPool(this);
         this.lightSystem = new LightSystem(groundY);
         this.octreeManager = new OctreeManager(this);
-        this.lodManager = new LODManager(this);
+        this.lodManager = new LODManager();
     }
 
     // 获取或创建区块（用于加载和修改）
