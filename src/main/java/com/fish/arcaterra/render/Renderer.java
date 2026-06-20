@@ -16,7 +16,6 @@ public class Renderer {
         glMatrixMode(GL_MODELVIEW);
         glPushMatrix();
         glLoadIdentity();
-
         glEnable(GL_TEXTURE_2D);
         glEnable(GL_DEPTH_TEST);
         glDisable(GL_BLEND);
@@ -54,17 +53,15 @@ public class Renderer {
         glPopAttrib();
     }
 
-    // VAO/VBO方块绘制接口
     public void drawTestCubeVao(float x, float y, float z) {
         glPushMatrix();
-        glTranslatef(x,y,z);
-        glColor3f(0.9f,0.2f,0.2f);
+        glTranslatef(x, y, z);
+        glColor3f(0.9f, 0.2f, 0.2f);
         testCubeMesh.render();
-        glColor3f(1f,1f,1f);
+        glColor3f(1f, 1f, 1f);
         glPopMatrix();
     }
 
-    // 退出释放
     public void destroyCubeMesh() {
         testCubeMesh.destroy();
     }

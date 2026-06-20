@@ -6,7 +6,6 @@ public class ChunkPool {
     public static final int LOAD_RADIUS = 6;
     public static final int UNLOAD_RADIUS = LOAD_RADIUS + 3;
     public static final int CHUNK_KEEP_FRAME = 60;
-    // 新增LOD距离常量
     public static final int LOD0_DIST_SQ = 25600;
 
     private final Map<Long, ChunkHolder> pool = new HashMap<>();
@@ -33,7 +32,8 @@ public class ChunkPool {
                 | (((cz + offset) & 0xFFFFFFFFL) << 48);
     }
 
-    public Chunk getChunk(int worldX, int worldY, int worldZ) {
+    // 获取或创建区块（用于加载和修改）
+    public Chunk getOrCreateChunk(int worldX, int worldY, int worldZ) {
         int cx = Math.floorDiv(worldX, Chunk.SIZE);
         int cy = Math.floorDiv(worldY, Chunk.SIZE);
         int cz = Math.floorDiv(worldZ, Chunk.SIZE);
@@ -41,13 +41,22 @@ public class ChunkPool {
 
         ChunkHolder holder = pool.get(key);
         if (holder == null) {
-            // 修正构造参数顺序 cx, cz, world
-            Chunk newChunk = new Chunk(cx, cz, world);
+            Chunk newChunk = new Chunk(cx, cy, cz, world);
             pool.put(key, new ChunkHolder(newChunk));
             return newChunk;
         }
         holder.keepFrame = CHUNK_KEEP_FRAME;
         return holder.chunk;
+    }
+
+    // 仅查询，不存在返回 null（用于邻居检测，避免递归）
+    public Chunk getChunkIfLoaded(int worldX, int worldY, int worldZ) {
+        int cx = Math.floorDiv(worldX, Chunk.SIZE);
+        int cy = Math.floorDiv(worldY, Chunk.SIZE);
+        int cz = Math.floorDiv(worldZ, Chunk.SIZE);
+        long key = getChunkKey(cx, cy, cz);
+        ChunkHolder holder = pool.get(key);
+        return (holder == null) ? null : holder.chunk;
     }
 
     private List<ChunkHolder> visibleCache = new ArrayList<>();
@@ -59,25 +68,26 @@ public class ChunkPool {
 
         visibleCache.clear();
 
+        // 加载可见区块（使用 getOrCreateChunk）
         for (int dx = -LOAD_RADIUS; dx <= LOAD_RADIUS; dx++) {
             for (int dz = -LOAD_RADIUS; dz <= LOAD_RADIUS; dz++) {
                 for (int dy = -4; dy <= 4; dy++) {
                     int wx = (pcx + dx) * Chunk.SIZE;
                     int wy = (pcy + dy) * Chunk.SIZE;
                     int wz = (pcz + dz) * Chunk.SIZE;
-                    Chunk c = getChunk(wx, wy, wz);
-                    // 用区块中心世界坐标计算距离
+                    Chunk c = getOrCreateChunk(wx, wy, wz);
                     float cxWorld = c.getCx() * Chunk.SIZE + Chunk.SIZE / 2f;
                     float czWorld = c.getCz() * Chunk.SIZE + Chunk.SIZE / 2f;
-                    float distSq = (cxWorld - playerX) * (cxWorld - playerX) + (czWorld - playerZ) * (czWorld - playerZ);
+                    float distSq = (cxWorld - playerX) * (cxWorld - playerX)
+                            + (czWorld - playerZ) * (czWorld - playerZ);
                     if (distSq < LOD0_DIST_SQ) {
-                        visibleCache.add(pool.get(getChunkKey(c.getCx(), 0, c.getCz())));
+                        visibleCache.add(pool.get(getChunkKey(c.getCx(), c.getCy(), c.getCz())));
                     }
                 }
             }
         }
 
-        // 简易卸载倒计时（补齐逻辑）
+        // 卸载
         List<Long> removeKeys = new ArrayList<>();
         for (Map.Entry<Long, ChunkHolder> entry : pool.entrySet()) {
             ChunkHolder h = entry.getValue();

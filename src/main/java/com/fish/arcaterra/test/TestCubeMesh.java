@@ -13,7 +13,6 @@ public class TestCubeMesh {
     private int vboIdx;
     private int indexCount;
 
-    // 标准方块8顶点6面
     private static final float[] VERT = {
             0,0,0, 1,0,0, 1,1,0, 0,1,0,
             0,0,1, 1,0,1, 1,1,1, 0,1,1
@@ -41,7 +40,7 @@ public class TestCubeMesh {
         glBindVertexArray(vao);
         glBindBuffer(GL_ARRAY_BUFFER, vboVert);
         glBufferData(GL_ARRAY_BUFFER, vBuf, GL_STATIC_DRAW);
-        glVertexAttribPointer(0,3,GL_FLOAT,false,12,0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, false, 12, 0);
         glEnableVertexAttribArray(0);
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vboIdx);

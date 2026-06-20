@@ -3,15 +3,11 @@ package com.fish.arcaterra;
 import com.fish.arcaterra.level.World;
 import com.fish.arcaterra.level.Chunk;
 import com.fish.arcaterra.level.ChunkPool;
+import com.fish.arcaterra.phys.BlockHit;
 import com.fish.arcaterra.render.Renderer;
-import com.fish.arcaterra.phys.AABB;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.opengl.GL;
 
-import java.util.List;
-
-import static java.lang.IO.print;
-import static java.lang.IO.println;
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
@@ -47,6 +43,7 @@ public class Arcaterra {
 
         glfwSetKeyCallback(window, this::keyCallback);
         glfwSetCursorPosCallback(window, this::mouseMoveCallback);
+        glfwSetMouseButtonCallback(window, this::mouseButtonCallback);
         glfwMakeContextCurrent(window);
         glfwSwapInterval(0);
         glfwShowWindow(window);
@@ -54,8 +51,8 @@ public class Arcaterra {
         GL.createCapabilities();
         glClearColor(0.4f, 0.7f, 1.0f, 1f);
         glEnable(GL_CULL_FACE);
+        glEnable(GL_DEPTH_TEST);
 
-        // 修复：加大远裁剪距离，地面不会被裁掉
         glMatrixMode(GL_PROJECTION);
         glLoadIdentity();
         float aspect = (float) WIDTH / HEIGHT;
@@ -64,11 +61,16 @@ public class Arcaterra {
 
         world = new World();
         player = new Player(world);
-        // 修复：降低出生高度，直接踩在地面上方
         player.x = 30;
-        player.y = 68;
+        player.y = 10;
         player.z = 50;
-        player.setPos(30,68,50);
+        player.setPos(30, 10, 50);
+
+        // 强制加载初始区块并重建网格
+        world.updateChunks(player.x, player.y, player.z);
+        for (Chunk c : world.getDirtyChunks()) {
+            c.rebuildMesh();
+        }
 
         running = true;
         frameTaskStep = 0;
@@ -78,8 +80,6 @@ public class Arcaterra {
         while (running && !glfwWindowShouldClose(window)) {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-
-
             switch (frameTaskStep) {
                 case 0:
                     player.tick();
@@ -88,41 +88,32 @@ public class Arcaterra {
                     world.updateChunks(player.x, player.y, player.z);
                     break;
                 case 2:
-                    var dirtyList = world.getDirtyChunks();
-                    int limit = Math.min(8, dirtyList.size());
-                    for(int i=0;i<limit;i++) dirtyList.get(i).rebuildMesh();
-                    break;
-                case 3:
-                    Renderer.INSTANCE.beginWorldRender();
-                    // 修复：渲染前推入玩家相机矩阵
-                    glRotatef(-player.xRot, 1, 0, 0);
-                    glRotatef(-player.yRot, 0, 1, 0);
-                    glTranslatef(-player.x, -player.y, -player.z);
-
-                    for (ChunkPool.ChunkHolder holder : world.getVisibleChunkHolders()) {
-                        Chunk c = holder.chunk;
-                        c.render(player.x, player.y, player.z);
-                    }
-                    Renderer.INSTANCE.endWorldRender();
-                    break;
-                case 4:
+                    rebuildSomeDirtyChunks();
                     break;
             }
-            frameTaskStep = (frameTaskStep + 1) % 5;
+            frameTaskStep = (frameTaskStep + 1) % 3;
 
             Renderer.INSTANCE.beginWorldRender();
             glRotatef(-player.xRot, 1, 0, 0);
             glRotatef(-player.yRot, 0, 1, 0);
             glTranslatef(-player.x, -player.y, -player.z);
 
-            // testcube
-            Renderer.INSTANCE.drawTestCubeVao(30,60,50);
+            for (ChunkPool.ChunkHolder holder : world.getVisibleChunkHolders()) {
+                Chunk c = holder.chunk;
+                c.render(player.x, player.y, player.z);
+            }
             Renderer.INSTANCE.endWorldRender();
-
-            println(player.x + " " + player.y + " " + player.z);
 
             glfwSwapBuffers(window);
             glfwPollEvents();
+        }
+    }
+
+    private void rebuildSomeDirtyChunks() {
+        var dirty = world.getDirtyChunks();
+        int limit = Math.min(4, dirty.size());
+        for (int i = 0; i < limit; i++) {
+            dirty.get(i).rebuildMesh();
         }
     }
 
@@ -138,25 +129,34 @@ public class Arcaterra {
         if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
             running = false;
         }
-        if (action == GLFW_PRESS || action == GLFW_REPEAT || action == GLFW_RELEASE)  player.handleKey(key, action);
+        player.handleKey(key, action);
     }
 
     private void mouseMoveCallback(long win, double x, double y) {
         float dx = (float) (x - WIDTH / 2.0);
         float dy = (float) (y - HEIGHT / 2.0);
         player.turn(-dx, dy);
-        // 新增判断，减少高频调用
-        if(Math.abs(dx) > 10 || Math.abs(dy) > 10){
+        if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
             glfwSetCursorPos(win, WIDTH / 2.0, HEIGHT / 2.0);
         }
     }
-    public long getWindow() {
-        return window;
+
+    private void mouseButtonCallback(long win, int button, int action, int mods) {
+        if (action != GLFW_PRESS) return;
+        BlockHit hit = player.raycast(5.0f);
+        if (hit == null) return;
+
+        if (button == GLFW_MOUSE_BUTTON_LEFT) {
+            world.setBlock(hit.x, hit.y, hit.z, (short) 0);
+        } else if (button == GLFW_MOUSE_BUTTON_RIGHT) {
+            int nx = hit.x + hit.nx;
+            int ny = hit.y + hit.ny;
+            int nz = hit.z + hit.nz;
+            world.setBlock(nx, ny, nz, (short) 1);
+        }
     }
 
     public static void main(String[] args) {
         new Arcaterra().run();
     }
-
-
 }
