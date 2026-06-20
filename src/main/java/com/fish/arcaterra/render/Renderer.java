@@ -1,13 +1,16 @@
 package com.fish.arcaterra.render;
 
+import com.fish.arcaterra.test.TestCubeMesh;
 import static org.lwjgl.opengl.GL11.*;
 
 public class Renderer {
     public static final Renderer INSTANCE = new Renderer();
+    private final TestCubeMesh testCubeMesh;
 
-    private Renderer(){}
+    private Renderer() {
+        testCubeMesh = new TestCubeMesh();
+    }
 
-    // 渲染世界统一入口
     public void beginWorldRender() {
         glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_TEXTURE_BIT | GL_DEPTH_BUFFER_BIT);
         glMatrixMode(GL_MODELVIEW);
@@ -25,24 +28,18 @@ public class Renderer {
         glPopAttrib();
     }
 
-    /// #### 拾取专用隔离矩阵
-    /// 拾取三重循环里有 continue 提前跳出，已经写了 glPopName()，是安全的，只要保证每一层 push 都有对应 pop 就不会名称栈溢出卡死
     public void beginPickRender() {
         glPushAttrib(GL_ENABLE_BIT);
         glMatrixMode(GL_MODELVIEW);
         glPushMatrix();
         glLoadIdentity();
-        glInitNames();
     }
-
 
     public void endPickRender() {
         glPopMatrix();
         glPopAttrib();
-        // 拾取结束不用手动清名称栈，glRenderMode 会自动重置名称栈
     }
 
-    // 高亮UI隔离渲染
     public void beginOverlayRender() {
         glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT);
         glMatrixMode(GL_MODELVIEW);
@@ -55,5 +52,19 @@ public class Renderer {
     public void endOverlayRender() {
         glPopMatrix();
         glPopAttrib();
+    }
+
+    // VAO/VBO方块绘制接口
+    public void drawTestCubeVao(float x, float y, float z) {
+        glPushMatrix();
+        glTranslatef(x,y,z);
+        glColor3f(0.9f,0.2f,0.2f);
+        testCubeMesh.render();
+        glPopMatrix();
+    }
+
+    // 退出释放
+    public void destroyCubeMesh() {
+        testCubeMesh.destroy();
     }
 }

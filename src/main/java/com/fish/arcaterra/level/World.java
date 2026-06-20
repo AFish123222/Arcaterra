@@ -1,6 +1,5 @@
 package com.fish.arcaterra.level;
 
-import com.fish.arcaterra.ChunkPool;
 import com.fish.arcaterra.phys.AABB;
 
 import java.util.*;

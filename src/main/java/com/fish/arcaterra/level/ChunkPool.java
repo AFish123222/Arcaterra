@@ -1,7 +1,4 @@
-package com.fish.arcaterra;
-
-import com.fish.arcaterra.level.Chunk;
-import com.fish.arcaterra.level.World;
+package com.fish.arcaterra.level;
 
 import java.util.*;
 

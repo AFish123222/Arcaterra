@@ -37,17 +37,15 @@ public class Chunk {
         dirty = true;
 
         generateTerrain();
-        rebuildMesh();
     }
 
+    // 生成地面，y=60为地表
     private void generateTerrain() {
-        int groundY = world.groundY;
-        int base = groundY - y0;
-
-        for (int rx = 0; rx < SIZE; rx++) {
-            for (int rz = 0; rz < SIZE; rz++) {
-                for (int ry = 0; ry <= base; ry++) {
-                    setBlock(rx, ry, rz, (short) 1);
+        int groundBase = world.groundY - y0;
+        for(int rx = 0; rx < SIZE; rx++){
+            for(int rz = 0; rz < SIZE; rz++){
+                for(int ry = 0; ry <= groundBase; ry++){
+                    setBlock(rx, ry, rz, (short)1);
                 }
             }
         }
@@ -72,66 +70,72 @@ public class Chunk {
         float dx = (x0 + 8) - px;
         float dz = (z0 + 8) - pz;
         float distSq = dx * dx + dz * dz;
-        if (distSq > 4096) return;
+        if (distSq > 8000) return;
 
         glPushMatrix();
         glTranslatef(x0, y0, z0);
 
+        // 绘制所有方块可见面
         for (int rx = 0; rx < SIZE; rx++) {
             for (int ry = 0; ry < SIZE; ry++) {
                 for (int rz = 0; rz < SIZE; rz++) {
-                    short block = getBlock(rx, ry, rz);
-                    if (block == 0) continue;
+                    short b = getBlock(rx, ry, rz);
+                    if (b == 0) continue;
 
-                    boolean l = getBlock(rx - 1, ry, rz) == 0;
-                    boolean r = getBlock(rx + 1, ry, rz) == 0;
-                    boolean d = getBlock(rx, ry - 1, rz) == 0;
-                    boolean u = getBlock(rx, ry + 1, rz) == 0;
-                    boolean b = getBlock(rx, ry, rz - 1) == 0;
-                    boolean f = getBlock(rx, ry, rz + 1) == 0;
+                    boolean left  = getBlock(rx-1, ry, rz) == 0;
+                    boolean right = getBlock(rx+1, ry, rz) == 0;
+                    boolean down  = getBlock(rx, ry-1, rz) == 0;
+                    boolean up    = getBlock(rx, ry+1, rz) == 0;
+                    boolean back  = getBlock(rx, ry, rz-1) == 0;
+                    boolean front = getBlock(rx, ry, rz+1) == 0;
 
                     glBegin(GL_QUADS);
-                    if (l) {
+                    // 左
+                    if(left){
                         glVertex3f(rx, ry, rz);
-                        glVertex3f(rx, ry + 1, rz);
-                        glVertex3f(rx, ry + 1, rz + 1);
-                        glVertex3f(rx, ry, rz + 1);
+                        glVertex3f(rx, ry+1, rz);
+                        glVertex3f(rx, ry+1, rz+1);
+                        glVertex3f(rx, ry, rz+1);
                     }
-                    if (r) {
-                        glVertex3f(rx + 1, ry, rz);
-                        glVertex3f(rx + 1, ry + 1, rz);
-                        glVertex3f(rx + 1, ry + 1, rz + 1);
-                        glVertex3f(rx + 1, ry, rz + 1);
+                    // 右
+                    if(right){
+                        glVertex3f(rx+1, ry, rz);
+                        glVertex3f(rx+1, ry+1, rz);
+                        glVertex3f(rx+1, ry+1, rz+1);
+                        glVertex3f(rx+1, ry, rz+1);
                     }
-                    if (d) {
+                    // 底
+                    if(down){
                         glVertex3f(rx, ry, rz);
-                        glVertex3f(rx + 1, ry, rz);
-                        glVertex3f(rx + 1, ry, rz + 1);
-                        glVertex3f(rx, ry, rz + 1);
+                        glVertex3f(rx+1, ry, rz);
+                        glVertex3f(rx+1, ry, rz+1);
+                        glVertex3f(rx, ry, rz+1);
                     }
-                    if (u) {
-                        glVertex3f(rx, ry + 1, rz);
-                        glVertex3f(rx + 1, ry + 1, rz);
-                        glVertex3f(rx + 1, ry + 1, rz + 1);
-                        glVertex3f(rx, ry + 1, rz + 1);
+                    // 顶
+                    if(up){
+                        glVertex3f(rx, ry+1, rz);
+                        glVertex3f(rx+1, ry+1, rz);
+                        glVertex3f(rx+1, ry+1, rz+1);
+                        glVertex3f(rx, ry+1, rz+1);
                     }
-                    if (b) {
+                    // 后
+                    if(back){
                         glVertex3f(rx, ry, rz);
-                        glVertex3f(rx + 1, ry, rz);
-                        glVertex3f(rx + 1, ry + 1, rz);
-                        glVertex3f(rx, ry + 1, rz);
+                        glVertex3f(rx+1, ry, rz);
+                        glVertex3f(rx+1, ry+1, rz);
+                        glVertex3f(rx, ry+1, rz);
                     }
-                    if (f) {
-                        glVertex3f(rx, ry, rz + 1);
-                        glVertex3f(rx + 1, ry, rz + 1);
-                        glVertex3f(rx + 1, ry + 1, rz + 1);
-                        glVertex3f(rx, ry + 1, rz + 1);
+                    // 前
+                    if(front){
+                        glVertex3f(rx, ry, rz+1);
+                        glVertex3f(rx+1, ry, rz+1);
+                        glVertex3f(rx+1, ry+1, rz+1);
+                        glVertex3f(rx, ry+1, rz+1);
                     }
                     glEnd();
                 }
             }
         }
-
         glPopMatrix();
     }
 

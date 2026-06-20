@@ -49,7 +49,7 @@ public class Player {
     }
 
     // 同步坐标并更新碰撞盒
-    private void setPos(float x, float y, float z) {
+    void setPos(float x, float y, float z) {
         this.x = x;
         this.y = y;
         this.z = z;
