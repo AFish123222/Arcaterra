@@ -67,10 +67,6 @@ public class Chunk {
     }
 
     public void render(float px, float py, float pz) {
-        float dx = (x0 + 8) - px;
-        float dz = (z0 + 8) - pz;
-        float distSq = dx * dx + dz * dz;
-        if (distSq > 8000) return;
 
         glPushMatrix();
         glTranslatef(x0, y0, z0);

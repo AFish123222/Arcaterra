@@ -27,6 +27,7 @@ public class World {
     }
 
     public Collection<ChunkPool.ChunkHolder> getAllChunkHolders() {
+        // 替换原来 getAllChunkHolders()
         return chunkPool.getAllChunks();
     }
 
@@ -65,5 +66,9 @@ public class World {
             }
         }
         return result;
+    }
+
+    public List<ChunkPool.ChunkHolder> getVisibleChunkHolders() {
+        return chunkPool.getVisibleChunks();
     }
 }

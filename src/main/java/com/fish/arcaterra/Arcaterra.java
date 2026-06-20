@@ -8,6 +8,8 @@ import com.fish.arcaterra.phys.AABB;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.opengl.GL;
 
+import java.util.List;
+
 import static java.lang.IO.print;
 import static java.lang.IO.println;
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
@@ -87,8 +89,8 @@ public class Arcaterra {
                     break;
                 case 2:
                     var dirtyList = world.getDirtyChunks();
-                    for (Chunk c : dirtyList) {
-                        c.rebuildMesh();
+                    if(!dirtyList.isEmpty()){
+                        dirtyList.get(0).rebuildMesh();
                     }
                     break;
                 case 3:
@@ -98,7 +100,7 @@ public class Arcaterra {
                     glRotatef(-player.yRot, 0, 1, 0);
                     glTranslatef(-player.x, -player.y, -player.z);
 
-                    for (ChunkPool.ChunkHolder holder : world.getAllChunkHolders()) {
+                    for (ChunkPool.ChunkHolder holder : world.getVisibleChunkHolders()) {
                         Chunk c = holder.chunk;
                         c.render(player.x, player.y, player.z);
                     }
@@ -144,9 +146,11 @@ public class Arcaterra {
         float dx = (float) (x - WIDTH / 2.0);
         float dy = (float) (y - HEIGHT / 2.0);
         player.turn(-dx, dy);
-        glfwSetCursorPos(win, WIDTH / 2.0, HEIGHT / 2.0);
+        // 新增判断，减少高频调用
+        if(Math.abs(dx) > 10 || Math.abs(dy) > 10){
+            glfwSetCursorPos(win, WIDTH / 2.0, HEIGHT / 2.0);
+        }
     }
-
     public long getWindow() {
         return window;
     }
@@ -154,4 +158,6 @@ public class Arcaterra {
     public static void main(String[] args) {
         new Arcaterra().run();
     }
+
+
 }

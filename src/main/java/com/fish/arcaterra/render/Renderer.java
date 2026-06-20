@@ -60,6 +60,7 @@ public class Renderer {
         glTranslatef(x,y,z);
         glColor3f(0.9f,0.2f,0.2f);
         testCubeMesh.render();
+        glColor3f(1f,1f,1f);
         glPopMatrix();
     }
 
