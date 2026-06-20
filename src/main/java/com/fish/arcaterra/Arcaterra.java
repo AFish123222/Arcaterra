@@ -105,8 +105,14 @@ public class Arcaterra {
             glRotatef(-player.yRot, 0, 1, 0);
             glTranslatef(-player.x, -player.y, -player.z);
 
-            // 使用八叉树渲染（自动 LOD）
-            world.getOctreeManager().render(player.x, player.y, player.z);
+//// 使用八叉树渲染
+//            world.getOctreeManager().render(player.x, player.y, player.z);
+
+// 暂时注释掉旧的区块渲染
+ for (ChunkPool.ChunkHolder holder : world.getVisibleChunkHolders()) {
+     Chunk c = holder.chunk;
+     c.render(player.x, player.y, player.z);
+ }
 
             Renderer.INSTANCE.endWorldRender();
 
