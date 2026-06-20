@@ -149,7 +149,7 @@ public class Player {
 
         // 同步玩家坐标（脚底）
         this.x = (bb.x0 + bb.x1) * 0.5f;
-        this.y = bb.y0 + 1.6F; // 补偿浮点误差，使脚底略高于方块
+        this.y = bb.y0 + EYE_HEIGHT; // 补偿浮点误差，使脚底略高于方块
         this.z = (bb.z0 + bb.z1) * 0.5f;
     }
 
