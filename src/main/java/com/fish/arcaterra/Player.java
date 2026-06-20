@@ -57,7 +57,7 @@ public class Player {
     }
 
     public void handleKey(int key, int action) {
-        boolean press = (action == GLFW_PRESS);
+        boolean press = (action == GLFW_PRESS||action==GLFW_REPEAT);
         boolean release = (action == GLFW_RELEASE);
         switch (key) {
             case GLFW_KEY_W: keyW = press; break;
@@ -120,28 +120,33 @@ public class Player {
 
     public void move(float xa, float ya, float za) {
         float xaOrg = xa, yaOrg = ya, zaOrg = za;
-        // 用扩展后的包围盒获取碰撞体
+        // 获取与扩展后的包围盒相交的方块
         List<AABB> colliders = world.getCollisionBox(this.bb.expand(xa, ya, za));
 
         // Y轴
         for (AABB box : colliders) ya = box.clipYCollide(this.bb, ya);
         this.bb.move(0, ya, 0);
+
         // X轴
         for (AABB box : colliders) xa = box.clipXCollide(this.bb, xa);
         this.bb.move(xa, 0, 0);
+
         // Z轴
         for (AABB box : colliders) za = box.clipZCollide(this.bb, za);
         this.bb.move(0, 0, za);
 
+        // 判断是否撞地
         this.onGround = (yaOrg != ya && yaOrg < 0.0F);
-        if (xaOrg != xa) this.xd = 0.0F;
-        if (yaOrg != ya) this.yd = 0.0F;
-        if (zaOrg != za) this.zd = 0.0F;
 
-        // 同步脚底坐标（bb.y0 即脚底）
-        this.x = (bb.x0 + bb.x1) / 2.0F;
+        // 只有实际发生碰撞且移动量变为0时才清零速度（避免浮点误差导致误清）
+        if (xaOrg != xa && Math.abs(xa) < 0.0001f) this.xd = 0.0F;
+        if (yaOrg != ya && Math.abs(ya) < 0.0001f) this.yd = 0.0F;
+        if (zaOrg != za && Math.abs(za) < 0.0001f) this.zd = 0.0F;
+
+        // 同步玩家坐标（脚底）
+        this.x = (bb.x0 + bb.x1) * 0.5f;
         this.y = bb.y0;
-        this.z = (bb.z0 + bb.z1) / 2.0F;
+        this.z = (bb.z0 + bb.z1) * 0.5f;
     }
 
     // 射线检测（起点在眼睛位置）

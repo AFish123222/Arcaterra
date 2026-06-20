@@ -88,12 +88,13 @@ public class World {
 
     public List<AABB> getCollisionBox(AABB box) {
         List<AABB> result = new ArrayList<>();
-        int minX = (int) Math.floor(box.x0);
-        int maxX = (int) Math.floor(box.x1);
-        int minY = (int) Math.floor(box.y0);
-        int maxY = (int) Math.floor(box.y1);
-        int minZ = (int) Math.floor(box.z0);
-        int maxZ = (int) Math.floor(box.z1);
+        // 将范围略微扩大，防止边界遗漏
+        int minX = (int) Math.floor(box.x0 - 0.001f);
+        int maxX = (int) Math.floor(box.x1 + 0.001f);
+        int minY = (int) Math.floor(box.y0 - 0.001f);
+        int maxY = (int) Math.floor(box.y1 + 0.001f);
+        int minZ = (int) Math.floor(box.z0 - 0.001f);
+        int maxZ = (int) Math.floor(box.z1 + 0.001f);
 
         for (int x = minX; x <= maxX; x++) {
             for (int y = minY; y <= maxY; y++) {

@@ -1,7 +1,9 @@
 package com.fish.arcaterra.phys;
 
 public class AABB {
-    private float epsilon = 0.0F;
+    // epsilon 设为 0.001f，避免浮点误差导致卡住
+    private static final float EPSILON = 0.001f;
+
     public float x0, y0, z0, x1, y1, z1;
 
     public AABB(float x0, float y0, float z0, float x1, float y1, float z1) {
@@ -25,23 +27,45 @@ public class AABB {
     }
 
     public float clipXCollide(AABB c, float xa) {
-        if (c.y1 <= y0 || c.y0 >= y1 || c.z1 <= z0 || c.z0 >= z1) return xa;
-        if (xa > 0 && c.x1 <= x0) { float max = x0 - c.x1 - epsilon; if (max < xa) xa = max; }
-        if (xa < 0 && c.x0 >= x1) { float max = x1 - c.x0 + epsilon; if (max > xa) xa = max; }
+        // 先判断是否在Y和Z方向重叠（用容差）
+        if (c.y1 <= y0 + EPSILON || c.y0 >= y1 - EPSILON || c.z1 <= z0 + EPSILON || c.z0 >= z1 - EPSILON)
+            return xa;
+        if (xa > 0 && c.x1 <= x0) {
+            float max = x0 - c.x1 - EPSILON;
+            if (max < xa) xa = max;
+        }
+        if (xa < 0 && c.x0 >= x1) {
+            float max = x1 - c.x0 + EPSILON;
+            if (max > xa) xa = max;
+        }
         return xa;
     }
 
     public float clipYCollide(AABB c, float ya) {
-        if (c.x1 <= x0 || c.x0 >= x1 || c.z1 <= z0 || c.z0 >= z1) return ya;
-        if (ya > 0 && c.y1 <= y0) { float max = y0 - c.y1 - epsilon; if (max < ya) ya = max; }
-        if (ya < 0 && c.y0 >= y1) { float max = y1 - c.y0 + epsilon; if (max > ya) ya = max; }
+        if (c.x1 <= x0 + EPSILON || c.x0 >= x1 - EPSILON || c.z1 <= z0 + EPSILON || c.z0 >= z1 - EPSILON)
+            return ya;
+        if (ya > 0 && c.y1 <= y0) {
+            float max = y0 - c.y1 - EPSILON;
+            if (max < ya) ya = max;
+        }
+        if (ya < 0 && c.y0 >= y1) {
+            float max = y1 - c.y0 + EPSILON;
+            if (max > ya) ya = max;
+        }
         return ya;
     }
 
     public float clipZCollide(AABB c, float za) {
-        if (c.x1 <= x0 || c.x0 >= x1 || c.y1 <= y0 || c.y0 >= y1) return za;
-        if (za > 0 && c.z1 <= z0) { float max = z0 - c.z1 - epsilon; if (max < za) za = max; }
-        if (za < 0 && c.z0 >= z1) { float max = z1 - c.z0 + epsilon; if (max > za) za = max; }
+        if (c.x1 <= x0 + EPSILON || c.x0 >= x1 - EPSILON || c.y1 <= y0 + EPSILON || c.y0 >= y1 - EPSILON)
+            return za;
+        if (za > 0 && c.z1 <= z0) {
+            float max = z0 - c.z1 - EPSILON;
+            if (max < za) za = max;
+        }
+        if (za < 0 && c.z0 >= z1) {
+            float max = z1 - c.z0 + EPSILON;
+            if (max > za) za = max;
+        }
         return za;
     }
 
