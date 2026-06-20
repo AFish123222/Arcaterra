@@ -88,13 +88,13 @@ public class World {
 
     public List<AABB> getCollisionBox(AABB box) {
         List<AABB> result = new ArrayList<>();
-        // 正确计算需要检测的方块范围
+        // 计算与包围盒相交的所有方块坐标
         int minX = (int) Math.floor(box.x0);
-        int maxX = (int) Math.floor(box.x1 - 0.001f);
+        int maxX = (int) Math.floor(box.x1 - 1e-6f); // 减极小量，防止多包含边缘方块
         int minY = (int) Math.floor(box.y0);
-        int maxY = (int) Math.floor(box.y1 - 0.001f);
+        int maxY = (int) Math.floor(box.y1 - 1e-6f);
         int minZ = (int) Math.floor(box.z0);
-        int maxZ = (int) Math.floor(box.z1 - 0.001f);
+        int maxZ = (int) Math.floor(box.z1 - 1e-6f);
 
         for (int x = minX; x <= maxX; x++) {
             for (int y = minY; y <= maxY; y++) {

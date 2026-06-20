@@ -9,6 +9,7 @@ import static org.lwjgl.glfw.GLFW.*;
 
 public class Player {
     private final World world;
+    private static final float FOOT_OFFSET = 0.02f; // 正值使碰撞盒上移，负值下移
 
     // 坐标（y 为脚底位置）
     public float x, y, z;
@@ -41,10 +42,13 @@ public class Player {
         this.y = y;
         this.z = z;
         float halfWidth = PLAYER_WIDTH / 2f;
+        // 将碰撞盒脚底放在 y + FOOT_OFFSET 处
         this.bb = new AABB(
-                x - halfWidth, y,
+                x - halfWidth,
+                y + FOOT_OFFSET,
                 z - halfWidth,
-                x + halfWidth, y + PLAYER_HEIGHT,
+                x + halfWidth,
+                y + PLAYER_HEIGHT + FOOT_OFFSET,
                 z + halfWidth
         );
     }
@@ -145,7 +149,7 @@ public class Player {
 
         // 同步玩家坐标（脚底）
         this.x = (bb.x0 + bb.x1) * 0.5f;
-        this.y = bb.y0;
+        this.y = bb.y0 + 1.6F; // 补偿浮点误差，使脚底略高于方块
         this.z = (bb.z0 + bb.z1) * 0.5f;
     }
 
