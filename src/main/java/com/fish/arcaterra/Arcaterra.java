@@ -89,7 +89,7 @@ public class Arcaterra {
                     break;
                 case 1:
                     // 更新 LOD 管理器
-                    world.getLodManager().update(player.x, player.y, player.z);
+//                    world.getLodManager().update(player.x, player.y, player.z);
                     break;
                 case 2:
                     // 重建一些脏区块（可选，现在 LOD 自己处理重建）
@@ -104,6 +104,7 @@ public class Arcaterra {
 
             // 使用 LOD 渲染
             world.getLodManager().render(player.x, player.y, player.z);
+
 
             Renderer.INSTANCE.endWorldRender();
 
