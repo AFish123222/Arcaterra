@@ -7,7 +7,7 @@ import static java.lang.IO.println;
 import static org.lwjgl.opengl.GL11.*;
 import java.util.ArrayList;
 import java.util.List;
-
+@Deprecated
 public class Chunk {
     public static int texture = 0;
 

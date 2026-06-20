@@ -7,7 +7,7 @@ import java.util.List;
 
 import static com.fish.mcclone.Arcaterra.getWindow;
 import static org.lwjgl.glfw.GLFW.*;
-
+@Deprecated
 public class Player {
     private Level level;
 

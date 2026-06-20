@@ -1,7 +1,7 @@
 package com.fish.mcclone.level;
 
 import com.fish.mcclone.block.Block;
-
+@Deprecated
 public class Tile {
     public static Tile grass = new Tile(0);
     public static Tile rock = new Tile(1);

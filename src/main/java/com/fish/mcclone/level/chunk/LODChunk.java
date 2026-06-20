@@ -2,7 +2,7 @@ package com.fish.mcclone.level.chunk;
 
 import com.fish.mcclone.level.Chunk;
 import com.fish.mcclone.level.Level;
-
+@Deprecated
 // 未来你要写的 LOD 区块（八叉树）
 public class LODChunk extends Chunk {
     public LODChunk(Level level, int x0, int y0, int z0, int size, int lodLevel) {

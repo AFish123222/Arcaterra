@@ -4,7 +4,7 @@ import com.fish.mcclone.phys.AABB;
 import java.nio.FloatBuffer;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
-
+@Deprecated
 public class Frustum {
     public float[][] m_Frustum = new float[6][4];
 

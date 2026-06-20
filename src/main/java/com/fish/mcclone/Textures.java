@@ -12,7 +12,7 @@ import org.lwjgl.opengl.GL11;
 
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL30.glGenerateMipmap;
-
+@Deprecated
 public class Textures {
     private static HashMap<String, Integer> idMap = new HashMap<String, Integer>();
 

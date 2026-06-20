@@ -1,5 +1,6 @@
 package com.fish.mcclone.phys;
 
+@Deprecated
 public class AABB {
     private float epsilon = 0.0F;
 

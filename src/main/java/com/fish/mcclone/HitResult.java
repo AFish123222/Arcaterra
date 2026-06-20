@@ -1,5 +1,5 @@
 package com.fish.mcclone;
-
+@Deprecated
 public class HitResult {
     public int x;
 

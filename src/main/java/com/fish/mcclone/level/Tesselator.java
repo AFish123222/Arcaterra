@@ -4,6 +4,7 @@ import java.nio.FloatBuffer;
 import org.lwjgl.BufferUtils;
 import static org.lwjgl.opengl.GL11.*;
 
+@Deprecated
 /// # 渲染器（贪心网格适配版）
 public class Tesselator {
     // ======================

@@ -13,7 +13,7 @@ import java.nio.FloatBuffer;
 
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.system.MemoryStack.stackPush;
-
+@Deprecated
 public class LevelRenderer implements LevelListener {
     private static final int CHUNK_SIZE = 16;
     private Level level;

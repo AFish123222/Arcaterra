@@ -1,5 +1,5 @@
 package com.fish.mcclone;
-
+@Deprecated
 public class Timer {
     private static final long NS_PER_SECOND = 1000000000L;
 

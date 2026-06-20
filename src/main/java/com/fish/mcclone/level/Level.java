@@ -3,7 +3,7 @@ package com.fish.mcclone.level;
 import com.fish.mcclone.phys.AABB;
 import java.util.ArrayList;
 import java.util.HashMap;
-
+@Deprecated
 public class Level {
     // 无限地图核心：动态存储区块，无大小限制
     final HashMap<Long, Chunk> chunkMap = new HashMap<>();
