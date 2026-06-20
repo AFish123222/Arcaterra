@@ -89,9 +89,8 @@ public class Arcaterra {
                     break;
                 case 2:
                     var dirtyList = world.getDirtyChunks();
-                    if(!dirtyList.isEmpty()){
-                        dirtyList.get(0).rebuildMesh();
-                    }
+                    int limit = Math.min(8, dirtyList.size());
+                    for(int i=0;i<limit;i++) dirtyList.get(i).rebuildMesh();
                     break;
                 case 3:
                     Renderer.INSTANCE.beginWorldRender();
@@ -139,7 +138,7 @@ public class Arcaterra {
         if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
             running = false;
         }
-        player.handleKey(key, action);
+        if (action == GLFW_PRESS || action == GLFW_REPEAT || action == GLFW_RELEASE)  player.handleKey(key, action);
     }
 
     private void mouseMoveCallback(long win, double x, double y) {

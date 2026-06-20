@@ -22,6 +22,7 @@ public class Player {
     // 碰撞包围盒
     public AABB bb;
     public boolean onGround = false;
+    public boolean flyable = true;
 
     // 按键缓存
     private boolean keyW, keyS, keyA, keyD;
@@ -69,7 +70,7 @@ public class Player {
 
     // 按键事件接收，缓存按键状态
     public void handleKey(int key, int action) {
-        boolean press = action == GLFW_PRESS;
+        boolean press = action == GLFW_PRESS||action == GLFW_REPEAT;
         switch (key) {
             case GLFW_KEY_W: keyW = press; break;
             case GLFW_KEY_S: keyS = press; break;
@@ -90,57 +91,57 @@ public class Player {
 
     // 每帧玩家逻辑更新（重力、移动、碰撞）
     public void tick() {
-        // 保存上帧坐标
         this.xo = this.x;
         this.yo = this.y;
         this.zo = this.z;
 
-        float xa = 0.0F;
-        float za = 0.0F;
+        float inputForward = 0.0F;
+        float inputRight = 0.0F;
 
-        // 前后左右输入叠加
-        if (keyW || keyUp) xa--;
-        if (keyS || keyDown) xa++;
-        if (keyA || keyLeft) za--;
-        if (keyD || keyRight) za++;
+        if (keyR) resetPos();
 
-        // 跳跃判定
-        if (keySpace && this.onGround) {
-            this.yd = 0.12F;
+        // 输入：W=前 S=后 A=左 D=右
+        if (keyW || keyUp) inputForward -= 1f;
+        if (keyS || keyDown) inputForward += 1f;
+        if (keyD || keyRight) inputRight += 1f;
+        if (keyA || keyLeft) inputRight -= 1f;
+
+        if ((keySpace)&&(onGround||flyable)) {
+            yd = 0.12F;
         }
 
-        // 相对视角移动
-        moveRelative(xa, za, this.onGround ? 0.02F : 0.005F);
+        float radY = (float) Math.toRadians(yRot);
+        float cos = (float) Math.cos(radY);
+        float sin = (float) Math.sin(radY);
 
-        // 重力加速度
-        this.yd -= 0.005D;
+        // 【正确旋转公式】
+        float worldX = inputRight * cos + inputForward * sin;
+        float worldZ = -inputRight * sin + inputForward * cos;
 
-        // 执行碰撞移动
-        move(this.xd, this.yd, this.zd);
+        moveRelative(worldX, worldZ, onGround ? 0.02F : 0.005F);
 
-        // 空气/地面摩擦力
-        this.xd *= 0.91F;
-        this.zd *= 0.91F;
-        if (this.onGround) {
-            this.xd *= 0.8F;
-            this.zd *= 0.8F;
+        yd -= 0.005F;
+        move(xd, yd, zd);
+
+        xd *= 0.91F;
+        yd *= 0.98F;
+        zd *= 0.91F;
+        if (onGround) {
+            xd *= 0.8F;
+            zd *= 0.8F;
         }
     }
 
     // 基于视角的相对移动（方向向量旋转）
-    public void moveRelative(float xa, float za, float speed) {
-        float dist = xa * xa + za * za;
-        if (dist < 0.01F) return;
-        dist = speed / (float) Math.sqrt(dist);
-        xa *= dist;
-        za *= dist;
+    public void moveRelative(float dx, float dz, float speed) {
+        float len = (float) Math.sqrt(dx * dx + dz * dz);
+        if (len < 0.001f) return;
 
-        float radY = (float) Math.toRadians(yRot);
-        float sin = (float) Math.sin(radY);
-        float cos = (float) Math.cos(radY);
+        dx = dx / len * speed;
+        dz = dz / len * speed;
 
-        this.xd += xa * cos - za * sin;
-        this.zd += za * cos + xa * sin;
+        xd += dx;
+        zd += dz;
     }
 
     // 碰撞移动分步判定（Y→X→Z）
