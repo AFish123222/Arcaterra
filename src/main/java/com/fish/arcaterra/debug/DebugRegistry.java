@@ -4,60 +4,54 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
-/**
- * 调试信息注册表。
- * - 对于成员变量：使用 register(key, supplier) 注册，延迟读取。
- * - 对于局部变量：使用 put(key, value) 主动推送。
- * DebugWindow 定时调用 snapshot() 获取所有值。
- */
 public class DebugRegistry {
-    private static final Map<String, Supplier<Object>> suppliers = new LinkedHashMap<>();
-    private static final Map<String, Object> snapshots = new LinkedHashMap<>();
+    private static final Map<String, Map<String, Supplier<Object>>> groups = new LinkedHashMap<>();
 
     /**
-     * 注册一个延迟读取的调试信息（适用于成员变量）
+     * 注册一个调试信息（指定分组）
+     * @param group 分组名（如 "Player"）
      * @param key 显示键名
-     * @param supplier 提供该值的函数（捕获变量引用）
+     * @param supplier 值提供者
+     */
+    public static void register(String group, String key, Supplier<Object> supplier) {
+        groups.computeIfAbsent(group, k -> new LinkedHashMap<>()).put(key, supplier);
+    }
+
+    /**
+     * 注册一个调试信息（默认分组 "Default"）
      */
     public static void register(String key, Supplier<Object> supplier) {
-        suppliers.put(key, supplier);
+        register("Default", key, supplier);
     }
 
     /**
-     * 主动推送一个调试值（适用于局部变量或一次性数据）
-     * 会覆盖同名的延迟读取项
-     * @param key 显示键名
-     * @param value 当前值
+     * 主动推送一个值（分组为 "Push"）
      */
     public static void put(String key, Object value) {
-        snapshots.put(key, value);
+        register("Push", key, () -> value);
     }
 
     /**
-     * 获取所有注册项的快照：先加入快照（put），再加入 Supplier（如果 key 不重复）
+     * 获取快照：分组 -> (键 -> 值)
      */
-    public static Map<String, Object> snapshot() {
-        Map<String, Object> result = new LinkedHashMap<>();
-        // 先放快照（优先级高）
-        result.putAll(snapshots);
-        // 再放 Supplier
-        for (Map.Entry<String, Supplier<Object>> entry : suppliers.entrySet()) {
-            if (!result.containsKey(entry.getKey())) {
+    public static Map<String, Map<String, Object>> snapshot() {
+        Map<String, Map<String, Object>> result = new LinkedHashMap<>();
+        for (Map.Entry<String, Map<String, Supplier<Object>>> groupEntry : groups.entrySet()) {
+            String group = groupEntry.getKey();
+            Map<String, Object> groupMap = new LinkedHashMap<>();
+            for (Map.Entry<String, Supplier<Object>> entry : groupEntry.getValue().entrySet()) {
                 try {
-                    result.put(entry.getKey(), entry.getValue().get());
+                    groupMap.put(entry.getKey(), entry.getValue().get());
                 } catch (Exception e) {
-                    result.put(entry.getKey(), "ERROR: " + e.getMessage());
+                    groupMap.put(entry.getKey(), "ERROR: " + e.getMessage());
                 }
             }
+            result.put(group, groupMap);
         }
         return result;
     }
 
-    /**
-     * 清空注册表（用于重新加载或重置）
-     */
     public static void clear() {
-        suppliers.clear();
-        snapshots.clear();
+        groups.clear();
     }
 }

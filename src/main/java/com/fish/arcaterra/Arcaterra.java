@@ -114,25 +114,15 @@ public class Arcaterra {
         SwingUtilities.invokeLater(() -> {
             DebugWindow.getInstance().setStatus("初始化完成");
         });
-        DebugRegistry.register("Player.X", () -> player.x);
-        DebugRegistry.register("Player.Y", () -> player.y);
-        DebugRegistry.register("Player.Z", () -> player.z);
-        DebugRegistry.register("Player.XD", () -> player.xd);
-        DebugRegistry.register("Player.YD", () -> player.yd);
-        DebugRegistry.register("Player.ZD", () -> player.zd);
-        DebugRegistry.register("Player.OnGround", () -> player.onGround);
-        DebugRegistry.register("Player.YRot", () -> player.yRot);
-        DebugRegistry.register("Player.XRot", () -> player.xRot);
-
-        DebugRegistry.register("System.FPS", () -> currentFps);
-        DebugRegistry.register("System.Delta", () -> delta);
-        DebugRegistry.register("System.Memory", () ->
+        // 在 init 中
+        DebugRegistry.register("System", "FPS", () -> currentFps);
+        DebugRegistry.register("System", "Delta", () -> delta);
+        DebugRegistry.register("System", "Memory", () ->
                 (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / (1024.0 * 1024.0) + " MB");
 
-        DebugRegistry.register("World.VisibleChunks", () -> world.getVisibleChunks().size());
-        DebugRegistry.register("World.DirtyChunks", () -> world.getDirtyChunks().size());
-        DebugRegistry.register("World.GroundHeight", () -> world.getTerrainProvider().getHeight(player.x, player.z));
-    }
+        DebugRegistry.register("World", "VisibleChunks", () -> world.getVisibleChunks().size());
+        DebugRegistry.register("World", "DirtyChunks", () -> world.getDirtyChunks().size());
+        DebugRegistry.register("World", "GroundHeight", () -> world.getTerrainProvider().getHeight(player.x, player.z));}
 
     private int frameCounter = 0;
     private double lastTime = 0.0;

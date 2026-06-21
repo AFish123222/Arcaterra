@@ -218,13 +218,22 @@ public class Player implements IDebugWindowPrintRegistry {
 
     @Override
     public void debugParamRegister() {
-        DebugRegistry.register("Player.WalkSpeed", () -> walkSpeed);
-        DebugRegistry.register("Player.AirSpeed", () -> airSpeed);
-        DebugRegistry.register("Player.JumpSpeed", () -> jumpSpeed);
-        DebugRegistry.register("Player.Gravity", () -> gravity);
-        DebugRegistry.register("Player.FrictionXZ", () -> frictionXZ);
-        DebugRegistry.register("Player.FrictionY", () -> frictionY);
-        DebugRegistry.register("Player.GroundFriction", () -> groundFriction);
-        DebugRegistry.register("Player.SpeedMultiplier", () -> speedMultiplier);
+        DebugRegistry.register("Player", "X", () -> x);
+        DebugRegistry.register("Player", "Y", () -> y);
+        DebugRegistry.register("Player", "Z", () -> z);
+        DebugRegistry.register("Player", "XD", () -> xd);
+        DebugRegistry.register("Player", "YD", () -> yd);
+        DebugRegistry.register("Player", "ZD", () -> zd);
+        DebugRegistry.register("Player", "OnGround", () -> onGround);
+        DebugRegistry.register("Player", "YRot", () -> yRot);
+        DebugRegistry.register("Player", "XRot", () -> xRot);
+        DebugRegistry.register("Player", "WalkSpeed", () -> walkSpeed);
+        DebugRegistry.register("Player", "AirSpeed", () -> airSpeed);
+        DebugRegistry.register("Player", "JumpSpeed", () -> jumpSpeed);
+        DebugRegistry.register("Player", "Gravity", () -> gravity);
+        DebugRegistry.register("Player", "FrictionXZ", () -> frictionXZ);
+        DebugRegistry.register("Player", "FrictionY", () -> frictionY);
+        DebugRegistry.register("Player", "GroundFriction", () -> groundFriction);
+        DebugRegistry.register("Player", "SpeedMultiplier", () -> speedMultiplier);
     }
 }
