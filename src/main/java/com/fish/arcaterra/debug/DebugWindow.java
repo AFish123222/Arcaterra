@@ -2,19 +2,18 @@ package com.fish.arcaterra.debug;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.util.Map;
 
-/**
- * 调试窗口，独立于游戏窗口。
- * 定时从 DebugRegistry 拉取数据并刷新显示。
- */
 public class DebugWindow extends JFrame {
     private final JPanel contentPanel = new JPanel();
     private static DebugWindow instance;
+    private boolean disposed = false; // 标记窗口是否已释放
 
     private DebugWindow() {
         setTitle("调试信息 - Arcaterra");
-        setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE); // 点击关闭时释放资源
         setSize(400, 350);
         setLocation(100, 100);
         setAlwaysOnTop(true);
@@ -22,20 +21,28 @@ public class DebugWindow extends JFrame {
         contentPanel.setLayout(new GridLayout(0, 1));
         add(new JScrollPane(contentPanel));
         setVisible(false);
+
+        // 监听窗口关闭事件，自动清理单例
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosed(WindowEvent e) {
+                cleanup(); // 窗口关闭时清理单例
+            }
+        });
     }
 
     public static DebugWindow getInstance() {
-        if (instance == null) {
+        // 如果实例不存在，或已被释放（disposed），重新创建
+        if (instance == null || instance.disposed) {
             instance = new DebugWindow();
         }
         return instance;
     }
 
-    /**
-     * 刷新窗口：从注册表拉取所有数据并重新绘制
-     */
     public void refresh() {
+        if (disposed) return; // 已释放则忽略
         SwingUtilities.invokeLater(() -> {
+            if (disposed) return;
             contentPanel.removeAll();
 
             Map<String, Object> data = DebugRegistry.snapshot();
@@ -55,13 +62,36 @@ public class DebugWindow extends JFrame {
     }
 
     public void toggleVisibility() {
+        if (disposed) {
+            // 如果已释放，重新创建（getInstance 会自动创建）
+            instance = new DebugWindow();
+        }
         setVisible(!isVisible());
         if (isVisible()) {
-            refresh(); // 显示时立即刷新
+            refresh();
         }
     }
 
     public void setStatus(String status) {
+        if (disposed) return;
         DebugRegistry.register("System.Status", () -> status);
+    }
+
+    /**
+     * 释放窗口资源，并清除单例
+     */
+    public static void cleanup() {
+        if (instance != null) {
+            instance.disposed = true;
+            instance.setVisible(false);
+            instance.dispose();
+            instance = null;
+        }
+    }
+
+    @Override
+    public void dispose() {
+        disposed = true;
+        super.dispose();
     }
 }

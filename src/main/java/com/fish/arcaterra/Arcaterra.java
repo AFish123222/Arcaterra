@@ -210,6 +210,12 @@ public class Arcaterra {
         glfwFreeCallbacks(window);
         glfwDestroyWindow(window);
         glfwTerminate();
+
+        // 关闭并释放调试窗口
+        DebugWindow.cleanup();
+
+        // 可选：强制退出 JVM
+        // System.exit(0);
     }
 
     private void keyCallback(long win, int key, int scan, int action, int mods) {
