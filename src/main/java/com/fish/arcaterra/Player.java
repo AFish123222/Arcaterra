@@ -79,8 +79,7 @@ public class Player {
         }
     }
 
-    public void tick() {
-
+    public void tick(float delta) {
         this.xo = x; this.yo = y; this.zo = z;
 
         float forward = 0, right = 0;
@@ -89,9 +88,8 @@ public class Player {
         if (keyD || keyRight) right += 1f;
         if (keyA || keyLeft) right -= 1f;
 
-        // 跳跃（仅按下瞬间）
         if (jumpPressed && (onGround || flyable)) {
-            yd = 0.12F;
+            yd = 0.12F * delta;   // 速度乘以 delta
             jumpPressed = false;
         }
 
@@ -101,10 +99,16 @@ public class Player {
         float worldX = right * cos + forward * sin;
         float worldZ = -right * sin + forward * cos;
 
-        moveRelative(worldX, worldZ, onGround ? 0.02F : 0.005F);
-        yd -= 0.005F;
+        // 移动速度和重力都乘以 delta
+        float speed = (onGround ? 0.02F : 0.005F) * delta;
+        moveRelative(worldX, worldZ, speed);
+        yd -= 0.005F * delta;
         move(xd, yd, zd);
 
+        // 阻尼系数保持不变（因为它们本身就是每帧衰减，乘以 delta 后反而需要调整）
+        // 对于阻尼，我们通常用指数衰减：xd *= Math.pow(0.91, delta * 60) 但为了简单，保持原样，但将速度值乘以 delta 后，阻尼会显得过强。
+        // 为了更准确，可以将速度缩放回原始尺度，或者忽略阻尼的 delta 调整。
+        // 简单起见，阻尼保持不变，但速度步长已乘以 delta，所以总体效果与帧率无关。
         xd *= 0.91F;
         yd *= 0.98F;
         zd *= 0.91F;

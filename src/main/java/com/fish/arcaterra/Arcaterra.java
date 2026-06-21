@@ -116,17 +116,28 @@ public class Arcaterra {
     }
 
     private int frameCounter = 0;
+    private double lastTime = 0.0;
+    private double delta = 0.0;
 
     private void loop() {
+        // 初始化时间
+        lastTime = glfwGetTime();
+
         while (running && !glfwWindowShouldClose(window)) {
+            double now = glfwGetTime();
+            delta = now - lastTime;
+            lastTime = now;
+
+            // 限制 delta 最大值（防止跳帧时突变）
+            if (delta > 0.05) delta = 0.05;   // 最多 50ms
+
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
             switch (frameTaskStep) {
                 case 0:
-                    player.tick();
+                    player.tick((float) delta);   // 传入 delta
                     break;
                 case 1:
-                    // 更新区块加载（关键！）
                     world.updateChunks(player.x, player.y, player.z);
                     break;
                 case 2:
@@ -134,6 +145,7 @@ public class Arcaterra {
                     break;
             }
             frameTaskStep = (frameTaskStep + 1) % 3;
+
 
             Renderer.INSTANCE.beginWorldRender();
             glRotatef(-player.xRot, 1, 0, 0);
