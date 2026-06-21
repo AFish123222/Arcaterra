@@ -211,11 +211,8 @@ public class Arcaterra {
         glfwDestroyWindow(window);
         glfwTerminate();
 
-        // 关闭并释放调试窗口
-        DebugWindow.cleanup();
-
-        // 可选：强制退出 JVM
-        // System.exit(0);
+        // 保留调试窗口，不释放 //todo:support config to chose between sameshut and twiceshut
+        System.out.println("游戏已退出，调试窗口仍然保留。");
     }
 
     private void keyCallback(long win, int key, int scan, int action, int mods) {
