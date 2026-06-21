@@ -15,7 +15,7 @@ public class Chunk {
     public static final int SIZE = 16;
     private final int cx, cy, cz;
     private final World world;
-    private final ChunkMesh mesh;
+    private ChunkMesh mesh;
     private final short[] blocks = new short[SIZE * SIZE * SIZE];
     public boolean dirty = true;
 
@@ -71,6 +71,13 @@ public class Chunk {
     }
 
     public void rebuildMesh() {
+        // 释放旧网格（如果有）
+        if (mesh != null) {
+            mesh.destroy();
+        }
+        mesh = new ChunkMesh();
+        // 然后构建顶点，上传...
+
         List<Float> vertices = new ArrayList<>();
         List<Integer> indices = new ArrayList<>();
         buildBlockFaces(vertices, indices);
