@@ -4,7 +4,8 @@ import java.util.*;
 
 public class ChunkPool {
     /// 区块加载半径
-    public static final int LOAD_RADIUS = 10;
+    public static final int LOAD_RADIUS = 4;
+    public static final int LOAD_DIST_SQ = LOAD_RADIUS*16 * LOAD_RADIUS*16;
     public static final int UNLOAD_RADIUS = LOAD_RADIUS + 3;
     public static final int CHUNK_KEEP_FRAME = 60;
     public static final int LOD0_DIST_SQ = 25600;
@@ -81,7 +82,7 @@ public class ChunkPool {
                     float czWorld = c.getCz() * Chunk.SIZE + Chunk.SIZE / 2f;
                     float distSq = (cxWorld - playerX) * (cxWorld - playerX)
                             + (czWorld - playerZ) * (czWorld - playerZ);
-                    if (distSq < LOD0_DIST_SQ) {
+                    if (distSq < LOAD_DIST_SQ) {
                         visibleCache.add(pool.get(getChunkKey(c.getCx(), c.getCy(), c.getCz())));
                     }
                 }

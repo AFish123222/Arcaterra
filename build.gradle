@@ -21,6 +21,7 @@ ext {
 }
 
 dependencies {
+    // LWJGL
     implementation platform("org.lwjgl:lwjgl-bom:$lwjglVersion")
     implementation "org.lwjgl:lwjgl"
     implementation "org.lwjgl:lwjgl-glfw"
@@ -33,9 +34,9 @@ dependencies {
 
     implementation "org.joml:joml:${jomlVersion}"
 
-    // GeoTools 暂时注释，后续再研究
-    // implementation 'org.geotools:gt-geotiff:28.0'
-    // implementation 'org.geotools:gt-epsg-hsql:28.0'
+    // ===== 纯 Java 的 TIFF 读取（无 JAI 依赖） =====
+    implementation 'com.twelvemonkeys.imageio:imageio-tiff:3.10.1'
+    implementation 'com.twelvemonkeys.imageio:imageio-core:3.10.1'
 
     testImplementation platform('org.junit:junit-bom:5.10.0')
     testImplementation 'org.junit.jupiter:junit-jupiter'

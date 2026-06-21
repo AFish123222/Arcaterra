@@ -1,36 +1,50 @@
 package com.fish.arcaterra.level;
 
-import com.fish.arcaterra.lod.LODManager;
-import com.fish.arcaterra.octree.OctreeManager;
-
 import com.fish.arcaterra.phys.AABB;
+import com.fish.arcaterra.terrarium.TerrainProvider;
+import com.fish.arcaterra.terrarium.NoiseTerrainProvider;
+
 import java.util.*;
 
 public class World {
-    private OctreeManager octreeManager;
-    private LODManager lodManager;
-    public final int groundY = 8;
     private final ChunkPool chunkPool;
     private final LightSystem lightSystem;
+    private final TerrainProvider terrainProvider;
 
+    public final int groundY = 8; // 仅作为 fallback，实际由 TerrainProvider 决定
+
+    /**
+     * 默认构造：使用噪声地形
+     */
     public World() {
-        this.chunkPool = new ChunkPool(this);
-        this.lightSystem = new LightSystem(groundY);
-        this.octreeManager = new OctreeManager(this);
-        this.lodManager = new LODManager();
+        this(new NoiseTerrainProvider());
     }
 
-    // 获取或创建区块（用于加载和修改）
+    /**
+     * 构造时指定地形提供者（如 DEM 或噪声）
+     * @param provider 地形高度提供者
+     */
+    public World(TerrainProvider provider) {
+        this.terrainProvider = provider;
+        this.chunkPool = new ChunkPool(this);
+        this.lightSystem = new LightSystem(groundY);
+    }
+
+    // ========== 地形提供者访问 ==========
+    public TerrainProvider getTerrainProvider() {
+        return terrainProvider;
+    }
+
+    // ========== 区块管理 ==========
     public Chunk getChunk(int wx, int wy, int wz) {
         return chunkPool.getOrCreateChunk(wx, wy, wz);
     }
 
-    // 仅查询区块，不存在返回 null
     public Chunk getChunkIfLoaded(int wx, int wy, int wz) {
         return chunkPool.getChunkIfLoaded(wx, wy, wz);
     }
 
-    // 安全获取方块，区块不存在时返回 0（空气）
+    // ========== 方块查询/修改 ==========
     public short getBlockSafe(int wx, int wy, int wz) {
         Chunk c = getChunkIfLoaded(wx, wy, wz);
         if (c == null) return 0;
@@ -40,12 +54,10 @@ public class World {
         return c.getBlock(rx, ry, rz);
     }
 
-    // 对外公开的 getBlock，直接调用 getBlockSafe
     public short getBlock(int wx, int wy, int wz) {
         return getBlockSafe(wx, wy, wz);
     }
 
-    // 设置方块，若区块不存在则创建
     public void setBlock(int wx, int wy, int wz, short id) {
         Chunk c = getChunk(wx, wy, wz);
         int rx = wx - c.getCx() * Chunk.SIZE;
@@ -68,6 +80,7 @@ public class World {
         }
     }
 
+    // ========== 世界更新与渲染 ==========
     public void updateChunks(float playerX, float playerY, float playerZ) {
         chunkPool.update(playerX, playerY, playerZ);
     }
@@ -83,10 +96,13 @@ public class World {
     public void destroyAllChunks() {
         chunkPool.clearAll();
         lightSystem.clear();
-        lodManager.clear();
-        octreeManager.clear();
     }
 
+    public List<ChunkPool.ChunkHolder> getVisibleChunkHolders() {
+        return chunkPool.getVisibleChunks();
+    }
+
+    // ========== 光照系统（保留，暂未使用） ==========
     public void calcLightArea(int x0, int z0, int x1, int z1) {
         lightSystem.calcLightDepths(x0, z0, x1, z1, this);
     }
@@ -95,11 +111,11 @@ public class World {
         return lightSystem.getBrightness(x, y, z);
     }
 
+    // ========== 碰撞检测 ==========
     public List<AABB> getCollisionBox(AABB box) {
         List<AABB> result = new ArrayList<>();
-        // 计算与包围盒相交的所有方块坐标
         int minX = (int) Math.floor(box.x0);
-        int maxX = (int) Math.floor(box.x1 - 1e-6f); // 减极小量，防止多包含边缘方块
+        int maxX = (int) Math.floor(box.x1 - 1e-6f);
         int minY = (int) Math.floor(box.y0);
         int maxY = (int) Math.floor(box.y1 - 1e-6f);
         int minZ = (int) Math.floor(box.z0);
@@ -115,17 +131,5 @@ public class World {
             }
         }
         return result;
-    }
-
-    public List<ChunkPool.ChunkHolder> getVisibleChunkHolders() {
-        return chunkPool.getVisibleChunks();
-    }
-
-    public OctreeManager getOctreeManager() {
-        return octreeManager;
-    }
-
-    public LODManager getLodManager() {
-        return lodManager;
     }
 }

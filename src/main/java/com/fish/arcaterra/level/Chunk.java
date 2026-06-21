@@ -1,6 +1,7 @@
 package com.fish.arcaterra.level;
 
 import com.fish.arcaterra.level.mesh.ChunkMesh;
+import com.fish.arcaterra.terrarium.TerrainProvider;
 import org.lwjgl.system.MemoryUtil;
 
 import java.nio.FloatBuffer;
@@ -31,14 +32,25 @@ public class Chunk {
     }
 
     private void generateTerrain() {
-        int groundY = 8;
+        TerrainProvider provider = world.getTerrainProvider();
         for (int rx = 0; rx < SIZE; rx++) {
             for (int rz = 0; rz < SIZE; rz++) {
+                int worldX = cx * SIZE + rx;
+                int worldZ = cz * SIZE + rz;
+                float height = provider.getHeight(worldX, worldZ);
+                int groundY = Math.round(height); // 四舍五入
+
+                int localBaseY = cy * SIZE;
                 for (int ry = 0; ry < SIZE; ry++) {
+                    int worldY = localBaseY + ry;
                     short id = 0;
-                    int worldY = cy * SIZE + ry;
-                    if (cy == 0 && ry <= groundY) id = 1;
-                    else if (cy == 0 && ry == groundY + 1) id = 2;
+                    if (worldY < groundY) {
+                        id = 1; // 石头
+                    } else if (worldY == groundY) {
+                        id = 1; // 也可以换为草方块，但这里统一石头
+                    } else if (worldY == groundY + 1) {
+                        id = 2; // 草地
+                    }
                     setBlock(rx, ry, rz, id);
                 }
             }
