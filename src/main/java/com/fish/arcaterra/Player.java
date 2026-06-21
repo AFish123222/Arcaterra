@@ -80,6 +80,7 @@ public class Player {
     }
 
     public void tick() {
+
         this.xo = x; this.yo = y; this.zo = z;
 
         float forward = 0, right = 0;
