@@ -1,0 +1,30 @@
+<component name="ArtifactManager">
+  <artifact name="MinecraftClone.main:jar2">
+    <output-path>$PROJECT_DIR$/out/artifacts/MinecraftClone_main_jar2</output-path>
+    <root id="root">
+      <element id="archive" name="MinecraftClone.main.jar">
+        <element id="module-output" name="MinecraftClone.main" />
+      </element>
+      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.20" />
+      <element id="library" level="project" name="Gradle: org.lwjgl:lwjgl-opengl:natives-windows:3.4.1" />
+      <element id="library" level="project" name="Gradle: org.lwjgl:lwjgl-stb:natives-windows:3.4.1" />
+      <element id="library" level="project" name="Gradle: org.lwjgl:lwjgl-glfw:3.4.1" />
+      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-stdlib-common:1.8.20" />
+      <element id="library" level="project" name="Gradle: com.twelvemonkeys.common:common-lang:3.10.1" />
+      <element id="library" level="project" name="Gradle: com.twelvemonkeys.common:common-io:3.10.1" />
+      <element id="library" level="project" name="Gradle: com.twelvemonkeys.imageio:imageio-metadata:3.10.1" />
+      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-stdlib:1.8.20" />
+      <element id="library" level="project" name="Gradle: com.twelvemonkeys.common:common-image:3.10.1" />
+      <element id="library" level="project" name="Gradle: com.twelvemonkeys.imageio:imageio-core:3.10.1" />
+      <element id="library" level="project" name="Gradle: org.lwjgl:lwjgl-opengl:3.4.1" />
+      <element id="library" level="project" name="Gradle: org.lwjgl:lwjgl-glfw:natives-windows:3.4.1" />
+      <element id="library" level="project" name="Gradle: org.lwjgl:lwjgl:3.4.1" />
+      <element id="library" level="project" name="Gradle: org.jetbrains:annotations:13.0" />
+      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.20" />
+      <element id="library" level="project" name="Gradle: org.lwjgl:lwjgl-stb:3.4.1" />
+      <element id="library" level="project" name="Gradle: org.lwjgl:lwjgl:natives-windows:3.4.1" />
+      <element id="library" level="project" name="Gradle: com.twelvemonkeys.imageio:imageio-tiff:3.10.1" />
+      <element id="library" level="project" name="Gradle: org.joml:joml:1.10.8" />
+    </root>
+  </artifact>
+</component>

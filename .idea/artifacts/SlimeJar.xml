@@ -1,0 +1,11 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="SlimeJar">
+    <output-path>$PROJECT_DIR$/out/artifacts/SlimeJar</output-path>
+    <root id="archive" name="SlimeJar.jar">
+      <element id="module-output" name="MinecraftClone.main" />
+      <element id="directory" name="META-INF">
+        <element id="file-copy" path="$PROJECT_DIR$/src/main/resources/META-INF/MANIFEST.MF" />
+      </element>
+    </root>
+  </artifact>
+</component>
