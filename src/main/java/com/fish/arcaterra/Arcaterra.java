@@ -128,7 +128,7 @@ public class Arcaterra {
                     player.tick();
                     break;
                 case 1:
-                    // 关键：更新区块（加载/卸载）
+                    // 更新区块加载（关键！）
                     world.updateChunks(player.x, player.y, player.z);
                     break;
                 case 2:
@@ -137,26 +137,19 @@ public class Arcaterra {
             }
             frameTaskStep = (frameTaskStep + 1) % 3;
 
-            // 渲染每帧都执行
             Renderer.INSTANCE.beginWorldRender();
             glRotatef(-player.xRot, 1, 0, 0);
             glRotatef(-player.yRot, 0, 1, 0);
             glTranslatef(-player.x, -player.y, -player.z);
 
-            //lod渲染
-//            world.getLodManager().render(player.x, player.y, player.z);
-            //全量渲染
-            for (ChunkPool.ChunkHolder holder : world.getVisibleChunkHolders()) {
-                Chunk c = holder.chunk;
+            for (Chunk c : world.getVisibleChunks()) {
                 c.render(player.x, player.y, player.z);
             }
 
             Renderer.INSTANCE.endWorldRender();
 
             glfwSwapBuffers(window);
-
             debugUpdate();
-
             glfwPollEvents();
         }
     }

@@ -89,16 +89,16 @@ public class World {
         return chunkPool.getDirtyChunks();
     }
 
-    public Collection<ChunkPool.ChunkHolder> getAllChunkHolders() {
-        return chunkPool.getAllChunks();
-    }
-
     public void destroyAllChunks() {
         chunkPool.clearAll();
         lightSystem.clear();
     }
 
-    public List<ChunkPool.ChunkHolder> getVisibleChunkHolders() {
+    public Collection<Chunk> getAllChunks() {
+        return chunkPool.getAllChunks();
+    }
+
+    public List<Chunk> getVisibleChunks() {
         return chunkPool.getVisibleChunks();
     }
 
