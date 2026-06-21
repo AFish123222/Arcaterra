@@ -7,6 +7,8 @@ import javax.swing.tree.TreePath;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.datatransfer.StringSelection;
+import java.awt.datatransfer.Clipboard;
 import java.util.Map;
 
 public class DebugWindow extends JFrame {
@@ -30,11 +32,19 @@ public class DebugWindow extends JFrame {
         tree.setRootVisible(true);
         tree.setFont(new Font("Monospaced", Font.PLAIN, 12));
 
-        // 双击复制值（可选）
-        // tree.addMouseListener(...);
-
+        // 滚动面板
         JScrollPane scrollPane = new JScrollPane(tree);
-        add(scrollPane);
+
+        // --- 按钮面板 ---
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JButton copyBtn = new JButton("复制为 Markdown");
+        copyBtn.addActionListener(e -> copyAsMarkdown());
+        buttonPanel.add(copyBtn);
+
+        // 主布局
+        setLayout(new BorderLayout());
+        add(scrollPane, BorderLayout.CENTER);
+        add(buttonPanel, BorderLayout.SOUTH);
 
         setVisible(false);
 
@@ -84,9 +94,36 @@ public class DebugWindow extends JFrame {
             }
 
             model.reload();
-            // 默认展开所有分组节点（可改为展开根，折叠分组）
+            // 展开所有分组节点
             expandAll(true);
         });
+    }
+
+    /**
+     * 将当前调试数据复制为 Markdown 无序列表
+     */
+    private void copyAsMarkdown() {
+        try {
+            Map<String, Map<String, Object>> data = DebugRegistry.snapshot();
+            StringBuilder sb = new StringBuilder();
+            sb.append("# 调试信息\n\n");
+            for (Map.Entry<String, Map<String, Object>> groupEntry : data.entrySet()) {
+                String group = groupEntry.getKey();
+                sb.append("## ").append(group).append("\n\n");
+                for (Map.Entry<String, Object> entry : groupEntry.getValue().entrySet()) {
+                    sb.append("- ").append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");
+                }
+                sb.append("\n");
+            }
+            // 复制到剪贴板
+            StringSelection selection = new StringSelection(sb.toString());
+            Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+            clipboard.setContents(selection, null);
+            // 给用户一点反馈
+            JOptionPane.showMessageDialog(this, "已复制 Markdown 到剪贴板", "复制成功", JOptionPane.INFORMATION_MESSAGE);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "复制失败: " + e.getMessage(), "错误", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     public void toggleVisibility() {
@@ -112,7 +149,6 @@ public class DebugWindow extends JFrame {
         }
     }
 
-    // 展开所有节点
     private void expandAll(boolean expand) {
         TreePath rootPath = new TreePath(root);
         if (expand) {

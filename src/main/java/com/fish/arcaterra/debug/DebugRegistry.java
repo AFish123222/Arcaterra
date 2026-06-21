@@ -4,6 +4,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
+/// ## debug窗口的调试注册表
 public class DebugRegistry {
     private static final Map<String, Map<String, Supplier<Object>>> groups = new LinkedHashMap<>();
 
@@ -12,6 +13,8 @@ public class DebugRegistry {
      * @param group 分组名（如 "Player"）
      * @param key 显示键名
      * @param supplier 值提供者
+     * eg:  DebugRegistry.register("Group", "Key", () -> Var);<br>
+     *                  //哪怕是实例变量，也是指针传递，自动刷新
      */
     public static void register(String group, String key, Supplier<Object> supplier) {
         groups.computeIfAbsent(group, k -> new LinkedHashMap<>()).put(key, supplier);
