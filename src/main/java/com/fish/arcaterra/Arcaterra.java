@@ -1,5 +1,6 @@
 package com.fish.arcaterra;
 
+import com.fish.arcaterra.debug.DebugRegistry;
 import com.fish.arcaterra.debug.DebugWindow;
 import com.fish.arcaterra.level.World;
 import com.fish.arcaterra.level.Chunk;
@@ -113,6 +114,24 @@ public class Arcaterra {
         SwingUtilities.invokeLater(() -> {
             DebugWindow.getInstance().setStatus("初始化完成");
         });
+        DebugRegistry.register("Player.X", () -> player.x);
+        DebugRegistry.register("Player.Y", () -> player.y);
+        DebugRegistry.register("Player.Z", () -> player.z);
+        DebugRegistry.register("Player.XD", () -> player.xd);
+        DebugRegistry.register("Player.YD", () -> player.yd);
+        DebugRegistry.register("Player.ZD", () -> player.zd);
+        DebugRegistry.register("Player.OnGround", () -> player.onGround);
+        DebugRegistry.register("Player.YRot", () -> player.yRot);
+        DebugRegistry.register("Player.XRot", () -> player.xRot);
+
+        DebugRegistry.register("System.FPS", () -> currentFps);
+        DebugRegistry.register("System.Delta", () -> delta);
+        DebugRegistry.register("System.Memory", () ->
+                (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / (1024.0 * 1024.0) + " MB");
+
+        DebugRegistry.register("World.VisibleChunks", () -> world.getVisibleChunks().size());
+        DebugRegistry.register("World.DirtyChunks", () -> world.getDirtyChunks().size());
+        DebugRegistry.register("World.GroundHeight", () -> world.getTerrainProvider().getHeight(player.x, player.z));
     }
 
     private int frameCounter = 0;
@@ -165,7 +184,6 @@ public class Arcaterra {
     }
 
     private void debugUpdate() {
-        // 更新 FPS 计数
         fpsCounter++;
         long now = System.currentTimeMillis();
         if (now - lastDebugUpdate >= 1000) {
@@ -173,19 +191,8 @@ public class Arcaterra {
             fpsCounter = 0;
             lastDebugUpdate = now;
 
-            // 获取调试数据
-            float height = world.getTerrainProvider().getHeight(player.x, player.z);
-            int visiableChunkCount = world.getVisibleChunks().size();
-            long usedMemory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
-
-            // 更新调试窗口
-            DebugWindow.getInstance().updateInfo(
-                    player.x, player.y, player.z,
-                    currentFps,
-                    visiableChunkCount,
-                    height,
-                    usedMemory
-            );
+            // 刷新调试窗口（内部调用 snapshot）
+            DebugWindow.getInstance().refresh();
         }
     }
 

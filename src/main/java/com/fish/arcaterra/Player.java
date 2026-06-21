@@ -1,5 +1,6 @@
 package com.fish.arcaterra;
 
+import com.fish.arcaterra.debug.IDebugWindowPrintRegistry;
 import com.fish.arcaterra.level.World;
 import com.fish.arcaterra.phys.AABB;
 import com.fish.arcaterra.phys.BlockHit;
@@ -7,7 +8,7 @@ import com.fish.arcaterra.phys.BlockHit;
 import java.util.List;
 import static org.lwjgl.glfw.GLFW.*;
 
-public class Player {
+public class Player implements IDebugWindowPrintRegistry {
     private final World world;
     private static final float FOOT_OFFSET = 0.02f; // 正值使碰撞盒上移，负值下移
 
@@ -217,5 +218,10 @@ public class Player {
             }
         }
         return null;
+    }
+
+    @Override
+    public void debugParamRegister() {
+
     }
 }
