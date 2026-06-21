@@ -55,7 +55,7 @@ public class DebugWindow extends JFrame {
         SwingUtilities.invokeLater(() -> {
             lblPlayerPos.setText(String.format("玩家坐标: (%.2f, %.2f, %.2f)", x, y, z));
             lblFps.setText("FPS: " + fps);
-            lblChunkCount.setText("区块总数: " + chunkCount);
+            lblChunkCount.setText("可视区块总数: " + chunkCount);
             lblHeight.setText(String.format("地面高度: %.2f", height));
             lblMemory.setText(String.format("内存: %.1f MB", usedMemory / (1024.0 * 1024.0)));
         });

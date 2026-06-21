@@ -3,10 +3,8 @@ package com.fish.arcaterra;
 import com.fish.arcaterra.debug.DebugWindow;
 import com.fish.arcaterra.level.World;
 import com.fish.arcaterra.level.Chunk;
-import com.fish.arcaterra.level.ChunkPool;
 import com.fish.arcaterra.phys.BlockHit;
 import com.fish.arcaterra.render.Renderer;
-import com.fish.arcaterra.terrarium.DemTerrainProvider;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.opengl.GL;
 
@@ -165,14 +163,14 @@ public class Arcaterra {
 
             // 获取调试数据
             float height = world.getTerrainProvider().getHeight(player.x, player.z);
-            int chunkCount = world.getAllChunkHolders().size();
+            int visiableChunkCount = world.getVisibleChunks().size();
             long usedMemory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
 
             // 更新调试窗口
             DebugWindow.getInstance().updateInfo(
                     player.x, player.y, player.z,
                     currentFps,
-                    chunkCount,
+                    visiableChunkCount,
                     height,
                     usedMemory
             );
