@@ -1,70 +1,56 @@
 plugins {
     id 'java'
+    id 'application'
 }
 
 group = 'com.fish'
 version = '1.0-SNAPSHOT'
 
+application {
+    mainClass = 'com.fish.arcaterra.Arcaterra'
+}
+
 repositories {
     mavenCentral()
 }
 
-project.ext.lwjglVersion = "3.4.1"
-project.ext.jomlVersion = "1.10.8"
-project.ext.lwjglNatives = "natives-windows"
-
-repositories {
-    mavenCentral()
-    maven {url "https://jitpack.io"}
+ext {
+    lwjglVersion = "3.4.1"
+    jomlVersion = "1.10.8"
+    lwjglNatives = "natives-windows"
 }
 
 dependencies {
     implementation platform("org.lwjgl:lwjgl-bom:$lwjglVersion")
-
     implementation "org.lwjgl:lwjgl"
-    implementation "org.lwjgl:lwjgl-assimp"
-    implementation "org.lwjgl:lwjgl-bgfx"
-    implementation "org.lwjgl:lwjgl-freetype"
     implementation "org.lwjgl:lwjgl-glfw"
-    implementation "org.lwjgl:lwjgl-harfbuzz"
-    implementation "org.lwjgl:lwjgl-nfd"
-    implementation "org.lwjgl:lwjgl-openal"
     implementation "org.lwjgl:lwjgl-opengl"
-    implementation "org.lwjgl:lwjgl-sdl"
     implementation "org.lwjgl:lwjgl-stb"
     implementation "org.lwjgl:lwjgl::$lwjglNatives"
-    implementation "org.lwjgl:lwjgl-assimp::$lwjglNatives"
-    implementation "org.lwjgl:lwjgl-bgfx::$lwjglNatives"
-    implementation "org.lwjgl:lwjgl-freetype::$lwjglNatives"
     implementation "org.lwjgl:lwjgl-glfw::$lwjglNatives"
-    implementation "org.lwjgl:lwjgl-harfbuzz::$lwjglNatives"
-    implementation "org.lwjgl:lwjgl-nfd::$lwjglNatives"
-    implementation "org.lwjgl:lwjgl-openal::$lwjglNatives"
     implementation "org.lwjgl:lwjgl-opengl::$lwjglNatives"
-    implementation "org.lwjgl:lwjgl-sdl::$lwjglNatives"
     implementation "org.lwjgl:lwjgl-stb::$lwjglNatives"
-    implementation "org.joml:joml:${jomlVersion}"
-}
 
-dependencies {
-    testImplementation platform('org.junit:junit-bom:6.0.0')
+    implementation "org.joml:joml:${jomlVersion}"
+
+    // GeoTools 暂时注释，后续再研究
+    // implementation 'org.geotools:gt-geotiff:28.0'
+    // implementation 'org.geotools:gt-epsg-hsql:28.0'
+
+    testImplementation platform('org.junit:junit-bom:5.10.0')
     testImplementation 'org.junit.jupiter:junit-jupiter'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 test {
     useJUnitPlatform()
 }
 
-// 任务：打包可运行Jar
 jar {
-    // 主类全限定名！改成你的主类
     manifest {
-        attributes 'Main-Class': 'com.fish.mcclone.MinecraftClone'
+        attributes 'Main-Class': application.mainClass.get()
     }
-    // 把依赖全部打进Jar里（FatJar）
     from {
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
-    duplicatesStrategy = 'INCLUDE'
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
 }
