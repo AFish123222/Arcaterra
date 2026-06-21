@@ -1,6 +1,7 @@
 package com.fish.arcaterra;
 
 import com.fish.arcaterra.debug.IDebugWindowPrintRegistry;
+import com.fish.arcaterra.debug.DebugRegistry;
 import com.fish.arcaterra.level.World;
 import com.fish.arcaterra.phys.AABB;
 import com.fish.arcaterra.phys.BlockHit;
@@ -10,9 +11,19 @@ import static org.lwjgl.glfw.GLFW.*;
 
 public class Player implements IDebugWindowPrintRegistry {
     private final World world;
-    private static final float FOOT_OFFSET = 0.02f; // 正值使碰撞盒上移，负值下移
+    private static final float FOOT_OFFSET = 0.02f;
 
-    // 坐标（y 为脚底位置）
+    // ===== 移动参数（可调字段）=====
+    public float walkSpeed = 0.02f;          // 地面移动速度
+    public float airSpeed = 0.005f;          // 空中移动速度
+    public float jumpSpeed = 0.12f;          // 跳跃速度
+    public float gravity = 0.005f;           // 重力加速度
+    public float frictionXZ = 0.91f;         // 水平阻尼（每帧）
+    public float frictionY = 0.98f;          // 垂直阻尼
+    public float groundFriction = 0.8f;      // 地面额外阻尼
+    public float speedMultiplier = 60f;      // 帧率补偿倍数（用于 delta）
+
+    // 坐标
     public float x, y, z;
     public float xo, yo, zo;
     public float xd, yd, zd;
@@ -21,7 +32,6 @@ public class Player implements IDebugWindowPrintRegistry {
     public boolean onGround = false;
     public boolean flyable = true;
 
-    // 玩家尺寸（半宽0.3，全高1.8）
     private static final float PLAYER_WIDTH = 0.6f;
     private static final float PLAYER_HEIGHT = 1.8f;
     private static final float EYE_HEIGHT = 1.62f;
@@ -34,16 +44,15 @@ public class Player implements IDebugWindowPrintRegistry {
         this.world = world;
         this.xRot = 0;
         this.yRot = 0;
-        setPos(30, 10, 50); // 脚底 y=10
+        setPos(30, 10, 50);
+        debugParamRegister(); // 自动注册调试信息
     }
 
-    // 设置位置（y 为脚底）
     public void setPos(float x, float y, float z) {
         this.x = x;
         this.y = y;
         this.z = z;
         float halfWidth = PLAYER_WIDTH / 2f;
-        // 将碰撞盒脚底放在 y + FOOT_OFFSET 处
         this.bb = new AABB(
                 x - halfWidth,
                 y + FOOT_OFFSET,
@@ -62,7 +71,7 @@ public class Player implements IDebugWindowPrintRegistry {
     }
 
     public void handleKey(int key, int action) {
-        boolean press = (action == GLFW_PRESS||action==GLFW_REPEAT);
+        boolean press = (action == GLFW_PRESS || action == GLFW_REPEAT);
         boolean release = (action == GLFW_RELEASE);
         switch (key) {
             case GLFW_KEY_W: keyW = press; break;
@@ -90,7 +99,7 @@ public class Player implements IDebugWindowPrintRegistry {
         if (keyA || keyLeft) right -= 1f;
 
         if (jumpPressed && (onGround || flyable)) {
-            yd = 0.12F * delta;   // 速度乘以 delta
+            yd = jumpSpeed * delta * speedMultiplier;
             jumpPressed = false;
         }
 
@@ -100,22 +109,17 @@ public class Player implements IDebugWindowPrintRegistry {
         float worldX = right * cos + forward * sin;
         float worldZ = -right * sin + forward * cos;
 
-        // 移动速度和重力都乘以 delta
-        float speed = (onGround ? 0.02F : 0.005F) * delta;
+        float speed = (onGround ? walkSpeed : airSpeed) * delta * speedMultiplier;
         moveRelative(worldX, worldZ, speed);
-        yd -= 0.005F * delta;
+        yd -= gravity * delta * speedMultiplier;
         move(xd, yd, zd);
 
-        // 阻尼系数保持不变（因为它们本身就是每帧衰减，乘以 delta 后反而需要调整）
-        // 对于阻尼，我们通常用指数衰减：xd *= Math.pow(0.91, delta * 60) 但为了简单，保持原样，但将速度值乘以 delta 后，阻尼会显得过强。
-        // 为了更准确，可以将速度缩放回原始尺度，或者忽略阻尼的 delta 调整。
-        // 简单起见，阻尼保持不变，但速度步长已乘以 delta，所以总体效果与帧率无关。
-        xd *= 0.91F;
-        yd *= 0.98F;
-        zd *= 0.91F;
+        xd *= frictionXZ;
+        yd *= frictionY;
+        zd *= frictionXZ;
         if (onGround) {
-            xd *= 0.8F;
-            zd *= 0.8F;
+            xd *= groundFriction;
+            zd *= groundFriction;
         }
     }
 
@@ -130,36 +134,28 @@ public class Player implements IDebugWindowPrintRegistry {
 
     public void move(float xa, float ya, float za) {
         float xaOrg = xa, yaOrg = ya, zaOrg = za;
-        // 获取与扩展后的包围盒相交的方块
         List<AABB> colliders = world.getCollisionBox(this.bb.expand(xa, ya, za));
 
-        // Y轴
         for (AABB box : colliders) ya = box.clipYCollide(this.bb, ya);
         this.bb.move(0, ya, 0);
 
-        // X轴
         for (AABB box : colliders) xa = box.clipXCollide(this.bb, xa);
         this.bb.move(xa, 0, 0);
 
-        // Z轴
         for (AABB box : colliders) za = box.clipZCollide(this.bb, za);
         this.bb.move(0, 0, za);
 
-        // 判断是否撞地
         this.onGround = (yaOrg != ya && yaOrg < 0.0F);
 
-        // 只有实际发生碰撞且移动量变为0时才清零速度（避免浮点误差导致误清）
         if (xaOrg != xa && Math.abs(xa) < 0.0001f) this.xd = 0.0F;
         if (yaOrg != ya && Math.abs(ya) < 0.0001f) this.yd = 0.0F;
         if (zaOrg != za && Math.abs(za) < 0.0001f) this.zd = 0.0F;
 
-        // 同步玩家坐标（脚底）
         this.x = (bb.x0 + bb.x1) * 0.5f;
-        this.y = bb.y0 + EYE_HEIGHT; // 补偿浮点误差，使脚底略高于方块
+        this.y = bb.y0 + EYE_HEIGHT;
         this.z = (bb.z0 + bb.z1) * 0.5f;
     }
 
-    // 射线检测（起点在眼睛位置）
     public BlockHit raycast(float maxDist) {
         float pitch = (float) Math.toRadians(xRot);
         float yaw = (float) Math.toRadians(yRot);
@@ -168,7 +164,7 @@ public class Player implements IDebugWindowPrintRegistry {
         float dz = (float) (Math.cos(pitch) * Math.cos(yaw));
 
         float px = this.x;
-        float py = this.y + EYE_HEIGHT;  // 眼睛高度
+        float py = this.y + EYE_HEIGHT;
         float pz = this.z;
 
         float stepX = (dx > 0) ? 1 : -1;
@@ -222,6 +218,13 @@ public class Player implements IDebugWindowPrintRegistry {
 
     @Override
     public void debugParamRegister() {
-
+        DebugRegistry.register("Player.WalkSpeed", () -> walkSpeed);
+        DebugRegistry.register("Player.AirSpeed", () -> airSpeed);
+        DebugRegistry.register("Player.JumpSpeed", () -> jumpSpeed);
+        DebugRegistry.register("Player.Gravity", () -> gravity);
+        DebugRegistry.register("Player.FrictionXZ", () -> frictionXZ);
+        DebugRegistry.register("Player.FrictionY", () -> frictionY);
+        DebugRegistry.register("Player.GroundFriction", () -> groundFriction);
+        DebugRegistry.register("Player.SpeedMultiplier", () -> speedMultiplier);
     }
 }
