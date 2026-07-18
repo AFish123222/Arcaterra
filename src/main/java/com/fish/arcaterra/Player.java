@@ -169,7 +169,7 @@ public class Player implements IDebugWindowPrintRegistry {
 
 // 标准 FPS 方向（yaw=0 指向 Z+，pitch=0 水平）
 
-        float dy = (float) (-Math.sin(pitch));
+        float dy = (float) (Math.sin(pitch));
 
         float dx = (float) (-Math.cos(pitch) * Math.sin(yaw));
         float dz = (float) (-Math.cos(pitch) * Math.cos(yaw));
