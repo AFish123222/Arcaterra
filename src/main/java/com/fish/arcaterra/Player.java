@@ -166,9 +166,9 @@ public class Player implements IDebugWindowPrintRegistry {
 
         float pitch = (float) Math.toRadians(xRot);
         float yaw = (float) Math.toRadians(yRot);
-        float dx = (float) (Math.cos(pitch) * Math.sin(yaw));
+        float dx = (float) (-Math.cos(pitch) * Math.sin(yaw));
         float dy = (float) (-Math.sin(pitch));
-        float dz = (float) (Math.cos(pitch) * Math.cos(yaw));
+        float dz = (float) (-Math.cos(pitch) * Math.cos(yaw));
 
         float px = this.x;
         float py = this.y + EYE_HEIGHT;
@@ -193,14 +193,14 @@ public class Player implements IDebugWindowPrintRegistry {
 
         float t = 0;
         while (t < maxDist) {
-                short blockId = world.getBlock(x, y, z);
-                System.out.println("t=" + t + " 坐标: (" + x + ", " + y + ", " + z + ") ID=" + blockId);
+            short blockId = world.getBlock(x, y, z);
+            System.out.println("t=" + t + " 坐标: (" + x + ", " + y + ", " + z + ") ID=" + blockId);
 //                ////////
-                Arcaterra.particlePool.spawn(x,y,z,0,0,0,20,0.1f,1f,0,0,0.5f, false);
+            Arcaterra.particlePool.spawn(x,y,z,0,0,0,20,0.1f,1f,0,0,0.5f, false);
 //                ///////
-                if (blockId != 0) {
-                    return new BlockHit(x, y, z, nx, ny, nz);
-                }
+            if (blockId != 0) {
+                return new BlockHit(x, y, z, nx, ny, nz);
+            }
             if (tMaxX < tMaxY) {
                 if (tMaxX < tMaxZ) {
                     x += (int) stepX;

@@ -288,21 +288,49 @@ public class Arcaterra {
 
     private void mouseButtonCallback(long win, int button, int action, int mods) {
         if (action != GLFW_PRESS) return;
-        BlockHit hit = player.raycast(5.0f);
-        if (hit == null) {
-            System.out.println("hit is null");
-            return;
-        }
-        if (button == GLFW_MOUSE_BUTTON_LEFT) {
-            world.setBlock(hit.x, hit.y, hit.z, (short) 0);
-            ////////////////
 
-            ////////////////
-        } else if (button == GLFW_MOUSE_BUTTON_RIGHT) {
+        // 1. 射线检测（获取瞄准的方块）
+        BlockHit hit = player.raycast(5.0f);
+        if (hit == null) return;
+
+        if (button == GLFW_MOUSE_BUTTON_LEFT) {
+            // 2. 挖掘：将目标方块设为空气
+            ///////////
+            world.setBlock(hit.x, hit.y, hit.z, (short) 1);
+            /////////
+
+            // 3. 强制重建该方块所在的区块（立即刷新）
+            Chunk c = world.getChunkIfLoaded(hit.x, hit.y, hit.z);
+            if (c != null) {
+                c.rebuildMesh();          // 重新生成网格
+                c.dirty = false;          // 重置脏标记，避免重复重建
+            }
+
+            // 4. 粒子效果（碎片飞溅）
+            if (particlePool != null) {
+                particlePool.spawn(15,
+                        hit.x + 0.5f, hit.y + 0.5f, hit.z + 0.5f,
+                        1.5f, 2.5f, 0.8f, 0.12f,
+                        0.6f, 0.4f, 0.2f,0.5f, true);
+            }
+
+            System.out.println("Mined block at (" + hit.x + ", " + hit.y + ", " + hit.z + ")");
+        }
+
+        if (button == GLFW_MOUSE_BUTTON_RIGHT) {
+            // 5. 放置：在相邻位置放置石块
             int nx = hit.x + hit.nx;
             int ny = hit.y + hit.ny;
             int nz = hit.z + hit.nz;
             world.setBlock(nx, ny, nz, (short) 1);
+
+            Chunk c = world.getChunkIfLoaded(nx, ny, nz);
+            if (c != null) {
+                c.rebuildMesh();
+                c.dirty = false;
+            }
+
+            System.out.println("Placed block at (" + nx + ", " + ny + ", " + nz + ")");
         }
     }
 
