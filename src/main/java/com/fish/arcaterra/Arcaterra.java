@@ -211,6 +211,8 @@ public class Arcaterra {
                 c.render(player.x, player.y, player.z);
             }
 
+            Renderer.INSTANCE.drawEyeRay(player.x,player.y,player.z,player.xRot,player.yRot);
+
             Renderer.INSTANCE.endWorldRender();
 
             hudManager.render();

@@ -95,8 +95,8 @@ public class Renderer {
         float ez = pz + dz * length;
 
         //////////
-        px = px-1;
-        py = py-1;
+        px = px;
+        py = py;
         ///////////
 
         glBegin(GL_LINES);
