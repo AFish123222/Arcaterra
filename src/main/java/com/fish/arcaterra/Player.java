@@ -6,6 +6,7 @@ import com.fish.arcaterra.level.World;
 import com.fish.arcaterra.phys.AABB;
 import com.fish.arcaterra.phys.BlockHit;
 
+
 import java.util.List;
 import static org.lwjgl.glfw.GLFW.*;
 
@@ -195,7 +196,7 @@ public class Player implements IDebugWindowPrintRegistry {
                 short blockId = world.getBlock(x, y, z);
                 System.out.println("t=" + t + " 坐标: (" + x + ", " + y + ", " + z + ") ID=" + blockId);
 //                ////////
-                world.setBlock(x,y,z, (short) 1);
+                Arcaterra.particlePool.spawn(x,y,z,0,0,0,20,0.1f,1f,0,0,0.5f, false);
 //                ///////
                 if (blockId != 0) {
                     return new BlockHit(x, y, z, nx, ny, nz);

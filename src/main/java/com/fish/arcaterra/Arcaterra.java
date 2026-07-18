@@ -50,7 +50,7 @@ public class Arcaterra {
     private World world;
     private Player player;
     private int frameTaskStep;
-    private ParticlePool particlePool;
+    public static ParticlePool particlePool;
 
     public void run() {
         init();
@@ -296,7 +296,7 @@ public class Arcaterra {
         if (button == GLFW_MOUSE_BUTTON_LEFT) {
             world.setBlock(hit.x, hit.y, hit.z, (short) 0);
             ////////////////
-            world.setBlock((int) player.x, (int) player.y, (int) player.z, (short) 1);
+
             ////////////////
         } else if (button == GLFW_MOUSE_BUTTON_RIGHT) {
             int nx = hit.x + hit.nx;
