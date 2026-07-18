@@ -212,7 +212,7 @@ public class Chunk {
 
         // 线框叠加（红色）
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        glColor3f(1.0f, 0.0f, 0.0f);
+        glColor3f(0.0f, 0.0f, 0.0f);
         mesh.render();
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
