@@ -75,6 +75,7 @@ public class Arcaterra {
         glfwMakeContextCurrent(window);
         glfwSwapInterval(0);
         glfwShowWindow(window);
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN); //隐藏鼠标
 
         GL.createCapabilities();
         glClearColor(0.4f, 0.7f, 1.0f, 1f);
