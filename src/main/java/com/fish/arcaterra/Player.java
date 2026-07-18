@@ -16,9 +16,9 @@ public class Player implements IDebugWindowPrintRegistry {
 
     // ===== 移动参数（可调字段）=====
     public float walkSpeed = 0.02f;          // 地面移动速度
-    public float airSpeed = 0.005f;          // 空中移动速度
-    public float jumpSpeed = 0.12f;          // 跳跃速度
-    public float gravity = 0.005f;           // 重力加速度
+    public float airSpeed = 0.03f;          // 空中移动速度
+    public float jumpSpeed = 0.2f;          // 跳跃速度
+    public float gravity = 0.01f;           // 重力加速度
     public float frictionXZ = 0.91f;         // 水平阻尼（每帧）
     public float frictionY = 0.98f;          // 垂直阻尼
     public float groundFriction = 0.8f;      // 地面额外阻尼
@@ -169,7 +169,7 @@ public class Player implements IDebugWindowPrintRegistry {
 
         float dx = (float) (-Math.cos(pitch) * Math.sin(yaw));
         /////
-        float dy = (float) (-Math.sin(yaw));
+        float dy = (float) (-Math.sin(pitch));
 //        float dy = (float) (-Math.sin(pitch));
         ///////
         float dz = (float) (-Math.cos(pitch) * Math.cos(yaw));
