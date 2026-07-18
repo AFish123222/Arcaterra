@@ -6,6 +6,7 @@ import com.fish.arcaterra.level.World;
 import com.fish.arcaterra.level.Chunk;
 import com.fish.arcaterra.phys.BlockHit;
 import com.fish.arcaterra.render.Renderer;
+import com.fish.arcaterra.ui.hud.HudManager;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.opengl.GL;
 
@@ -35,8 +36,8 @@ import static org.lwjgl.system.MemoryUtil.NULL;
 /// 作者会同步学习游戏开发知识 并完善JavaDoc，便利开发
 public class Arcaterra {
     private long window;
-    private final int WIDTH = 1280;
-    private final int HEIGHT = 720;
+    public static final int WIDTH = 1280;
+    public static final int HEIGHT = 720;
     private boolean running;
     private boolean mouseCaptured = true;
 
@@ -143,6 +144,7 @@ public class Arcaterra {
     private int frameCounter = 0;
     private double lastTime = 0.0;
     private double delta = 0.0;
+    private HudManager hudManager = new HudManager();
 
     private void loop() {
         // 初始化时间
@@ -182,6 +184,8 @@ public class Arcaterra {
             }
 
             Renderer.INSTANCE.endWorldRender();
+
+            hudManager.render();
 
             glfwSwapBuffers(window);
             debugUpdate();
