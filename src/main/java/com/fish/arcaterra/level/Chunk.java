@@ -30,7 +30,7 @@ public class Chunk {
         this.mesh = new ChunkMesh();
         generateTerrain();
     }
-
+//原
     private void generateTerrain() {
         TerrainProvider provider = world.getTerrainProvider();
         for (int rx = 0; rx < SIZE; rx++) {
@@ -56,6 +56,23 @@ public class Chunk {
             }
         }
     }
+
+//    //plat
+//    private void generateTerrain() {
+//        int groundY = 8;  // 固定地面高度
+//        for (int rx = 0; rx < SIZE; rx++) {
+//            for (int rz = 0; rz < SIZE; rz++) {
+//                for (int ry = 0; ry < SIZE; ry++) {
+//                    int worldY = cy * SIZE + ry;
+//                    short id = 0;
+//                    if (worldY < groundY) {
+//                        id = 1; // 石头
+//                    }else {id=0;}
+//                    setBlock(rx, ry, rz, id);
+//                }
+//            }
+//        }
+//    }
 
     public void setBlock(int rx, int ry, int rz, short id) {
         if (rx < 0 || rx >= SIZE || ry < 0 || ry >= SIZE || rz < 0 || rz >= SIZE) return;

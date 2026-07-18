@@ -4,6 +4,7 @@ import com.fish.arcaterra.debug.DebugRegistry;
 import com.fish.arcaterra.debug.DebugWindow;
 import com.fish.arcaterra.level.World;
 import com.fish.arcaterra.level.Chunk;
+import com.fish.arcaterra.particle.ParticlePool;
 import com.fish.arcaterra.phys.BlockHit;
 import com.fish.arcaterra.render.Renderer;
 import com.fish.arcaterra.ui.hud.Crosshair;
@@ -49,6 +50,7 @@ public class Arcaterra {
     private World world;
     private Player player;
     private int frameTaskStep;
+    private ParticlePool particlePool;
 
     public void run() {
         init();
@@ -147,6 +149,7 @@ public class Arcaterra {
         short tv = this.world.getBlock(tx, ty, tz);
         System.out.println("测试 setBlock(0,0,0) = " + tv);
         /////////////////
+        particlePool = new ParticlePool(5000); // 最多 5000 个粒子
     }
     private HudManager hudManager;
 
@@ -184,7 +187,8 @@ public class Arcaterra {
 
             switch (frameTaskStep) {
                 case 0:
-                    player.tick((float) delta);   // 传入 delta
+                    player.tick((float) delta);
+                    particlePool.update((float) delta);// 传入 delta
                     break;
                 case 1:
                     world.updateChunks(player.x, player.y, player.z);
@@ -200,6 +204,8 @@ public class Arcaterra {
             glRotatef(-player.xRot, 1, 0, 0);
             glRotatef(-player.yRot, 0, 1, 0);
             glTranslatef(-player.x, -player.y, -player.z);
+
+            particlePool.render(player.x, player.y, player.z);
 
             for (Chunk c : world.getVisibleChunks()) {
                 c.render(player.x, player.y, player.z);
