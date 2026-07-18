@@ -6,6 +6,7 @@ import com.fish.arcaterra.level.World;
 import com.fish.arcaterra.level.Chunk;
 import com.fish.arcaterra.phys.BlockHit;
 import com.fish.arcaterra.render.Renderer;
+import com.fish.arcaterra.ui.hud.Crosshair;
 import com.fish.arcaterra.ui.hud.HudManager;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.opengl.GL;
@@ -124,9 +125,14 @@ public class Arcaterra {
         initDebugWindow();
         System.out.println("press F3 to debug");
 
+        // hud
+        hudManager = new HudManager();
+        hudManager.add(new Crosshair());
+
         running = true;
         frameTaskStep = 0;
     }
+    private HudManager hudManager;
 
     private void initDebugWindow() {
         SwingUtilities.invokeLater(() -> {
@@ -145,7 +151,6 @@ public class Arcaterra {
     private int frameCounter = 0;
     private double lastTime = 0.0;
     private double delta = 0.0;
-    private HudManager hudManager = new HudManager();
 
     private void loop() {
         // 初始化时间
