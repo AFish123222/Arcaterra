@@ -17,8 +17,8 @@ public class Player implements IDebugWindowPrintRegistry {
     // ===== 移动参数（可调字段）=====
     public float walkSpeed = 0.02f;          // 地面移动速度
     public float airSpeed = 0.03f;          // 空中移动速度
-    public float jumpSpeed = 0.2f;          // 跳跃速度
-    public float gravity = 0.01f;           // 重力加速度
+    public float jumpSpeed = 0.5f;          // 跳跃速度
+    public float gravity = 0.2f;           // 重力加速度
     public float frictionXZ = 0.91f;         // 水平阻尼（每帧）
     public float frictionY = 0.98f;          // 垂直阻尼
     public float groundFriction = 0.8f;      // 地面额外阻尼
@@ -167,12 +167,17 @@ public class Player implements IDebugWindowPrintRegistry {
         float pitch = (float) Math.toRadians(xRot);
         float yaw = (float) Math.toRadians(yRot);
 
-        float dx = (float) (-Math.cos(pitch) * Math.sin(yaw));
-        /////
+// 标准 FPS 方向（yaw=0 指向 Z+，pitch=0 水平）
+
         float dy = (float) (-Math.sin(pitch));
-//        float dy = (float) (-Math.sin(pitch));
-        ///////
-        float dz = (float) (-Math.cos(pitch) * Math.cos(yaw));
+
+        float dx = (float) (Math.cos(pitch) * -Math.cos(yaw));
+        float dz = (float) (Math.cos(pitch) * Math.sin(yaw));
+
+// 如果你的世界坐标 Z 轴正方向是“前方”，这个公式应该工作
+// 如果你发现方向反了，尝试把 dx 和 dz 取反：
+// dx = -dx;
+// dz = -dz;
 
         float px = this.x;
         float py = this.y;
