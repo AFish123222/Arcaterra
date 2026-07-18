@@ -166,12 +166,16 @@ public class Player implements IDebugWindowPrintRegistry {
 
         float pitch = (float) Math.toRadians(xRot);
         float yaw = (float) Math.toRadians(yRot);
+
         float dx = (float) (-Math.cos(pitch) * Math.sin(yaw));
-        float dy = (float) (-Math.sin(pitch));
+        /////
+        float dy = (float) (-Math.sin(yaw));
+//        float dy = (float) (-Math.sin(pitch));
+        ///////
         float dz = (float) (-Math.cos(pitch) * Math.cos(yaw));
 
         float px = this.x;
-        float py = this.y + EYE_HEIGHT;
+        float py = this.y;
         float pz = this.z;
 
         System.out.println("射线起点: (" + px + ", " + py + ", " + pz + ")  方向: (" + dx + ", " + dy + ", " + dz + ")");
