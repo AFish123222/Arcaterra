@@ -171,8 +171,8 @@ public class Player implements IDebugWindowPrintRegistry {
 
         float dy = (float) (-Math.sin(pitch));
 
-        float dx = (float) (Math.cos(pitch) * -Math.cos(yaw));
-        float dz = (float) (Math.cos(pitch) * Math.sin(yaw));
+        float dx = (float) (-Math.cos(pitch) * Math.sin(yaw));
+        float dz = (float) (-Math.cos(pitch) * Math.cos(yaw));
 
 // 如果你的世界坐标 Z 轴正方向是“前方”，这个公式应该工作
 // 如果你发现方向反了，尝试把 dx 和 dz 取反：
