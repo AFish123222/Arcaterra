@@ -56,3 +56,27 @@ jar {
     }
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
 }
+
+// ========== 修改启动脚本，使用 ../jre/bin/java.exe ==========
+startScripts {
+    doLast {
+        def batFile = file("${outputDir}/${applicationName}.bat")
+        def batContent = batFile.text
+
+        // 1. 强制将 JAVA_EXE 指向 ../jre/bin/java.exe
+        batContent = batContent.replace(
+                'set JAVA_EXE=java.exe',
+                'set JAVA_EXE=%APP_HOME%\\..\\jre\\bin\\java.exe'
+        )
+
+        // 2. 跳过 JAVA_HOME 检查，直接使用我们设定的 JAVA_EXE
+        // 简单方法：在 findJavaFromJavaHome 之前插入跳转
+        batContent = batContent.replace(
+                'if defined JAVA_HOME goto findJavaFromJavaHome',
+                'if defined JAVA_HOME goto findJavaFromJavaHome\nset JAVA_EXE=%APP_HOME%\\..\\jre\\bin\\java.exe\ngoto execute'
+        )
+
+        // 3. 把修改后的内容写回
+        batFile.text = batContent
+    }
+}
