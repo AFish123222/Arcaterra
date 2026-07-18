@@ -65,4 +65,55 @@ public class Renderer {
     public void destroyCubeMesh() {
         testCubeMesh.destroy();
     }
+
+    public void drawEyeRay(float px, float py, float pz,float xRot, float yRot) {
+
+        float pitch = (float) Math.toRadians(xRot);
+        float yaw = (float) Math.toRadians(yRot);
+        float dx = (float) (Math.cos(pitch) * Math.sin(yaw));
+        float dy = (float) (-Math.sin(pitch));
+        float dz = (float) (Math.cos(pitch) * Math.cos(yaw));
+
+
+
+
+        //////////
+        // 保存当前状态
+        glPushAttrib(GL_ENABLE_BIT | GL_LINE_BIT);
+
+        glDisable(GL_LIGHTING);
+        glDisable(GL_TEXTURE_2D);
+        glEnable(GL_LINE_SMOOTH);
+        glLineWidth(2.0f);
+
+        // 设置颜色（亮绿色，醒目）
+        glColor3f(0.0f, 1.0f, 0.0f);
+
+        float length = 5.0f;
+        float ex = px + dx * length;
+        float ey = py + dy * length;
+        float ez = pz + dz * length;
+
+        //////////
+        px = px-1;
+        py = py-1;
+        ///////////
+
+        glBegin(GL_LINES);
+        glVertex3f(px, py, pz);
+        glVertex3f(ex, ey, ez);
+        glEnd();
+
+        // 在终点画一个小球或十字标记（可选）
+        // 这里简单画一个小点
+        glPointSize(4.0f);
+        glColor3f(1.0f, 0.0f, 0.0f);
+        glBegin(GL_POINTS);
+        glVertex3f(ex, ey, ez);
+        glEnd();
+
+        // 恢复状态
+        glPopAttrib();
+        ////////
+    }
 }
