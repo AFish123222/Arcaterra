@@ -102,6 +102,11 @@ public class Player implements IDebugWindowPrintRegistry {
             yd = jumpSpeed * delta * speedMultiplier;
             jumpPressed = false;
         }
+        if (this.y < -64) {
+            float groundY = world.getTerrainProvider().getHeight(x, z);
+            setPos(x, groundY + 1.5f, z);
+            yd = 0;
+        }
 
         float radY = (float) Math.toRadians(yRot);
         float cos = (float) Math.cos(radY);
@@ -157,6 +162,7 @@ public class Player implements IDebugWindowPrintRegistry {
     }
 
     public BlockHit raycast(float maxDist) {
+
         float pitch = (float) Math.toRadians(xRot);
         float yaw = (float) Math.toRadians(yRot);
         float dx = (float) (Math.cos(pitch) * Math.sin(yaw));
@@ -166,6 +172,8 @@ public class Player implements IDebugWindowPrintRegistry {
         float px = this.x;
         float py = this.y + EYE_HEIGHT;
         float pz = this.z;
+
+        System.out.println("射线起点: (" + px + ", " + py + ", " + pz + ")  方向: (" + dx + ", " + dy + ", " + dz + ")");
 
         float stepX = (dx > 0) ? 1 : -1;
         float stepY = (dy > 0) ? 1 : -1;
@@ -184,9 +192,14 @@ public class Player implements IDebugWindowPrintRegistry {
 
         float t = 0;
         while (t < maxDist) {
-            if (world.getBlock(x, y, z) != 0) {
-                return new BlockHit(x, y, z, nx, ny, nz);
-            }
+                short blockId = world.getBlock(x, y, z);
+                System.out.println("t=" + t + " 坐标: (" + x + ", " + y + ", " + z + ") ID=" + blockId);
+//                ////////
+                world.setBlock(x,y,z, (short) 1);
+//                ///////
+                if (blockId != 0) {
+                    return new BlockHit(x, y, z, nx, ny, nz);
+                }
             if (tMaxX < tMaxY) {
                 if (tMaxX < tMaxZ) {
                     x += (int) stepX;
