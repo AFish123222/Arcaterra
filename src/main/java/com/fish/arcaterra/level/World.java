@@ -60,17 +60,10 @@ public class World {
 
     public void setBlock(int wx, int wy, int wz, short id) {
         Chunk c = getChunk(wx, wy, wz);
-        ///////////
-        int cx = c.getCx();
-        int cy = c.getCy();
-        int cz = c.getCz();
-        System.out.println("getChunk(" + wx + ", " + wy + ", " + wz + ") -> cx=" + cx + ", cy=" + cy + ", cz=" + cz);
-        /////////////
         int rx = wx - c.getCx() * Chunk.SIZE;
         int ry = wy - c.getCy() * Chunk.SIZE;
         int rz = wz - c.getCz() * Chunk.SIZE;
         c.setBlock(rx, ry, rz, id);
-        System.out.println("区块坐标: cx=" + c.getCx() + ", cy=" + c.getCy() + ", cz=" + c.getCz());
         c.dirty = true;
         markNeighborDirty(wx, wy, wz);
     }

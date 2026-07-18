@@ -134,21 +134,8 @@ public class Arcaterra {
 
         running = true;
         frameTaskStep = 0;
-        /////////////
 
-            int x = 33, y = 10, z = 30;
-            world.setBlock(x, y, z, (short) 1);
-            short val = world.getBlock(x, y, z);
-            System.out.println("测试结果: " + val);
 
-        ///////////////////////////////////////////////////
-        ////////////////
-        // 在 this.world = new World(); 之后，player 创建之前
-        int tx = 10, ty = -10, tz = 0;
-        this.world.setBlock(tx, ty, tz, (short) 1);
-        short tv = this.world.getBlock(tx, ty, tz);
-        System.out.println("测试 setBlock(0,0,0) = " + tv);
-        /////////////////
         particlePool = new ParticlePool(5000); // 最多 5000 个粒子
     }
     private HudManager hudManager;
@@ -292,14 +279,10 @@ public class Arcaterra {
         if (action != GLFW_PRESS) return;
         BlockHit hit = player.raycast(5.0f);
         if (hit == null) {
-            System.out.println("hit is null");
             return;
         }
         if (button == GLFW_MOUSE_BUTTON_LEFT) {
             world.setBlock(hit.x, hit.y, hit.z, (short) 0);
-            ////////////////
-
-            ////////////////
         } else if (button == GLFW_MOUSE_BUTTON_RIGHT) {
             int nx = hit.x + hit.nx;
             int ny = hit.y + hit.ny;
@@ -320,8 +303,7 @@ public class Arcaterra {
                 c.dirty = false;
             }
 
-            System.out.println("Placed block at (" + nx + ", " + ny + ", " + nz + ")");
-        }
+                    }
     }
 
     public static void main(String[] args) {

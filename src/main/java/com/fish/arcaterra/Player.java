@@ -163,28 +163,14 @@ public class Player implements IDebugWindowPrintRegistry {
     }
 
     public BlockHit raycast(float maxDist) {
-
         float pitch = (float) Math.toRadians(xRot);
         float yaw = (float) Math.toRadians(yRot);
-
-// 标准 FPS 方向（yaw=0 指向 Z+，pitch=0 水平）
-
         float dy = (float) (Math.sin(pitch));
-
         float dx = (float) (-Math.cos(pitch) * Math.sin(yaw));
         float dz = (float) (-Math.cos(pitch) * Math.cos(yaw));
-
-// 如果你的世界坐标 Z 轴正方向是“前方”，这个公式应该工作
-// 如果你发现方向反了，尝试把 dx 和 dz 取反：
-// dx = -dx;
-// dz = -dz;
-
         float px = this.x;
         float py = this.y;
         float pz = this.z;
-
-        System.out.println("射线起点: (" + px + ", " + py + ", " + pz + ")  方向: (" + dx + ", " + dy + ", " + dz + ")");
-
         float stepX = (dx > 0) ? 1 : -1;
         float stepY = (dy > 0) ? 1 : -1;
         float stepZ = (dz > 0) ? 1 : -1;
@@ -203,10 +189,7 @@ public class Player implements IDebugWindowPrintRegistry {
         float t = 0;
         while (t < maxDist) {
             short blockId = world.getBlock(x, y, z);
-            System.out.println("t=" + t + " 坐标: (" + x + ", " + y + ", " + z + ") ID=" + blockId);
-//                ////////
-            Arcaterra.particlePool.spawn(x,y,z,0,0,0,20,0.1f,1f,0,0,0.5f, false);
-//                ///////
+//            Arcaterra.particlePool.spawn(x,y,z,0,0,0,20,0.1f,1f,0,0,0.5f, false);
             if (blockId != 0) {
                 return new BlockHit(x, y, z, nx, ny, nz);
             }
