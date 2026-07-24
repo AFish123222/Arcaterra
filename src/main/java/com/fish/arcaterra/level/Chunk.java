@@ -19,7 +19,7 @@ public class Chunk {
     private final short[] blocks = new short[SIZE * SIZE * SIZE];
     public boolean dirty = true;
 
-    // ★ 调试开关：设为 true 则只画线框，false 则正常填充（默认）
+    /// 调试开关：设为 true 则只画线框，false 则正常填充（默认）
     private static final boolean DEBUG_WIREFRAME_ONLY = false;
 
     public Chunk(int cx, int cy, int cz, World world) {
@@ -196,7 +196,7 @@ public class Chunk {
         i.add(offset + 3);
     }
 
-    // ★★★ 渲染：支持填充 + 线框叠加（调试用）★★★
+    /// ★★★ 渲染：支持填充 + 线框叠加（调试用）★★★
     public void render(float px, float py, float pz) {
         if (mesh.indexCount <= 0) return;
 
@@ -227,4 +227,87 @@ public class Chunk {
     public int getCx() { return cx; }
     public int getCy() { return cy; }
     public int getCz() { return cz; }
+
+    /// #### 基于 mesh 的边界绘制方法
+    /// 从实际推入 GPU 的顶点数据中，反向提取出这个区块的边界顶点。<br>
+    /// 效果:
+    /// - 每个区块的边界线框，完全基于 mesh 中实际存在的顶点数据提取
+    /// - 如果区块是空的（全空气），mesh.indexCount == 0，不绘制。
+    /// - 如果区块包含体素，边界会精确贴合顶点数据的极值范围。<br>
+    /// 看到的不是硬编码的 16×16×16 方块轮廓，而是实际渲染数据的真实边界。
+
+    public void renderChunkBounds() {
+        if (mesh == null || mesh.indexCount == 0) return;
+
+        float[] vertices = mesh.getVertexData();
+        if (vertices == null || vertices.length == 0) return;
+
+        // 找出极值
+        float minX = Float.MAX_VALUE, maxX = -Float.MAX_VALUE;
+        float minY = Float.MAX_VALUE, maxY = -Float.MAX_VALUE;
+        float minZ = Float.MAX_VALUE, maxZ = -Float.MAX_VALUE;
+
+        for (int i = 0; i < vertices.length; i += 3) {
+            float x = vertices[i];
+            float y = vertices[i + 1];
+            float z = vertices[i + 2];
+
+            if (x < minX) minX = x;
+            if (x > maxX) maxX = x;
+            if (y < minY) minY = y;
+            if (y > maxY) maxY = y;
+            if (z < minZ) minZ = z;
+            if (z > maxZ) maxZ = z;
+        }
+
+        // 8 个极值顶点
+        float[][] corners = {
+                {minX, minY, minZ}, // 0
+                {maxX, minY, minZ}, // 1
+                {maxX, maxY, minZ}, // 2
+                {minX, maxY, minZ}, // 3
+                {minX, minY, maxZ}, // 4
+                {maxX, minY, maxZ}, // 5
+                {maxX, maxY, maxZ}, // 6
+                {minX, maxY, maxZ}  // 7
+        };
+
+        // 12 条棱
+        int[][] edges = {
+                {0,1}, {1,2}, {2,3}, {3,0},
+                {4,5}, {5,6}, {6,7}, {7,4},
+                {0,4}, {1,5}, {2,6}, {3,7}
+        };
+
+        // 绘制
+        glPushAttrib(GL_ENABLE_BIT | GL_LINE_BIT | GL_COLOR_BUFFER_BIT);
+        glDisable(GL_LIGHTING);
+        glDisable(GL_TEXTURE_2D);
+        glDisable(GL_DEPTH_TEST);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+        glLineWidth(2.0f);
+        glColor4f(0.0f, 1.0f, 0.0f, 0.8f);
+
+        glBegin(GL_LINES);
+        for (int[] edge : edges) {
+            float[] p1 = corners[edge[0]];
+            float[] p2 = corners[edge[1]];
+            glVertex3f(p1[0], p1[1], p1[2]);
+            glVertex3f(p2[0], p2[1], p2[2]);
+        }
+        glEnd();
+
+        // 可选：顶点标记
+        glPointSize(4.0f);
+        glColor4f(1.0f, 0.0f, 0.0f, 0.9f);
+        glBegin(GL_POINTS);
+        for (float[] corner : corners) {
+            glVertex3f(corner[0], corner[1], corner[2]);
+        }
+        glEnd();
+
+        glPopAttrib();
+    }
 }
