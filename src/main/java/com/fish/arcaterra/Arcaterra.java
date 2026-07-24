@@ -324,8 +324,8 @@ public class Arcaterra {
     /// ### 配置类
     static class Config{
         /// 渲染玩家所在区块边界，空黄实绿
-        public static boolean showChunkBoundPlayerAt = false;
+        public static boolean showChunkBoundPlayerAt = true;
         /// 渲染所有区块边界，空黄实绿
-        public static boolean showAllChunkBound = true;
+        public static boolean showAllChunkBound = false;
     }
 }
