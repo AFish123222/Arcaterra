@@ -3,6 +3,8 @@ package com.fish.arcaterra.tree;
 import com.fish.arcaterra.level.mesh.ChunkMesh;
 import com.fish.arcaterra.terrarium.NoiseTerrainProvider;
 import com.fish.arcaterra.terrarium.TerrainProvider;
+import com.fish.arcaterra.tree.terrain.LodTerrainProvider;
+import com.fish.arcaterra.tree.terrain.NoiseLodTerrainProvider;
 import org.lwjgl.system.MemoryUtil;
 
 import java.nio.FloatBuffer;
@@ -46,7 +48,7 @@ public class TreeNetChunk {
      * @param path 从根到该节点的路径
      * @param parent 父节点，根节点为 null
      */
-    public TreeNetChunk(TreePath path, TreeNetChunk parent,  TerrainProvider terrainProvider) {
+    public TreeNetChunk(TreePath path, TreeNetChunk parent, LodTerrainProvider terrainProvider) {
         this.path = path;
         this.parent = parent;
         this.meshes = new ChunkMesh[MAX_LOD];
@@ -118,7 +120,7 @@ public class TreeNetChunk {
             children[index] = new TreeNetChunk(
                     childPath,
                     this,
-                    new NoiseTerrainProvider()
+                    new NoiseLodTerrainProvider() //fixme:这么写不能扩展啊
             );
             // 从磁盘加载LOD数据（如有）
             loadFromDisk(childPath);
@@ -144,6 +146,10 @@ public class TreeNetChunk {
             this.isOnPlayerPath = true;
             if (!isLeaf()) {
                 int nextDir = playerPath.getDirectionAt(this.path.getDepth());
+                // 关键修复：如果子节点为空，先创建它
+                if (children[nextDir] == null) {
+                    children[nextDir] = getOrCreateChild(nextDir);
+                }
                 children[nextDir].markPlayerPath(playerPath);
             }
         } else {
