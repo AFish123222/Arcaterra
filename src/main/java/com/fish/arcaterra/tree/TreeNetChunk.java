@@ -196,10 +196,10 @@ public class TreeNetChunk {
      * @param camX, camY, camZ 相机位置（世界坐标）
      */
     public void render(float camX, float camY, float camZ) {
-        System.out.println(0);
+//        System.out.println(0);
 
         if (!loaded) return;
-        System.out.println(1);
+//        System.out.println(1);
 
         // 计算当前节点到相机的距离，选择 LOD 级别
         float dist = distanceToCamera(camX, camY, camZ);
@@ -210,21 +210,21 @@ public class TreeNetChunk {
             renderMesh(camX, camY, camZ);
             return;
         }
-        System.out.println(2);
+//        System.out.println(2);
 
         // 在玩家路径上，且是叶子节点：渲染精细网格
         if (isLeaf()) {
             renderMesh(camX, camY, camZ);
             return;
         }
-        System.out.println(3);
+//        System.out.println(3);
 
         // 在玩家路径上，但距离足够远，停止细化（直接渲染当前节点）
         if (currentLOD >= 2) {
             renderMesh(camX, camY, camZ);
             return;
         }
-        System.out.println(4);
+//        System.out.println(4);
 
         // 否则继续递归子节点
         for (TreeNetChunk child : children) {
@@ -292,8 +292,10 @@ public class TreeNetChunk {
         if (meshes[currentLOD] == null) {
             generateLODMesh(currentLOD);
         }
-        if (meshes[currentLOD] == null || meshes[currentLOD].indexCount == 0) return;
+        System.out.println("aaa");
 
+        if (meshes[currentLOD] == null || meshes[currentLOD].indexCount == 0) return;
+        System.out.println("bbb");
         float[] offset = computeWorldOffset();
         glPushMatrix();
         glTranslatef(offset[0], offset[1], offset[2]);
@@ -303,20 +305,21 @@ public class TreeNetChunk {
 
     /**
      * 生成指定 LOD 级别的网格。
-     * @param lodLevel LOD级别，0为最精细，3为最粗
+     * @param lod LOD级别，0为最精细，3为最粗
      */
-    private void generateLODMesh(int lodLevel) {
+    private void generateLODMesh(int lod) {
+        System.out.println("generateLODMesh: lod=" + lod + ", isLeaf=" + isLeaf());
         if (isLeaf()) {
-            // 叶子节点：从体素生成方块网格（仅当 lodLevel == 0 时）
-            if (lodLevel == 0) {
-                meshes[lodLevel] = buildBlockMesh();
+            if (lod == 0) {
+                meshes[lod] = buildBlockMesh();
+                System.out.println("buildBlockMesh finish: " + (meshes[lod] != null ? "indexCount=" + meshes[lod].indexCount : "null"));
             } else {
-                // 叶子节点不生成 LOD1~3（这些由父节点处理）
-                meshes[lodLevel] = null;
+                meshes[lod] = null;
+                System.out.println("leaf net LOD " + lod + " set null");
             }
         } else {
-            // 非叶节点：从子节点简化生成网格
-            meshes[lodLevel] = buildSimplifiedMesh(lodLevel);
+            meshes[lod] = buildSimplifiedMesh(lod);
+            System.out.println("buildSimplifiedMesh finish: " + (meshes[lod] != null ? "indexCount=" + meshes[lod].indexCount : "null"));
         }
         dirty = false;
     }
