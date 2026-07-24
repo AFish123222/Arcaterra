@@ -194,11 +194,14 @@ public class Arcaterra {
 
             particlePool.render(player.x, player.y, player.z);
 
+            ////////////////
             world.getChunk(
-                    (int) player.x,
-                    (int) player.y,
-                    (int) player.z
+                    player.x,
+                    player.y,
+                    player.z
             ).renderChunkBounds(); // 渲染玩家所在区块的边界
+            ////////////////////
+
 
             for (Chunk c : world.getVisibleChunks()) {
                 c.render(player.x, player.y, player.z);
