@@ -36,8 +36,21 @@ public class World {
     }
 
     // ========== 区块管理 ==========
+    @Deprecated // int强转会使 -float --> 0
+    /// @see World.getChunk(float,float,float)
     public Chunk getChunk(int wx, int wy, int wz) {
         return chunkPool.getOrCreateChunk(wx, wy, wz);
+    }
+
+    ///
+    /// @param wx : 世界坐标
+    /// @param wy : 世界坐标
+    /// @param wz : 世界坐标
+    public Chunk getChunk(float wx, float wy, float wz) {
+        int cx = Math.floorDiv((int) Math.floor(wx), Chunk.SIZE);
+        int cy = Math.floorDiv((int) Math.floor(wy), Chunk.SIZE);
+        int cz = Math.floorDiv((int) Math.floor(wz), Chunk.SIZE);
+        return getChunk(cx * Chunk.SIZE, cy * Chunk.SIZE, cz * Chunk.SIZE);
     }
 
     public Chunk getChunkIfLoaded(int wx, int wy, int wz) {
