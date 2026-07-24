@@ -37,7 +37,7 @@ public class NoiseLodTerrainProvider implements LodTerrainProvider {
 
     @Override
     public short[] generateVoxels(float offsetX, float offsetY, float offsetZ) {
-        int size = 4; // LEAF_SIZE
+        int size = 4;
         short[] voxels = new short[size * size * size];
         for (int x = 0; x < size; x++) {
             for (int z = 0; z < size; z++) {
@@ -47,11 +47,15 @@ public class NoiseLodTerrainProvider implements LodTerrainProvider {
                 int groundY = Math.round(height);
                 for (int y = 0; y < size; y++) {
                     int worldY = (int)(offsetY + y);
-                    short id = 0;
-                    if (worldY < groundY) id = 1;
-                    else if (worldY == groundY) id = 1;
-                    else if (worldY == groundY + 1) id = 2;
-                    voxels[x + y * size + z * size * size] = id;
+                    if (worldY < groundY) {
+                        voxels[x + y * size + z * size * size] = 1; // 石头
+                    } else if (worldY == groundY) {
+                        voxels[x + y * size + z * size * size] = 1; // 地表
+                    } else if (worldY == groundY + 1) {
+                        voxels[x + y * size + z * size * size] = 2; // 草地
+                    } else {
+                        voxels[x + y * size + z * size * size] = 0; // 空气
+                    }
                 }
             }
         }
