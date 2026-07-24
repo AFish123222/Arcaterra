@@ -6,6 +6,7 @@ import static org.lwjgl.opengl.GL11.*;
 import static com.fish.arcaterra.Arcaterra.WIDTH;
 import static com.fish.arcaterra.Arcaterra.HEIGHT;
 
+/// ## 准星
 public class Crosshair implements IHudElement {
     @Override
     public void render() {
