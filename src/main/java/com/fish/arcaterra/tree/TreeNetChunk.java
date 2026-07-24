@@ -196,37 +196,31 @@ public class TreeNetChunk {
      * @param camX, camY, camZ 相机位置（世界坐标）
      */
     public void render(float camX, float camY, float camZ) {
-//        System.out.println(0);
-
         if (!loaded) return;
-//        System.out.println(1);
 
-        // 计算当前节点到相机的距离，选择 LOD 级别
         float dist = distanceToCamera(camX, camY, camZ);
         currentLOD = selectLOD(dist);
 
-        // 不在玩家路径上：直接渲染粗网格，不递归
+        // 叶子节点：始终渲染精细网格（LOD 0）
+        if (isLeaf()) {
+            currentLOD = 0;  // 强制 LOD 0
+            renderMesh(camX, camY, camZ);
+            return;
+        }
+
+        // 非叶节点：如果不在玩家路径上，直接渲染粗网格
         if (!isOnPlayerPath) {
             renderMesh(camX, camY, camZ);
             return;
         }
-//        System.out.println(2);
 
-        // 在玩家路径上，且是叶子节点：渲染精细网格
-        if (isLeaf()) {
-            renderMesh(camX, camY, camZ);
-            return;
-        }
-//        System.out.println(3);
-
-        // 在玩家路径上，但距离足够远，停止细化（直接渲染当前节点）
+        // 在路径上但距离足够远，停止细化
         if (currentLOD >= 2) {
             renderMesh(camX, camY, camZ);
             return;
         }
-//        System.out.println(4);
 
-        // 否则继续递归子节点
+        // 继续递归子节点
         for (TreeNetChunk child : children) {
             if (child != null && child.loaded) {
                 child.render(camX, camY, camZ);
@@ -532,8 +526,44 @@ public class TreeNetChunk {
      * 从子节点简化生成网格（非叶子节点）。
      */
     private ChunkMesh buildSimplifiedMesh(int lod) {
-        // TODO: 根据 LOD 级别合并子节点网格或生成高度图
-        return new ChunkMesh();
+        System.out.println("buildSimplifiedMesh: lod=" + lod + ", size=" + getSize());
+
+        // 临时：生成一个包围盒
+        List<Float> verts = new ArrayList<>();
+        List<Integer> indices = new ArrayList<>();
+
+        float s = getSize();
+        float h = s * 0.5f;
+
+        // 8 个顶点
+        float[][] corners = {
+                {-h, -h, -h}, { h, -h, -h}, { h,  h, -h}, {-h,  h, -h},
+                {-h, -h,  h}, { h, -h,  h}, { h,  h,  h}, {-h,  h,  h}
+        };
+        // 12 个三角形（6 个面，每个面 2 个三角形）
+        int[][] faces = {
+                {0,1,2}, {0,2,3}, {4,5,6}, {4,6,7},
+                {0,1,5}, {0,5,4}, {2,3,7}, {2,7,6},
+                {0,3,7}, {0,7,4}, {1,2,6}, {1,6,5}
+        };
+
+        int offset = 0;
+        for (int[] tri : faces) {
+            for (int idx : tri) {
+                verts.add(corners[idx][0]);
+                verts.add(corners[idx][1]);
+                verts.add(corners[idx][2]);
+            }
+            indices.add(offset++);
+            indices.add(offset++);
+            indices.add(offset++);
+        }
+
+        // 上传
+        ChunkMesh mesh = new ChunkMesh();
+        // ... 转换并上传
+        System.out.println("buildSimplifiedMesh: vertices=" + verts.size() + ", indexs=" + indices.size());
+        return mesh;
     }
 
     // ========== 事件队列 ==========
