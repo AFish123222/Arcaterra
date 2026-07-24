@@ -196,6 +196,7 @@ public class Arcaterra {
 
             for (Chunk c : world.getVisibleChunks()) {
                 c.render(player.x, player.y, player.z);
+                if (Config.showAllChunkBound) c.renderChunkBounds();
             } //可见区块渲染
 
             // 渲染玩家所在区块的边界
@@ -320,8 +321,11 @@ public class Arcaterra {
         new Arcaterra().run();
     }
 
+    /// ### 配置类
     static class Config{
-        /// 渲染玩家所在区块，空黄实绿
-        public static boolean showChunkBoundPlayerAt = true;
+        /// 渲染玩家所在区块边界，空黄实绿
+        public static boolean showChunkBoundPlayerAt = false;
+        /// 渲染所有区块边界，空黄实绿
+        public static boolean showAllChunkBound = true;
     }
 }
