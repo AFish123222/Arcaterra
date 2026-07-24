@@ -60,10 +60,13 @@ public class TreeNetChunk {
         if (isLeaf()) {
             this.voxels = new short[LEAF_SIZE * LEAF_SIZE * LEAF_SIZE];
             generateTerrain();
+            this.loaded = true;
             this.children = null;
         } else {
             this.voxels = null;
             this.children = new TreeNetChunk[8];
+            // 非叶节点不需要地形数据，但也可以标记为已加载（如果它有子节点数据）
+            loaded = true; // 或者根据是否有子节点数据来决定
         }
     }
 
@@ -88,6 +91,10 @@ public class TreeNetChunk {
      * 生成叶子节点的体素数据（占位实现，需替换为真实地形生成）。
      */
     private void generateTerrain() {
+        if (terrainProvider == null) {
+            System.out.println("warning：terrainProvider is null!! no terrain");
+            return;
+        }
         // 计算叶子在世界空间中的角点偏移
         float[] offset = computeWorldOffset();
         for (int x = 0; x < LEAF_SIZE; x++) {
@@ -107,6 +114,20 @@ public class TreeNetChunk {
             }
         }
     }
+//    private void generateTerrain() {
+//        if (terrainProvider == null) {
+//            System.out.println("警告：terrainProvider 为空，无法生成地形！");
+//            return;
+//        }
+//        float[] offset = computeWorldOffset();
+//        this.voxels = terrainProvider.generateVoxels(offset[0], offset[1], offset[2]);
+//        // 检查是否有非空气方块
+//        int nonAir = 0;
+//        for (short v : voxels) {
+//            if (v != 0) nonAir++;
+//        }
+//        System.out.println("叶子节点 " + path + " 生成了 " + nonAir + " 个非空气方块");
+//    }
     // ========== 树操作 ==========
 
     /**
@@ -175,7 +196,10 @@ public class TreeNetChunk {
      * @param camX, camY, camZ 相机位置（世界坐标）
      */
     public void render(float camX, float camY, float camZ) {
+        System.out.println(0);
+
         if (!loaded) return;
+        System.out.println(1);
 
         // 计算当前节点到相机的距离，选择 LOD 级别
         float dist = distanceToCamera(camX, camY, camZ);
@@ -186,18 +210,21 @@ public class TreeNetChunk {
             renderMesh(camX, camY, camZ);
             return;
         }
+        System.out.println(2);
 
         // 在玩家路径上，且是叶子节点：渲染精细网格
         if (isLeaf()) {
             renderMesh(camX, camY, camZ);
             return;
         }
+        System.out.println(3);
 
         // 在玩家路径上，但距离足够远，停止细化（直接渲染当前节点）
         if (currentLOD >= 2) {
             renderMesh(camX, camY, camZ);
             return;
         }
+        System.out.println(4);
 
         // 否则继续递归子节点
         for (TreeNetChunk child : children) {
