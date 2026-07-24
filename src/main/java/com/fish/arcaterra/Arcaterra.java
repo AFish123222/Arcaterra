@@ -10,6 +10,7 @@ import com.fish.arcaterra.render.Renderer;
 import com.fish.arcaterra.tree.TreeNetChunk;
 import com.fish.arcaterra.tree.TreeNetWorld;
 import com.fish.arcaterra.tree.TreePath;
+import com.fish.arcaterra.tree.terrain.NoiseLodTerrainProvider;
 import com.fish.arcaterra.ui.hud.Crosshair;
 import com.fish.arcaterra.ui.hud.HudManager;
 import org.jetbrains.annotations.NotNull;
@@ -98,7 +99,7 @@ public class Arcaterra {
 
 
         // 在 init() 中
-        LODManager.treeWorld = new TreeNetWorld();
+        LODManager.treeWorld = new TreeNetWorld(new NoiseLodTerrainProvider());
 
         // 使用噪声地形（默认）
         this.world = new World();
