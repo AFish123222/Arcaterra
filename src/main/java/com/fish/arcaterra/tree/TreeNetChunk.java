@@ -26,7 +26,7 @@ public class TreeNetChunk {
     /** 根节点覆盖边长（世界单位）。 */
     public static final int ROOT_SIZE = 1024;
     /** LOD级别数量，0为最精细，3为最粗。 */
-    public static final int MAX_LOD = 3;
+    public static final int MAX_LOD = 4;
 
     private final TerrainProvider terrainProvider;
 
