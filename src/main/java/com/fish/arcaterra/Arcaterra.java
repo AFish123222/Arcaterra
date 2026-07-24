@@ -7,8 +7,12 @@ import com.fish.arcaterra.level.Chunk;
 import com.fish.arcaterra.particle.ParticlePool;
 import com.fish.arcaterra.phys.BlockHit;
 import com.fish.arcaterra.render.Renderer;
+import com.fish.arcaterra.tree.TreeNetChunk;
+import com.fish.arcaterra.tree.TreeNetWorld;
+import com.fish.arcaterra.tree.TreePath;
 import com.fish.arcaterra.ui.hud.Crosshair;
 import com.fish.arcaterra.ui.hud.HudManager;
+import org.jetbrains.annotations.NotNull;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.opengl.GL;
 
@@ -93,9 +97,11 @@ public class Arcaterra {
         glMatrixMode(GL_MODELVIEW);
 
 
+        // 在 init() 中
+        LODManager.treeWorld = new TreeNetWorld();
 
         // 使用噪声地形（默认）
-         this.world = new World();
+        this.world = new World();
 
 //        // 使用 DEM（如果文件存在）
 //        try {
@@ -138,6 +144,7 @@ public class Arcaterra {
 
         particlePool = new ParticlePool(5000); // 最多 5000 个粒子
     }
+
     private HudManager hudManager;
 
     private void initDebugWindow() {
@@ -152,7 +159,8 @@ public class Arcaterra {
 
         DebugRegistry.register("World", "VisibleChunks", () -> world.getVisibleChunks().size());
         DebugRegistry.register("World", "DirtyChunks", () -> world.getDirtyChunks().size());
-        DebugRegistry.register("World", "GroundHeight", () -> world.getTerrainProvider().getHeight(player.x, player.z));}
+        DebugRegistry.register("World", "GroundHeight", () -> world.getTerrainProvider().getHeight(player.x, player.z));
+    }
 
     private int frameCounter = 0;
     private double lastTime = 0.0;
@@ -161,6 +169,8 @@ public class Arcaterra {
     private void loop() {
         // 初始化时间
         lastTime = glfwGetTime();
+        TreePath playerPath = LODManager.worldToPath(player.x, player.y, player.z);
+        LODManager.treeWorld.updatePlayerPath(playerPath);
 
         while (running && !glfwWindowShouldClose(window)) {
             double now = glfwGetTime();
@@ -194,13 +204,18 @@ public class Arcaterra {
 
             particlePool.render(player.x, player.y, player.z);
 
-            for (Chunk c : world.getVisibleChunks()) {
-                c.render(player.x, player.y, player.z);
-                if (Config.showAllChunkBound) c.renderChunkBounds();
-            } //可见区块渲染
+            if(Config.renderMode == Config.RenderMode.ORIGINAL){
+                for (Chunk c : world.getVisibleChunks()) {
+                    c.render(player.x, player.y, player.z);
+                    if (Config.showAllChunkBound) c.renderChunkBounds();
+                } //可见区块渲染
+            }
+            if(Config.renderMode == Config.RenderMode.LOD){
+                LODManager.treeWorld.render(player.x, player.y, player.z);
+            }
 
             // 渲染玩家所在区块的边界
-            if (Config.showChunkBoundPlayerAt){
+            if (Config.showChunkBoundPlayerAt) {
                 world.getChunk(
                         player.x,
                         player.y,
@@ -209,7 +224,7 @@ public class Arcaterra {
             }
 
 
-            Renderer.INSTANCE.drawEyeRay(player.x,player.y,player.z,player.xRot,player.yRot);
+            Renderer.INSTANCE.drawEyeRay(player.x, player.y, player.z, player.xRot, player.yRot);
 
             Renderer.INSTANCE.endWorldRender();
 
@@ -264,7 +279,7 @@ public class Arcaterra {
                 mouseCaptured = !mouseCaptured;
                 glfwSetInputMode(window, GLFW_CURSOR, mouseCaptured ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
                 if (!mouseCaptured) {
-                    glfwSetCursorPos(window, WIDTH/2.0, HEIGHT/2.0);
+                    glfwSetCursorPos(window, WIDTH / 2.0, HEIGHT / 2.0);
                 }
             }
             return; // 不传递给 player
@@ -314,18 +329,58 @@ public class Arcaterra {
                 c.dirty = false;
             }
 
-                    }
+        }
     }
 
     public static void main(String[] args) {
         new Arcaterra().run();
     }
 
+
     /// ### 配置类
-    static class Config{
+    static class Config {
         /// 渲染玩家所在区块边界，空黄实绿
         public static boolean showChunkBoundPlayerAt = true;
         /// 渲染所有区块边界，空黄实绿
         public static boolean showAllChunkBound = false;
+        /// 启用lodRender
+        public static RenderMode renderMode = RenderMode.LOD;
+        public enum RenderMode {
+            ORIGINAL, // World,Chunk (com.fish.arcaterra.level)
+            LOD //com.fish.arcaterra.tree
+        }
+    }
+
+    /// LOD
+    class LODManager {
+        // 在 Arcaterra.java 中
+        public static TreeNetWorld treeWorld;
+
+        /**
+         * 将世界坐标转换为 TreePath。
+         * @param x, y, z 世界坐标
+         * @return 从根到该位置的叶子节点路径
+         */
+        public static TreePath worldToPath(float x, float y, float z) {
+            int size = TreeNetChunk.ROOT_SIZE;
+            long code = 0;
+            int depth = 0;
+
+            // 从根开始，逐层计算方向
+            while (size > TreeNetChunk.LEAF_SIZE) {
+                int half = size >> 1;
+                int dir = 0;
+                if (x >= 0) { x -= half; dir |= 1; }
+                else x += half;
+                if (y >= 0) { y -= half; dir |= 2; }
+                else y += half;
+                if (z >= 0) { z -= half; dir |= 4; }
+                else z += half;
+                code = (code << 3) | dir;
+                depth++;
+                size = half;
+            }
+            return new TreePath(code, depth);
+        }
     }
 }
