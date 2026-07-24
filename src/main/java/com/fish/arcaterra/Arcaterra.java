@@ -198,11 +198,15 @@ public class Arcaterra {
                 c.render(player.x, player.y, player.z);
             } //可见区块渲染
 
-            world.getChunk(
-                    player.x,
-                    player.y,
-                    player.z
-            ).renderChunkBounds(); // 渲染玩家所在区块的边界
+            // 渲染玩家所在区块的边界
+            if (Config.showChunkBoundPlayerAt){
+                world.getChunk(
+                        player.x,
+                        player.y,
+                        player.z
+                ).renderChunkBounds();
+            }
+
 
             Renderer.INSTANCE.drawEyeRay(player.x,player.y,player.z,player.xRot,player.yRot);
 
@@ -314,5 +318,10 @@ public class Arcaterra {
 
     public static void main(String[] args) {
         new Arcaterra().run();
+    }
+
+    static class Config{
+        /// 渲染玩家所在区块，空黄实绿
+        public static boolean showChunkBoundPlayerAt = true;
     }
 }
