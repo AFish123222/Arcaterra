@@ -366,16 +366,20 @@ public class Arcaterra {
             long code = 0;
             int depth = 0;
 
-            // 从根开始，逐层计算方向
+            // 偏移到根节点范围 [0, ROOT_SIZE)
+            float px = x + size / 2f;
+            float py = y + size / 2f;
+            float pz = z + size / 2f;
+
             while (size > TreeNetChunk.LEAF_SIZE) {
                 int half = size >> 1;
                 int dir = 0;
-                if (x >= 0) { x -= half; dir |= 1; }
-                else x += half;
-                if (y >= 0) { y -= half; dir |= 2; }
-                else y += half;
-                if (z >= 0) { z -= half; dir |= 4; }
-                else z += half;
+                if (px >= half) { px -= half; dir |= 1; }
+                else px += half;
+                if (py >= half) { py -= half; dir |= 2; }
+                else py += half;
+                if (pz >= half) { pz -= half; dir |= 4; }
+                else pz += half;
                 code = (code << 3) | dir;
                 depth++;
                 size = half;
