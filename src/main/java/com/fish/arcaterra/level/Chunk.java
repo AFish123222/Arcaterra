@@ -237,11 +237,14 @@ public class Chunk {
     /// 看到的不是硬编码的 16×16×16 方块轮廓，而是实际渲染数据的真实边界。
 
     public void renderChunkBounds() {
+        System.out.println("bound: " + cx + ", " + cy + ", " + cz);
+
+
         if (mesh == null || mesh.indexCount == 0) return;
+
 
         float[] vertices = mesh.getVertexData();
         if (vertices == null || vertices.length == 0) return;
-
         // 找出极值
         float minX = Float.MAX_VALUE, maxX = -Float.MAX_VALUE;
         float minY = Float.MAX_VALUE, maxY = -Float.MAX_VALUE;
