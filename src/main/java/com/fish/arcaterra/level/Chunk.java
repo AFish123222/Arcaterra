@@ -237,14 +237,11 @@ public class Chunk {
     /// 看到的不是硬编码的 16×16×16 方块轮廓，而是实际渲染数据的真实边界。
 
     public void renderChunkBounds() {
-        System.out.println("bound: " + cx + ", " + cy + ", " + cz);
-
-
         if (mesh == null || mesh.indexCount == 0) return;
-
 
         float[] vertices = mesh.getVertexData();
         if (vertices == null || vertices.length == 0) return;
+
         // 找出极值
         float minX = Float.MAX_VALUE, maxX = -Float.MAX_VALUE;
         float minY = Float.MAX_VALUE, maxY = -Float.MAX_VALUE;
@@ -254,7 +251,6 @@ public class Chunk {
             float x = vertices[i];
             float y = vertices[i + 1];
             float z = vertices[i + 2];
-
             if (x < minX) minX = x;
             if (x > maxX) maxX = x;
             if (y < minY) minY = y;
@@ -263,32 +259,30 @@ public class Chunk {
             if (z > maxZ) maxZ = z;
         }
 
-        // 8 个极值顶点
+        // 8 个极值顶点（局部坐标）
         float[][] corners = {
-                {minX, minY, minZ}, // 0
-                {maxX, minY, minZ}, // 1
-                {maxX, maxY, minZ}, // 2
-                {minX, maxY, minZ}, // 3
-                {minX, minY, maxZ}, // 4
-                {maxX, minY, maxZ}, // 5
-                {maxX, maxY, maxZ}, // 6
-                {minX, maxY, maxZ}  // 7
+                {minX, minY, minZ}, {maxX, minY, minZ},
+                {maxX, maxY, minZ}, {minX, maxY, minZ},
+                {minX, minY, maxZ}, {maxX, minY, maxZ},
+                {maxX, maxY, maxZ}, {minX, maxY, maxZ}
         };
 
-        // 12 条棱
         int[][] edges = {
                 {0,1}, {1,2}, {2,3}, {3,0},
                 {4,5}, {5,6}, {6,7}, {7,4},
                 {0,4}, {1,5}, {2,6}, {3,7}
         };
 
-        // 绘制
         glPushAttrib(GL_ENABLE_BIT | GL_LINE_BIT | GL_COLOR_BUFFER_BIT);
         glDisable(GL_LIGHTING);
         glDisable(GL_TEXTURE_2D);
         glDisable(GL_DEPTH_TEST);
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+        // 平移到区块的世界坐标
+        glPushMatrix();
+        glTranslatef(cx * SIZE, cy * SIZE, cz * SIZE);
 
         glLineWidth(2.0f);
         glColor4f(0.0f, 1.0f, 0.0f, 0.8f);
@@ -302,7 +296,6 @@ public class Chunk {
         }
         glEnd();
 
-        // 可选：顶点标记
         glPointSize(4.0f);
         glColor4f(1.0f, 0.0f, 0.0f, 0.9f);
         glBegin(GL_POINTS);
@@ -311,6 +304,7 @@ public class Chunk {
         }
         glEnd();
 
+        glPopMatrix();
         glPopAttrib();
     }
 }
