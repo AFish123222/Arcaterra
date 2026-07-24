@@ -167,7 +167,6 @@ public class TreeNetChunk {
             this.isOnPlayerPath = true;
             if (!isLeaf()) {
                 int nextDir = playerPath.getDirectionAt(this.path.getDepth());
-                // 关键修复：如果子节点为空，先创建它
                 if (children[nextDir] == null) {
                     children[nextDir] = getOrCreateChild(nextDir);
                 }
@@ -286,10 +285,10 @@ public class TreeNetChunk {
         if (meshes[currentLOD] == null) {
             generateLODMesh(currentLOD);
         }
-        System.out.println("aaa");
+        // 临时：即使 indexCount 为 0，也尝试渲染
+        if (meshes[currentLOD] == null) return;
+        // if (meshes[currentLOD].indexCount == 0) return;  // 暂时注释掉
 
-        if (meshes[currentLOD] == null || meshes[currentLOD].indexCount == 0) return;
-        System.out.println("bbb");
         float[] offset = computeWorldOffset();
         glPushMatrix();
         glTranslatef(offset[0], offset[1], offset[2]);
@@ -303,7 +302,11 @@ public class TreeNetChunk {
      */
     private void generateLODMesh(int lod) {
         System.out.println("generateLODMesh: lod=" + lod + ", isLeaf=" + isLeaf());
+        ////////
+
+        ///////
         if (isLeaf()) {
+            System.out.println("@@@");
             if (lod == 0) {
                 meshes[lod] = buildBlockMesh();
                 System.out.println("buildBlockMesh finish: " + (meshes[lod] != null ? "indexCount=" + meshes[lod].indexCount : "null"));
@@ -323,7 +326,9 @@ public class TreeNetChunk {
      * @return 包含所有可见面的网格
      */
     private ChunkMesh buildBlockMesh() {
+        System.out.println(111);
         if (!isLeaf()) return null;
+        System.out.println(222);
 
         List<Float> verts = new ArrayList<>();
         List<Integer> indices = new ArrayList<>();
@@ -332,6 +337,7 @@ public class TreeNetChunk {
         if (verts.isEmpty() || indices.isEmpty()) {
             return null;
         }
+        System.out.println(333);
 
         // 转换为数组
         float[] vArr = new float[verts.size()];
@@ -347,6 +353,7 @@ public class TreeNetChunk {
 
         ChunkMesh mesh = new ChunkMesh();
         mesh.upload(vBuf, iBuf);
+        System.out.println("upload 后 indexCount=" + mesh.indexCount);
 
         MemoryUtil.memFree(vBuf);
         MemoryUtil.memFree(iBuf);
