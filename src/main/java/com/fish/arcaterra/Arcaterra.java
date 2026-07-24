@@ -346,13 +346,15 @@ public class Arcaterra {
         /// 启用lodRender
         public static RenderMode renderMode = RenderMode.LOD;
         public enum RenderMode {
-            ORIGINAL, // World,Chunk (com.fish.arcaterra.level)
-            LOD //com.fish.arcaterra.tree
+            /// 运行World,Chunk (com.fish.arcaterra.level)
+            ORIGINAL,
+            /// 运行com.fish.arcaterra.tree
+            LOD
         }
     }
 
     /// LOD
-    class LODManager {
+    static class LODManager {
         // 在 Arcaterra.java 中
         public static TreeNetWorld treeWorld;
 

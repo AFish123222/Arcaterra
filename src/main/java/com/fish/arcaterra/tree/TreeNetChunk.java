@@ -22,7 +22,7 @@ import static org.lwjgl.opengl.GL11.*;
  */
 public class TreeNetChunk {
     /** 叶子区块边长（体素单位）。 */
-    public static final int LEAF_SIZE = 4;
+    public static final int LEAF_SIZE = 16;
     /** 根节点覆盖边长（世界单位）。 */
     public static final int ROOT_SIZE = 1024;
     /** LOD级别数量，0为最精细，3为最粗。 */
