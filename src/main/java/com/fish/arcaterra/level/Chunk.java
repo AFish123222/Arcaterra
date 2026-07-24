@@ -235,28 +235,49 @@ public class Chunk {
     /// - 如果区块是空的（全空气），mesh.indexCount == 0，不绘制。
     /// - 如果区块包含体素，边界会精确贴合顶点数据的极值范围。<br>
     /// 看到的不是硬编码的 16×16×16 方块轮廓，而是实际渲染数据的真实边界。
+    ///
+    /// 空区块，黄框；实区块绿框
 
     public void renderChunkBounds() {
-        if (mesh == null || mesh.indexCount == 0) return;
 
-        float[] vertices = mesh.getVertexData();
-        if (vertices == null || vertices.length == 0) return;
+        // 存储极值点（无论是否来自 mesh）
+        float minX = 0, maxX = SIZE;
+        float minY = 0, maxY = SIZE;
+        float minZ = 0, maxZ = SIZE;
+        boolean hasData = false;
 
-        // 找出极值
-        float minX = Float.MAX_VALUE, maxX = -Float.MAX_VALUE;
-        float minY = Float.MAX_VALUE, maxY = -Float.MAX_VALUE;
-        float minZ = Float.MAX_VALUE, maxZ = -Float.MAX_VALUE;
+        // 尝试从 mesh 中提取顶点数据
+        if (mesh != null && mesh.indexCount > 0) {
+            float[] vertices = mesh.getVertexData();
+            if (vertices != null && vertices.length > 0) {
+                // 从顶点数据中提取极值
+                minX = Float.MAX_VALUE; maxX = -Float.MAX_VALUE;
+                minY = Float.MAX_VALUE; maxY = -Float.MAX_VALUE;
+                minZ = Float.MAX_VALUE; maxZ = -Float.MAX_VALUE;
 
-        for (int i = 0; i < vertices.length; i += 3) {
-            float x = vertices[i];
-            float y = vertices[i + 1];
-            float z = vertices[i + 2];
-            if (x < minX) minX = x;
-            if (x > maxX) maxX = x;
-            if (y < minY) minY = y;
-            if (y > maxY) maxY = y;
-            if (z < minZ) minZ = z;
-            if (z > maxZ) maxZ = z;
+                for (int i = 0; i < vertices.length; i += 3) {
+                    float x = vertices[i];
+                    float y = vertices[i + 1];
+                    float z = vertices[i + 2];
+                    if (x < minX) minX = x;
+                    if (x > maxX) maxX = x;
+                    if (y < minY) minY = y;
+                    if (y > maxY) maxY = y;
+                    if (z < minZ) minZ = z;
+                    if (z > maxZ) maxZ = z;
+                }
+                hasData = true;
+            }
+        }
+
+        // 如果没有有效顶点数据，用区块范围（16×16×16）
+        if (!hasData) {
+            minX = 0;
+            maxX = SIZE;
+            minY = 0;
+            maxY = SIZE;
+            minZ = 0;
+            maxZ = SIZE;
         }
 
         // 8 个极值顶点（局部坐标）
@@ -273,6 +294,7 @@ public class Chunk {
                 {0,4}, {1,5}, {2,6}, {3,7}
         };
 
+        // 绘制
         glPushAttrib(GL_ENABLE_BIT | GL_LINE_BIT | GL_COLOR_BUFFER_BIT);
         glDisable(GL_LIGHTING);
         glDisable(GL_TEXTURE_2D);
@@ -284,9 +306,14 @@ public class Chunk {
         glPushMatrix();
         glTranslatef(cx * SIZE, cy * SIZE, cz * SIZE);
 
-        glLineWidth(2.0f);
-        glColor4f(0.0f, 1.0f, 0.0f, 0.8f);
+        // 根据是否有数据选择颜色（有数据：绿色，无数据：黄色）
+        if (hasData) {
+            glColor4f(0.0f, 1.0f, 0.0f, 0.8f); // 绿色
+        } else {
+            glColor4f(1.0f, 1.0f, 0.0f, 0.6f); // 黄色
+        }
 
+        glLineWidth(2.0f);
         glBegin(GL_LINES);
         for (int[] edge : edges) {
             float[] p1 = corners[edge[0]];
@@ -296,6 +323,7 @@ public class Chunk {
         }
         glEnd();
 
+        // 顶点标记（红色）
         glPointSize(4.0f);
         glColor4f(1.0f, 0.0f, 0.0f, 0.9f);
         glBegin(GL_POINTS);
