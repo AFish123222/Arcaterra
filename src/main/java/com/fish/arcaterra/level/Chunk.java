@@ -12,7 +12,7 @@ import java.util.List;
 import static org.lwjgl.opengl.GL11.*;
 
 public class Chunk {
-    public static final int SIZE = 4;
+    public static final int SIZE = 16;
     private final int cx, cy, cz;
     private final World world;
     private ChunkMesh mesh;
