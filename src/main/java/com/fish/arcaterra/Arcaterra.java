@@ -345,7 +345,7 @@ public class Arcaterra {
         /// 渲染所有区块边界，空黄实绿
         public static boolean showAllChunkBound = false;
         /// 启用lodRender
-        public static RenderMode renderMode = RenderMode.LOD;
+        public static RenderMode renderMode = RenderMode.ORIGINAL;
         public enum RenderMode {
             /// 运行World,Chunk (com.fish.arcaterra.level)
             ORIGINAL,
