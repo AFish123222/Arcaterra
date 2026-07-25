@@ -365,7 +365,7 @@ public class Arcaterra {
             LOD
         }
         /// 世界生成器
-        public static WorldGenMode worldGenMode = WorldGenMode.NOISE;
+        public static WorldGenMode worldGenMode = WorldGenMode.DEM;
         public enum WorldGenMode {
             /// 噪声地形
             NOISE,
