@@ -52,26 +52,32 @@ public class DemTerrainProvider implements TerrainProvider {
     /**
      * 构造器（直观方式）：直接传入每个方块对应的水平/垂直米数。
      * 内部自动计算每度经纬度对应的米数（使用原点纬度近似）。
-     * @param zoom 瓦片缩放级别（10~14）
      * @param originLon 游戏世界原点 (0,0) 对应的经度（度）
      * @param originLat 游戏世界原点 (0,0) 对应的纬度（度）
-     * @param meterPerBlockX 每个方块在水平方向（经度）对应的米数，例如 1.0 表示 1 方块 = 1 米
-     * @param meterPerBlockZ 每个方块在垂直方向（纬度）对应的米数
+     * @param meterPerBlock  每格对应几米
      */
-    public DemTerrainProvider(int zoom, double originLon, double originLat,
-                              double meterPerBlockX, double meterPerBlockZ) {
-        this.zoom = zoom;
+    public DemTerrainProvider(double originLon, double originLat, double meterPerBlock) {
         this.originLon = originLon;
         this.originLat = originLat;
-        // 1° 纬度 ≈ 111320 米（恒定）
-        // 1° 经度 ≈ 111320 * cos(lat) 米（随纬度变化，用原点纬度近似）
+        // 计算最佳 zoom
         double latRad = Math.toRadians(originLat);
         double metersPerDegreeLon = 111320 * Math.cos(latRad);
         double metersPerDegreeLat = 111320;
-        this.lonPerMeter = meterPerBlockX / metersPerDegreeLon;
-        this.latPerMeter = meterPerBlockZ / metersPerDegreeLat;
+        // 每个像素对应的纬度/经度跨度 = meterPerBlock / (每度米数)
+        this.lonPerMeter = meterPerBlock / metersPerDegreeLon;
+        this.latPerMeter = meterPerBlock / metersPerDegreeLat;
+        // 计算最佳 zoom：使像素分辨率尽量接近 meterPerBlock
+        // 像素分辨率 = (每度米数) / (256 * 2^zoom)
+        // 让 (每度米数) / (256 * 2^zoom) ≈ meterPerBlock
+        // 解得 zoom = log2(每度米数 / (256 * meterPerBlock))
+        // 用纬度方向的米数（恒定）计算
+        double targetResolution = meterPerBlock; // 我们希望每个像素对应 meterPerBlock 米
+        double idealZoom = Math.log(metersPerDegreeLat / (256.0 * targetResolution))/Math.log(2);//log()->ln
+        this.zoom = (int) Math.round(idealZoom);
+        // 限制在 10~14 之间
+        if (this.zoom < 10) this.zoom = 10;
+        if (this.zoom > 14) this.zoom = 14;
     }
-
     @Override
     public float getHeight(float worldX, float worldZ) {
         // 游戏坐标（米）→ 经纬度（度）
