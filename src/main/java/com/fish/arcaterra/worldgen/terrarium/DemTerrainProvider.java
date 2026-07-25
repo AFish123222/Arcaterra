@@ -10,79 +10,56 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * 从 Mapterhorn 或 AWS Terrain Tiles 在线获取 DEM 数据。<br>
- * 瓦片格式：Terrarium (RGB 编码高程)。<br>
- * 支持两种构造方式：<br>
- * 1. 传入每度经纬度对应的米数（精确）<br>
- * 2. 传入每个方块对应的水平/垂直米数（直观）<br>
- * <br>
- * 示例（直观方式，宝鸡附近，1方块=1米）：<br>
- * DemTerrainProvider dem = new DemTerrainProvider(12, 107.1, 34.3, 1.0, 1.0);
+ * 从 AWS Terrain Tiles 在线获取 DEM 数据。<br>
+ * 构造时只需传入：原点经纬度、每个方块对应的水平米数。<br>
+ * zoom 级别自动计算，使每个 DEM 像素尽量对应一个方块。<br>
+ * 高度值直接使用 DEM 返回的米数（垂直方向不缩放）。
  */
 public class DemTerrainProvider implements TerrainProvider {
-    // 在线瓦片服务
     private static final String TILE_URL =
             "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png";
 
     private final Map<Long, BufferedImage> cache = new HashMap<>();
     private final int zoom;
-
     private final double originLon;
     private final double originLat;
-    private final double lonPerMeter; // 每米对应的经度增量（度/米）
-    private final double latPerMeter; // 每米对应的纬度增量（度/米）
-
-//    /**
-//     * 构造器（精确方式）：直接传入每度经纬度对应的米数。
-//     * @param zoom 瓦片缩放级别（10~14）
-//     * @param originLon 游戏世界原点 (0,0) 对应的经度（度）
-//     * @param originLat 游戏世界原点 (0,0) 对应的纬度（度）
-//     * @param metersPerDegreeLon 每度经度对应的米数（在原点附近）
-//     * @param metersPerDegreeLat 每度纬度对应的米数（约 111320）
-//     */
-//    public DemTerrainProvider(int zoom, double originLon, double originLat,
-//                              double metersPerDegreeLon, double metersPerDegreeLat) {
-//        this.zoom = zoom;
-//        this.originLon = originLon;
-//        this.originLat = originLat;
-//        this.lonPerMeter = 1.0 / metersPerDegreeLon;
-//        this.latPerMeter = 1.0 / metersPerDegreeLat;
-//    }
+    private final double lonPerBlock; // 每个方块对应的经度增量（度/格）
+    private final double latPerBlock; // 每个方块对应的纬度增量（度/格）
 
     /**
-     * 构造器（直观方式）：直接传入每个方块对应的水平/垂直米数。
-     * 内部自动计算每度经纬度对应的米数（使用原点纬度近似）。
+     * 构造器：自动计算最佳 zoom。
      * @param originLon 游戏世界原点 (0,0) 对应的经度（度）
      * @param originLat 游戏世界原点 (0,0) 对应的纬度（度）
-     * @param meterPerBlock  每格对应几米
+     * @param meterPerBlock 每个方块在水平方向对应的实际米数（例如 1.0 表示 1 方块 = 1 米）
      */
     public DemTerrainProvider(double originLon, double originLat, double meterPerBlock) {
         this.originLon = originLon;
         this.originLat = originLat;
-        // 计算最佳 zoom
+
+        // 计算每度经纬度对应的米数（使用原点纬度近似）
         double latRad = Math.toRadians(originLat);
         double metersPerDegreeLon = 111320 * Math.cos(latRad);
         double metersPerDegreeLat = 111320;
-        // 每个像素对应的纬度/经度跨度 = meterPerBlock / (每度米数)
-        this.lonPerMeter = meterPerBlock / metersPerDegreeLon;
-        this.latPerMeter = meterPerBlock / metersPerDegreeLat;
-        // 计算最佳 zoom：使像素分辨率尽量接近 meterPerBlock
-        // 像素分辨率 = (每度米数) / (256 * 2^zoom)
-        // 让 (每度米数) / (256 * 2^zoom) ≈ meterPerBlock
-        // 解得 zoom = log2(每度米数 / (256 * meterPerBlock))
-        // 用纬度方向的米数（恒定）计算
-        double targetResolution = meterPerBlock; // 我们希望每个像素对应 meterPerBlock 米
-        double idealZoom = Math.log(metersPerDegreeLat / (256.0 * targetResolution))/Math.log(2);//log()->ln
-        this.zoom = (int) Math.round(idealZoom);
-        // 限制在 10~14 之间
-        if (this.zoom < 10) this.zoom = 10;
-        if (this.zoom > 14) this.zoom = 14;
+
+        // 每个方块对应的经纬度增量
+        this.lonPerBlock = meterPerBlock / metersPerDegreeLon;
+        this.latPerBlock = meterPerBlock / metersPerDegreeLat;
+
+        // 自动选择 zoom：使每个像素对应的地面距离 ≈ meterPerBlock
+        // 像素分辨率 = metersPerDegreeLat / (256 * 2^zoom)
+        // 令其等于 meterPerBlock，解出 zoom
+        double idealZoom = Math.log(metersPerDegreeLat / (256.0 * meterPerBlock))/Math.log(2); //log()->ln
+        int z = (int) Math.round(idealZoom);
+        z = Math.max(10, Math.min(14, z)); // 限制在 10~14 之间
+        this.zoom = z;
+        System.out.println("DemTerrainProvider: zoom=" + zoom + " (meterPerBlock=" + meterPerBlock + ")");
     }
+
     @Override
     public float getHeight(float worldX, float worldZ) {
-        // 游戏坐标（米）→ 经纬度（度）
-        double lng = originLon + worldX * lonPerMeter;
-        double lat = originLat + worldZ * latPerMeter;
+        // 游戏坐标（方块）→ 经纬度（度）
+        double lng = originLon + worldX * lonPerBlock;
+        double lat = originLat + worldZ * latPerBlock;
 
         // 经纬度 → 瓦片坐标
         int[] tile = latLngToTile(lat, lng, zoom);
@@ -110,9 +87,11 @@ public class DemTerrainProvider implements TerrainProvider {
             HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
             conn.setConnectTimeout(5000);
             conn.setReadTimeout(5000);
+            System.out.println("successfully fetch tile: " + url);
             return ImageIO.read(conn.getInputStream());
         } catch (Exception e) {
             System.err.println("Failed to fetch tile: " + e.getMessage());
+
             return new BufferedImage(256, 256, BufferedImage.TYPE_INT_RGB);
         }
     }
