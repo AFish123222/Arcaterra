@@ -11,8 +11,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * 从 Mapterhorn 或 AWS Terrain Tiles 在线获取 DEM 数据。
- * 瓦片格式：Terrarium (RGB 编码高程)。
+ * 从 Mapterhorn 或 AWS Terrain Tiles 在线获取 DEM 数据。<br>
+ * 瓦片格式：Terrarium (RGB 编码高程)。 <br>
+ * example: <br>
+ * // 宝鸡中心：107.1°E, 34.3°N <br>
+ * // 1°经度 ≈ 111320 * cos(34.3°) ≈ 92000 米 <br>
+ * // 1°纬度 ≈ 111320 米 <br>
+ * DemTerrainProvider dem = new DemTerrainProvider(12, 107.1, 34.3, 92000.0, 111320.0); <br>
+ * world = new World(dem); <br>
  */
 public class DemTerrainProvider implements TerrainProvider {
     // 在线瓦片服务（国内推荐用 TellusCN 镜像，需要自己查具体地址）
@@ -52,9 +58,9 @@ public class DemTerrainProvider implements TerrainProvider {
         int[] tile = latLngToTile(lat, lng, zoom);
         int tileX = tile[0], tileY = tile[1];
 
-        System.out.println("getHeight: worldX=" + worldX + ", worldZ=" + worldZ);
-        System.out.println("lat=" + lat + ", lng=" + lng);
-        System.out.println("tileX=" + tileX + ", tileY=" + tileY);
+//        System.out.println("getHeight: worldX=" + worldX + ", worldZ=" + worldZ);
+//        System.out.println("lat=" + lat + ", lng=" + lng);
+//        System.out.println("tileX=" + tileX + ", tileY=" + tileY);
 
         long key = ((long) tileX << 32) | (tileY & 0xFFFFFFFFL);
         BufferedImage img = cache.computeIfAbsent(key, k -> fetchTile(tileX, tileY));
@@ -78,6 +84,7 @@ public class DemTerrainProvider implements TerrainProvider {
             HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
             conn.setConnectTimeout(5000);
             conn.setReadTimeout(5000);
+            System.out.println("Success to fetch tile: " + url);
             return ImageIO.read(conn.getInputStream());
         } catch (Exception e) {
             System.err.println("Failed to fetch tile: " + e.getMessage());

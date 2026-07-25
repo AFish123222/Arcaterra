@@ -108,7 +108,7 @@ public class Arcaterra {
         // 使用噪声地形
         if (Config.worldGenMode == Config.WorldGenMode.NOISE) this.world = new World(new NoiseTerrainProvider());
         // 使用dem
-        if (Config.worldGenMode == Config.WorldGenMode.DEM) this.world = new World(new DemTerrainProvider(12));//zoom12->2.4m/pixel
+        if (Config.worldGenMode == Config.WorldGenMode.DEM) this.world = new World(new DemTerrainProvider(12, 107.1, 34.3, 92000.0, 111320.0));//zoom12->2.4m/pixel
 
 
 
