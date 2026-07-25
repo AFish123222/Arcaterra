@@ -1,5 +1,7 @@
 package com.fish.arcaterra.terrarium;
 
+import com.fish.arcaterra.worldgen.TerrainProvider;
+
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
@@ -11,6 +13,7 @@ import java.io.IOException;
  * 使用标准 Java ImageIO + imageio-ext 插件读取 GeoTIFF。
  * 需要手动提供 DEM 覆盖的地理范围（minX, maxX, minZ, maxZ）。
  */
+@Deprecated
 public class DemTerrainProvider implements TerrainProvider {
     private final Raster raster;
     private final int width, height;

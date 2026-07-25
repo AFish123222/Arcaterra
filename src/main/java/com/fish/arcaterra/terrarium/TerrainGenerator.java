@@ -1,7 +1,9 @@
 package com.fish.arcaterra.terrarium;
 
 import com.fish.arcaterra.level.Chunk;
+import com.fish.arcaterra.worldgen.TerrainProvider;
 
+@Deprecated
 public class TerrainGenerator {
     private final TerrainProvider provider;
     private final int seaLevel = 8; // 海平面高度（未使用，可扩展）
