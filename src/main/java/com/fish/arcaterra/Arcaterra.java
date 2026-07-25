@@ -13,6 +13,8 @@ import com.fish.arcaterra.tree.TreePath;
 import com.fish.arcaterra.tree.terrain.NoiseLodTerrainProvider;
 import com.fish.arcaterra.ui.hud.Crosshair;
 import com.fish.arcaterra.ui.hud.HudManager;
+import com.fish.arcaterra.worldgen.noise.NoiseTerrainProvider;
+import com.fish.arcaterra.worldgen.terrarium.DemTerrainProvider;
 import org.jetbrains.annotations.NotNull;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.opengl.GL;
@@ -99,10 +101,16 @@ public class Arcaterra {
 
 
         // 在 init() 中
-        LODManager.treeWorld = new TreeNetWorld(new NoiseLodTerrainProvider());
+        if (Config.renderMode == Config.RenderMode.LOD) {
+            LODManager.treeWorld = new TreeNetWorld(new NoiseLodTerrainProvider());
+        }
 
-        // 使用噪声地形（默认）
-        this.world = new World();
+        // 使用噪声地形
+        if (Config.worldGenMode == Config.WorldGenMode.NOISE) this.world = new World(new NoiseTerrainProvider());
+        // 使用dem
+        if (Config.worldGenMode == Config.WorldGenMode.DEM) this.world = new World(new DemTerrainProvider(12));//zoom12->2.4m/pixel
+
+
 
 //        // 使用 DEM（如果文件存在）
 //        try {
@@ -170,8 +178,12 @@ public class Arcaterra {
     private void loop() {
         // 初始化时间
         lastTime = glfwGetTime();
-        TreePath playerPath = LODManager.worldToPath(player.x, player.y, player.z);
-        LODManager.treeWorld.updatePlayerPath(playerPath);
+
+        if (Config.renderMode == Config.RenderMode.LOD){
+            TreePath playerPath = LODManager.worldToPath(player.x, player.y, player.z);
+            LODManager.treeWorld.updatePlayerPath(playerPath);
+        }
+
 
         while (running && !glfwWindowShouldClose(window)) {
             double now = glfwGetTime();
@@ -339,7 +351,7 @@ public class Arcaterra {
 
 
     /// ### 配置类
-    static class Config {
+    public static class Config {
         /// 渲染玩家所在区块边界，空黄实绿
         public static boolean showChunkBoundPlayerAt = true;
         /// 渲染所有区块边界，空黄实绿
@@ -351,6 +363,14 @@ public class Arcaterra {
             ORIGINAL,
             /// 运行com.fish.arcaterra.tree
             LOD
+        }
+        /// 世界生成器
+        public static WorldGenMode worldGenMode = WorldGenMode.NOISE;
+        public enum WorldGenMode {
+            /// 噪声地形
+            NOISE,
+            /// Terrarium
+            DEM
         }
     }
 

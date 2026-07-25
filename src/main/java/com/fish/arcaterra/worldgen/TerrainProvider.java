@@ -1,4 +1,4 @@
-package com.fish.arcaterra.terrarium;
+package com.fish.arcaterra.worldgen;
 
 public interface TerrainProvider {
     float getHeight(float worldX, float worldZ);

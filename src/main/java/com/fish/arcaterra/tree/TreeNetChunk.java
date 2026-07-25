@@ -1,8 +1,7 @@
 package com.fish.arcaterra.tree;
 
 import com.fish.arcaterra.level.mesh.ChunkMesh;
-import com.fish.arcaterra.terrarium.NoiseTerrainProvider;
-import com.fish.arcaterra.terrarium.TerrainProvider;
+import com.fish.arcaterra.worldgen.TerrainProvider;
 import com.fish.arcaterra.tree.terrain.LodTerrainProvider;
 import com.fish.arcaterra.tree.terrain.NoiseLodTerrainProvider;
 import org.lwjgl.system.MemoryUtil;

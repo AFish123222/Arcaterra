@@ -1,8 +1,6 @@
 package com.fish.arcaterra.tree;
 
-import com.fish.arcaterra.terrarium.NoiseTerrainProvider;
 import com.fish.arcaterra.tree.terrain.LodTerrainProvider;
-import com.fish.arcaterra.tree.terrain.NoiseLodTerrainProvider;
 
 public class TreeNetWorld {
     private TreeNetChunk root;

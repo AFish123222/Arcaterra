@@ -1,8 +1,10 @@
 package com.fish.arcaterra.level;
 
+import com.fish.arcaterra.Arcaterra;
 import com.fish.arcaterra.phys.AABB;
-import com.fish.arcaterra.terrarium.TerrainProvider;
-import com.fish.arcaterra.terrarium.NoiseTerrainProvider;
+import com.fish.arcaterra.worldgen.TerrainProvider;
+import com.fish.arcaterra.worldgen.noise.NoiseTerrainProvider;
+import com.fish.arcaterra.worldgen.terrarium.DemTerrainProvider;
 
 import java.util.*;
 
@@ -12,13 +14,6 @@ public class World {
     private final TerrainProvider terrainProvider;
 
     public final int groundY = 8; // 仅作为 fallback，实际由 TerrainProvider 决定
-
-    /**
-     * 默认构造：使用噪声地形
-     */
-    public World() {
-        this(new NoiseTerrainProvider());
-    }
 
     /**
      * 构造时指定地形提供者（如 DEM 或噪声）

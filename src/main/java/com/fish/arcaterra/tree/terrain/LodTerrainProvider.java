@@ -1,6 +1,6 @@
 package com.fish.arcaterra.tree.terrain;
 
-import com.fish.arcaterra.terrarium.TerrainProvider;
+import com.fish.arcaterra.worldgen.TerrainProvider;
 
 /**
  * 专为 LOD 系统设计的地形提供者。

@@ -1,7 +1,7 @@
 package com.fish.arcaterra.level;
 
 import com.fish.arcaterra.level.mesh.ChunkMesh;
-import com.fish.arcaterra.terrarium.TerrainProvider;
+import com.fish.arcaterra.worldgen.TerrainProvider;
 import org.lwjgl.system.MemoryUtil;
 
 import java.nio.FloatBuffer;

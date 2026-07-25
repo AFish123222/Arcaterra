@@ -1,4 +1,6 @@
-package com.fish.arcaterra.terrarium;
+package com.fish.arcaterra.worldgen.noise;
+
+import com.fish.arcaterra.worldgen.TerrainProvider;
 
 import java.util.Random;
 
