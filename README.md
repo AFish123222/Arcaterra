@@ -14,13 +14,26 @@
 ### Why i create it?
 I wanna journey in Minecraft,However It's soooooo ka!!! I'll optifine it extremely!
 
-### 画饼~
--
--
--
+### 画饼~ 
+- terrarium+Minecraft+Voxy+Fabric +原神
+- 模块即插件将在不知多久后指导开发，极致优雅的架构
+- 好的我要开始随便画饼了，碎碎念模式
+- 你见过什么样的中国？是900万平方公里的辽阔，还是... (Terrarium,CubicChunks,voxy)
+- 你可以踏遍千山万水，是云游的徐霞客   (旅游,七天神像 传送锚点，旅人标题跳字)
+- 你可以走过好多地儿，见过好多人，经历好多事 (任务书，(或许可以接入本地ai（写故事，对话）?优化了不卡吧应该))
+- 你可以修路，基建，化工
+- ...有模组，随便怎么玩
 ### Plans
 -
 -
 -
+### 注释
+本项目被计划为长期的开源项目，而非商业项目，我不希望你赚钱来亵渎这片精神的沃土；；
+最次最次，我就是拿它卖钱，也会留有一份开源版，下班独立开发
+贡献者之名将被刻在游戏内致谢界面或对应模块旁
+只为名，不为利
+
+
+ps: 目前，由对话式的deepseek协作开发;;”创新“味重，多有非标准写法，受着:P
 
 Welcome to this tiny space/home/world,whether interest it or not.
