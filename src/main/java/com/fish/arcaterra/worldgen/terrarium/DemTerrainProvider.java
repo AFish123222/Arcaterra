@@ -21,20 +21,40 @@ public class DemTerrainProvider implements TerrainProvider {
     private final Map<Long, BufferedImage> cache = new HashMap<>();
     private final int zoom;
 
+    private final double originLon;
+    private final double originLat;
+    private final double lonPerMeter; // 每米对应的经度增量（度/米）
+    private final double latPerMeter; // 每米对应的纬度增量（度/米）
+
     /**
      * @param zoom 瓦片缩放级别（10~14），越高越精细
+     * @param originLon 游戏世界原点 (0,0) 对应的经度（度）
+     * @param originLat 游戏世界原点 (0,0) 对应的纬度（度）
+     * @param metersPerDegreeLon 每度经度对应的米数（在原点附近），例如宝鸡约 92000 米/度
+     * @param metersPerDegreeLat 每度纬度对应的米数，约 111320 米/度（可近似）
      */
-    public DemTerrainProvider(int zoom) {
+    public DemTerrainProvider(int zoom, double originLon, double originLat,
+                              double metersPerDegreeLon, double metersPerDegreeLat) {
         this.zoom = zoom;
+        this.originLon = originLon;
+        this.originLat = originLat;
+        this.lonPerMeter = 1.0 / metersPerDegreeLon;
+        this.latPerMeter = 1.0 / metersPerDegreeLat;
     }
 
     @Override
     public float getHeight(float worldX, float worldZ) {
+
         // 经纬度 → 瓦片坐标
-        double lat = Math.toDegrees(worldX);
-        double lng = Math.toDegrees(worldZ);
+        // 游戏坐标（米）→ 经纬度（度）
+        double lng = originLon + worldX * lonPerMeter;
+        double lat = originLat + worldZ * latPerMeter;
         int[] tile = latLngToTile(lat, lng, zoom);
         int tileX = tile[0], tileY = tile[1];
+
+        System.out.println("getHeight: worldX=" + worldX + ", worldZ=" + worldZ);
+        System.out.println("lat=" + lat + ", lng=" + lng);
+        System.out.println("tileX=" + tileX + ", tileY=" + tileY);
 
         long key = ((long) tileX << 32) | (tileY & 0xFFFFFFFFL);
         BufferedImage img = cache.computeIfAbsent(key, k -> fetchTile(tileX, tileY));

@@ -140,4 +140,11 @@ public class World {
         }
         return result;
     }
+
+    public float worldXToLon(float worldX) {
+        return 106 + (worldX - 0) * (108 - 106) / 256; // 假设世界宽度 256 对应 2 度
+    }
+    public float worldZToLat(float worldZ) {
+        return 33 + (worldZ - 0) * (35 - 33) / 256;
+    }
 }
