@@ -13,7 +13,7 @@ import java.util.Map;
  * 从 AWS Terrain Tiles 在线获取 DEM 数据。<br>
  * 构造时只需传入：原点经纬度、每个方块对应的水平米数。<br>
  * zoom 级别自动计算，使每个 DEM 像素尽量对应一个方块。<br>
- * 高度值直接使用 DEM 返回的米数（垂直方向不缩放）。
+ * 高度值直接使用 DEM 返回的米数/(m/block)（垂直方向缩放）。
  */
 public class DemTerrainProvider implements TerrainProvider {
     private static final String TILE_URL =
@@ -25,14 +25,15 @@ public class DemTerrainProvider implements TerrainProvider {
     private final double originLat;
     private final double lonPerBlock; // 每个方块对应的经度增量（度/格）
     private final double latPerBlock; // 每个方块对应的纬度增量（度/格）
+    private final double meterPerBlockY;
 
     /**
      * 构造器：自动计算最佳 zoom。
      * @param originLon 游戏世界原点 (0,0) 对应的经度（度）
      * @param originLat 游戏世界原点 (0,0) 对应的纬度（度）
-     * @param meterPerBlock 每个方块在水平方向对应的实际米数（例如 1.0 表示 1 方块 = 1 米）
+     * @param meterPerBlockXZ 每个方块在水平方向对应的实际米数（例如 1.0 表示 1 方块 = 1 米）
      */
-    public DemTerrainProvider(double originLon, double originLat, double meterPerBlock) {
+    public DemTerrainProvider(double originLon, double originLat, double meterPerBlockXZ, double meterPerBlockY) {
         this.originLon = originLon;
         this.originLat = originLat;
 
@@ -42,17 +43,18 @@ public class DemTerrainProvider implements TerrainProvider {
         double metersPerDegreeLat = 111320;
 
         // 每个方块对应的经纬度增量
-        this.lonPerBlock = meterPerBlock / metersPerDegreeLon;
-        this.latPerBlock = meterPerBlock / metersPerDegreeLat;
+        this.lonPerBlock = meterPerBlockXZ / metersPerDegreeLon;
+        this.latPerBlock = meterPerBlockXZ / metersPerDegreeLat;
 
-        // 自动选择 zoom：使每个像素对应的地面距离 ≈ meterPerBlock
+        // 自动选择 zoom：使每个像素对应的地面距离 ≈ meterPerBlockXZ
         // 像素分辨率 = metersPerDegreeLat / (256 * 2^zoom)
-        // 令其等于 meterPerBlock，解出 zoom
-        double idealZoom = Math.log(metersPerDegreeLat / (256.0 * meterPerBlock))/Math.log(2); //log()->ln
+        // 令其等于 meterPerBlockXZ，解出 zoom
+        double idealZoom = Math.log(metersPerDegreeLat / (256.0 * meterPerBlockXZ))/Math.log(2); //log()->ln
         int z = (int) Math.round(idealZoom);
         z = Math.max(10, Math.min(14, z)); // 限制在 10~14 之间
         this.zoom = z;
-        System.out.println("DemTerrainProvider: zoom=" + zoom + " (meterPerBlock=" + meterPerBlock + ")");
+        this.meterPerBlockY = meterPerBlockY;
+        System.out.println("DemTerrainProvider: zoom=" + zoom + " (meterPerBlockXZ=" + meterPerBlockXZ + ")" + "meterPerBlockY=" + meterPerBlockY);
     }
 
     @Override
@@ -76,7 +78,7 @@ public class DemTerrainProvider implements TerrainProvider {
         py = Math.max(0, Math.min(py, 255));
 
         int rgb = img.getRGB(px, py);
-        return decodeTerrariumHeight(rgb);
+        return (float) (decodeTerrariumHeight(rgb)/meterPerBlockY);
     }
 
     private BufferedImage fetchTile(int x, int y) {
