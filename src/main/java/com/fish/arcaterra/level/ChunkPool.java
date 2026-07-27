@@ -103,7 +103,7 @@ public class ChunkPool {
                     int wy = (pcy + dy) * Chunk.SIZE;
                     int wz = (pcz + dz) * Chunk.SIZE;
                     Chunk c = getOrCreateChunk(wx, wy, wz);
-                    System.out.println(1);
+//                    System.out.println(1);
 
                     if(c==null) {
                         if (dx == 0 && dy == 0 && dz == 0 ||  // 玩家区块
@@ -118,7 +118,7 @@ public class ChunkPool {
                             visibleCache.add(c);
 //                            System.out.println(2);
                         }else{
-                            System.out.println(3);
+//                            System.out.println(3);
                             continue;
                         }
                     }
@@ -126,7 +126,7 @@ public class ChunkPool {
 //                        System.out.println(4);
 //                        continue;
 //                    }
-                    System.out.println(5);
+//                    System.out.println(5);
 
                     // 距离筛选
                     float cxWorld = c.getCx() * Chunk.SIZE + Chunk.SIZE / 2f;
