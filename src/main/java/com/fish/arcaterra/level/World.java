@@ -2,6 +2,7 @@ package com.fish.arcaterra.level;
 
 import com.fish.arcaterra.Arcaterra;
 import com.fish.arcaterra.phys.AABB;
+import com.fish.arcaterra.render.Frustum;
 import com.fish.arcaterra.worldgen.TerrainProvider;
 import com.fish.arcaterra.worldgen.noise.NoiseTerrainProvider;
 import com.fish.arcaterra.worldgen.terrarium.DemTerrainProvider;
@@ -89,8 +90,8 @@ public class World {
     }
 
     // ========== 世界更新与渲染 ==========
-    public void updateChunks(float playerX, float playerY, float playerZ) {
-        chunkPool.update(playerX, playerY, playerZ);
+    public void updateChunks(float playerX, float playerY, float playerZ, Frustum frustum) {
+        chunkPool.update(playerX, playerY, playerZ,frustum);
     }
 
     public List<Chunk> getDirtyChunks() {
