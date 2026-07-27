@@ -15,13 +15,13 @@ public class Player implements IDebugWindowPrintRegistry {
     private static final float FOOT_OFFSET = 0.02f;
 
     // ===== 移动参数（可调字段）=====
-    public float walkSpeed = 0.02f;          // 地面移动速度
-    public float airSpeed = 0.05f;          // 空中移动速度
-    public float jumpSpeed = 0.5f;          // 跳跃速度
-    public float gravity = 0.05f;           // 重力加速度
+    public float walkSpeed = 0.1f;          // 地面移动速度
+    public float airSpeed = 0.01f;          // 空中移动速度
+    public float jumpSpeed = 0.08f;          // 跳跃速度
+    public float gravity = 0.01f;           // 重力加速度
     public float frictionXZ = 0.91f;         // 水平阻尼（每帧）
     public float frictionY = 0.98f;          // 垂直阻尼
-    public float groundFriction = 0.8f;      // 地面额外阻尼
+    public float groundFriction = 0.0f;      // 地面额外阻尼
     public float speedMultiplier = 60f;      // 帧率补偿倍数（用于 delta）
 
     // 坐标
@@ -74,7 +74,7 @@ public class Player implements IDebugWindowPrintRegistry {
     public void handleKey(int key, int action) {
         boolean press = (action == GLFW_PRESS || action == GLFW_REPEAT);
         boolean release = (action == GLFW_RELEASE);
-        System.out.println("jumpPressed: " + jumpPressed + ", onGround: " + onGround + ", y: " + y);
+//        System.out.println("jumpPressed: " + jumpPressed + ", onGround: " + onGround + ", y: " + y);
         switch (key) {
             case GLFW_KEY_W: keyW = press; break;
             case GLFW_KEY_S: keyS = press; break;
@@ -89,7 +89,7 @@ public class Player implements IDebugWindowPrintRegistry {
                 else if (release) jumpPressed = false;
                 break;
         }
-        System.out.println("jumpPressed: " + jumpPressed + ", onGround: " + onGround + ", y: " + y);
+//        System.out.println("jumpPressed: " + jumpPressed + ", onGround: " + onGround + ", y: " + y);
     }
 
     public void tick(float delta) {
@@ -153,7 +153,7 @@ public class Player implements IDebugWindowPrintRegistry {
         for (AABB box : colliders) za = box.clipZCollide(this.bb, za);
         this.bb.move(0, 0, za);
 
-        this.onGround = (yaOrg != ya && yaOrg < 0.0F);
+        this.onGround = ((int)yaOrg != (int)ya && (int)yaOrg <= 0);
 
         if (xaOrg != xa && Math.abs(xa) < 0.0001f) this.xd = 0.0F;
         if (yaOrg != ya && Math.abs(ya) < 0.0001f) this.yd = 0.0F;
