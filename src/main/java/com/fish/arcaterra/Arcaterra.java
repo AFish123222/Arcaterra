@@ -6,6 +6,7 @@ import com.fish.arcaterra.level.World;
 import com.fish.arcaterra.level.Chunk;
 import com.fish.arcaterra.particle.ParticlePool;
 import com.fish.arcaterra.phys.BlockHit;
+import com.fish.arcaterra.render.Frustum;
 import com.fish.arcaterra.render.Renderer;
 import com.fish.arcaterra.tree.TreeNetChunk;
 import com.fish.arcaterra.tree.TreeNetWorld;
@@ -16,10 +17,14 @@ import com.fish.arcaterra.ui.hud.HudManager;
 import com.fish.arcaterra.worldgen.noise.NoiseTerrainProvider;
 import com.fish.arcaterra.worldgen.terrarium.DemTerrainProvider;
 import org.jetbrains.annotations.NotNull;
+import org.joml.Matrix4f;
+import org.lwjgl.BufferUtils;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.opengl.GL;
+import org.lwjgl.system.ffm.FFMReturn;
 
 import javax.swing.*;
+import java.nio.FloatBuffer;
 import java.util.List;
 
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
@@ -59,6 +64,8 @@ public class Arcaterra {
     private int frameTaskStep;
     public static ParticlePool particlePool;
 
+    private Frustum frustum;
+
     public void run() {
         init();
         loop();
@@ -96,8 +103,24 @@ public class Arcaterra {
         glMatrixMode(GL_PROJECTION);
         glLoadIdentity();
         float aspect = (float) WIDTH / HEIGHT;
-        glFrustum(-aspect * 0.1f, aspect * 0.1f, -0.1f, 0.1f, 0.1f, 2000f);
+//        glFrustum(-aspect * 0.1f, aspect * 0.1f, -0.1f, 0.1f, 0.1f, 2000f);
+//        glMatrixMode(GL_MODELVIEW);
+//        Frustum frustum = new Frustum(glGetFloatv());
+        // 在 init() 中，不再调用 glFrustum，而是用 JOML 计算并上传
+        Matrix4f projMatrix = new Matrix4f().setFrustum(
+                -aspect * 0.1f, aspect * 0.1f,  // left, right
+                -0.1f, 0.1f,                    // bottom, top
+                0.1f, 2000f                     // near, far
+        );
+        // 上传到 OpenGL（固定管线）
+        FloatBuffer projBuf = BufferUtils.createFloatBuffer(16);
+        projMatrix.get(projBuf);
+        glMatrixMode(GL_PROJECTION);
+        glLoadMatrixf(projBuf);
         glMatrixMode(GL_MODELVIEW);
+        // 创建 Frustum（视图矩阵后续更新）
+        Matrix4f viewMatrix = new Matrix4f();
+        Frustum frustum = new Frustum(projMatrix, viewMatrix);
 
 
         // 在 init() 中
@@ -134,7 +157,7 @@ public class Arcaterra {
         player.setPos(spawnX, spawnY, spawnZ);
 
         // 加载并重建周围区块
-        world.updateChunks(player.x, player.y, player.z);
+        world.updateChunks(player.x, player.y, player.z,frustum);
         for (Chunk c : world.getDirtyChunks()) {
             c.rebuildMesh();
         }
@@ -201,7 +224,7 @@ public class Arcaterra {
                     particlePool.update((float) delta);// 传入 delta
                     break;
                 case 1:
-                    world.updateChunks(player.x, player.y, player.z);
+                    world.updateChunks(player.x, player.y, player.z,frustum);
                     break;
                 case 2:
                     rebuildSomeDirtyChunks(16);
