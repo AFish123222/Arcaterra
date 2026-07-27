@@ -74,11 +74,33 @@ public class DemTerrainProvider implements TerrainProvider {
         double[] pixel = tileToPixel(lat, lng, tileX, tileY, zoom);
         int px = (int) Math.round(pixel[0]);
         int py = (int) Math.round(pixel[1]);
-        px = Math.max(0, Math.min(px, 255));
-        py = Math.max(0, Math.min(py, 255));
+        px = Math.max(0, Math.min(px, 255)); //保护，钳位；过滤异常数据
+        py = Math.max(0, Math.min(py, 255)); //保护，钳位；过滤异常数据
 
-        int rgb = img.getRGB(px, py);
-        return (float) (decodeTerrariumHeight(rgb)/meterPerBlockY);
+        // 边界处理
+        px = Math.max(0, Math.min(255, px));
+        py = Math.max(0, Math.min(255, py));
+
+        // 四个相邻像素的整数坐标
+        int x0 = (int) Math.floor(px);
+        int y0 = (int) Math.floor(py);
+        int x1 = Math.min(x0 + 1, 255);
+        int y1 = Math.min(y0 + 1, 255);
+        float fx = px - x0;
+        float fy = py - y0;
+
+        // 读取四个像素值（解码高度）
+        float h00 = decodeTerrariumHeight(img.getRGB(x0, y0));
+        float h10 = decodeTerrariumHeight(img.getRGB(x1, y0));
+        float h01 = decodeTerrariumHeight(img.getRGB(x0, y1));
+        float h11 = decodeTerrariumHeight(img.getRGB(x1, y1));
+
+        // 双线性插值
+        float h0 = h00 * (1 - fx) + h10 * fx;
+        float h1 = h01 * (1 - fx) + h11 * fx;
+        float height = h0 * (1 - fy) + h1 * fy;
+
+        return height;
     }
 
     private BufferedImage fetchTile(int x, int y) {
