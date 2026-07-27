@@ -44,6 +44,20 @@ public class ChunkPool {
         return chunk;
     }
 
+    /// 强制创建
+    public Chunk createChunk(int worldX, int worldY, int worldZ) {
+        int cx = Math.floorDiv(worldX, Chunk.SIZE);
+        int cy = Math.floorDiv(worldY, Chunk.SIZE);
+        int cz = Math.floorDiv(worldZ, Chunk.SIZE);
+        long key = getChunkKey(cx, cy, cz);
+        Chunk chunk = pool.get(key);
+        if (chunk == null) {
+            chunk = new Chunk(cx, cy, cz, world);
+            pool.put(key, chunk);
+        }
+        return chunk;
+    }
+
     private boolean hasTerrain(int cx, int cy, int cz) {
         // 对区块内的所有 (x,z) 采样高度，判断是否有方块落在该区块的 Y 范围内
         for (int x = 0; x < Chunk.SIZE; x++) {
@@ -91,11 +105,20 @@ public class ChunkPool {
                     Chunk c = getOrCreateChunk(wx, wy, wz);
 
 
-                    if(c==null
-                        &&!(dx == 0 && dy == 0 && dz == 0 // 玩家区块
-                            // todo: 毗邻区块，不然npe
-                        )
-                    ) continue;
+//                    if(c==null) {
+//                        if (dx == 0 && dy == 0 && dz == 0 ||  // 玩家区块
+//                                (dx == -1 && dy == 0 && dz == 0) ||  // 左
+//                                (dx == 1 && dy == 0 && dz == 0) ||  // 右
+//                                (dx == 0 && dy == -1 && dz == 0) ||  // 下
+//                                (dx == 0 && dy == 1 && dz == 0) ||  // 上
+//                                (dx == 0 && dy == 0 && dz == -1) ||  // 后
+//                                (dx == 0 && dy == 0 && dz == 1)      // 前
+//                        ){
+//                            c = createChunk(wx, wy, wz);
+//                            visibleCache.add(c);
+//                        }
+//                    }else{continue;}
+//                    if(c==null){continue;}
 
                     // 距离筛选
                     float cxWorld = c.getCx() * Chunk.SIZE + Chunk.SIZE / 2f;
