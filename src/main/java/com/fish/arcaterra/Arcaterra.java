@@ -2,6 +2,7 @@ package com.fish.arcaterra;
 
 import com.fish.arcaterra.debug.DebugRegistry;
 import com.fish.arcaterra.debug.DebugWindow;
+import com.fish.arcaterra.debug.timer.DebugTimer;
 import com.fish.arcaterra.level.World;
 import com.fish.arcaterra.level.Chunk;
 import com.fish.arcaterra.particle.ParticlePool;
@@ -209,6 +210,8 @@ public class Arcaterra {
 
 
         while (running && !glfwWindowShouldClose(window)) {
+//            try (DebugTimer timer = new DebugTimer("Loop")) {
+
             double now = glfwGetTime();
             delta = now - lastTime;
             lastTime = now;
@@ -217,10 +220,10 @@ public class Arcaterra {
             if (delta > 0.05) delta = 0.05;   // 最多 50ms
 
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+            player.tick((float) delta);
             switch (frameTaskStep) {
                 case 0:
-                    player.tick((float) delta);
+
                     particlePool.update((float) delta);// 传入 delta
                     break;
                 case 1:
@@ -270,6 +273,7 @@ public class Arcaterra {
             debugUpdate();
             glfwPollEvents();
         }
+//        }
     }
 
     private void debugUpdate() {
