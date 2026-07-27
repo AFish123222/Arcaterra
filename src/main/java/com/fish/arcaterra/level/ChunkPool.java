@@ -34,9 +34,9 @@ public class ChunkPool {
         Chunk chunk = pool.get(key);
         if (chunk == null) {
             // 使用 DEM 判断该区块是否包含地形
-//            if (!hasTerrain(cx, cy, cz)) {
-//                return null; // 不创建空区块
-//            }
+            if (!hasTerrain(cx, cy, cz)) {
+                return null; // 不创建空区块
+            }
 
             chunk = new Chunk(cx, cy, cz, world);
             pool.put(key, chunk);
@@ -105,29 +105,27 @@ public class ChunkPool {
                     Chunk c = getOrCreateChunk(wx, wy, wz);
                     System.out.println(1);
 
-
-
-                    if(c==null) {
-                        if (dx == 0 && dy == 0 && dz == 0 ||  // 玩家区块
-                                (dx == -1 && dy == 0 && dz == 0) ||  // 左
-                                (dx == 1 && dy == 0 && dz == 0) ||  // 右
-                                (dx == 0 && dy == -1 && dz == 0) ||  // 下
-                                (dx == 0 && dy == 1 && dz == 0) ||  // 上
-                                (dx == 0 && dy == 0 && dz == -1) ||  // 后
-                                (dx == 0 && dy == 0 && dz == 1)      // 前
-                        ){
-                            c = createChunk(wx, wy, wz);
-                            visibleCache.add(c);
-                            System.out.println(2);
-                        }
-                    }else{
-                        System.out.println(3);
-                        continue;
-                    }
-                    if(c==null){
-                        System.out.println(4);
-                        continue;
-                    }
+//                    if(c==null) {
+//                        if (dx == 0 && dy == 0 && dz == 0 ||  // 玩家区块
+//                                (dx == -1 && dy == 0 && dz == 0) ||  // 左
+//                                (dx == 1 && dy == 0 && dz == 0) ||  // 右
+//                                (dx == 0 && dy == -1 && dz == 0) ||  // 下
+//                                (dx == 0 && dy == 1 && dz == 0) ||  // 上
+//                                (dx == 0 && dy == 0 && dz == -1) ||  // 后
+//                                (dx == 0 && dy == 0 && dz == 1)      // 前
+//                        ){
+////                            c = createChunk(wx, wy, wz);
+//                            visibleCache.add(c);
+//                            System.out.println(2);
+//                        }
+//                    }else{
+//                        System.out.println(3);
+//                        continue;
+//                    }
+////                    if(c==null){
+////                        System.out.println(4);
+////                        continue;
+////                    }
                     System.out.println(5);
 
                     // 距离筛选
