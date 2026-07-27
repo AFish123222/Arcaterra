@@ -95,24 +95,10 @@ public class DemTerrainProvider implements TerrainProvider {
         float h01 = decodeTerrariumHeight(img.getRGB(x0, y1));
         float h11 = decodeTerrariumHeight(img.getRGB(x1, y1));
 
-        // 双线性插值
+        // 双线性插值 //todo:这玩意是边界生硬，内部斜面的得换的要
         float h0 = h00 * (1 - fx) + h10 * fx;
         float h1 = h01 * (1 - fx) + h11 * fx;
         float height = h0 * (1 - fy) + h1 * fy;
-
-        ////////////////
-//        // ===== 调试输出 =====
-//        System.out.println("----- DEM Debug -----");
-//        System.out.println("worldX=" + worldX + ", worldZ=" + worldZ);
-//        System.out.println("lat=" + lat + ", lng=" + lng);
-//        System.out.println("tileX=" + tileX + ", tileY=" + tileY + ", key=" + key);
-//        System.out.println("px=" + px + ", py=" + py);
-//        System.out.println("x0=" + x0 + ", y0=" + y0 + ", x1=" + x1 + ", y1=" + y1);
-//        System.out.println("fx=" + fx + ", fy=" + fy);
-//        System.out.println("h00=" + h00 + ", h10=" + h10 + ", h01=" + h01 + ", h11=" + h11);
-//        System.out.println("h0=" + h0 + ", h1=" + h1 + ", height=" + height);
-//        System.out.println("----- End Debug -----");
-        ////////////
 
         return height;
     }
