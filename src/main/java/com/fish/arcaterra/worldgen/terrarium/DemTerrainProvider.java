@@ -72,12 +72,12 @@ public class DemTerrainProvider implements TerrainProvider {
 
         // 像素坐标
         double[] pixel = tileToPixel(lat, lng, tileX, tileY, zoom);
-        int px = (int) Math.round(pixel[0]);
-        int py = (int) Math.round(pixel[1]);
+        float px = (float) pixel[0];
+        float py = (float) pixel[1];
         px = Math.max(0, Math.min(px, 255)); //保护，钳位；过滤异常数据
         py = Math.max(0, Math.min(py, 255)); //保护，钳位；过滤异常数据
 
-        // 边界处理
+        // 边界处理 //这个冗余的边界处理不要删，后果难以想象！！！202607272022
         px = Math.max(0, Math.min(255, px));
         py = Math.max(0, Math.min(255, py));
 
@@ -99,6 +99,20 @@ public class DemTerrainProvider implements TerrainProvider {
         float h0 = h00 * (1 - fx) + h10 * fx;
         float h1 = h01 * (1 - fx) + h11 * fx;
         float height = h0 * (1 - fy) + h1 * fy;
+
+        ////////////////
+//        // ===== 调试输出 =====
+//        System.out.println("----- DEM Debug -----");
+//        System.out.println("worldX=" + worldX + ", worldZ=" + worldZ);
+//        System.out.println("lat=" + lat + ", lng=" + lng);
+//        System.out.println("tileX=" + tileX + ", tileY=" + tileY + ", key=" + key);
+//        System.out.println("px=" + px + ", py=" + py);
+//        System.out.println("x0=" + x0 + ", y0=" + y0 + ", x1=" + x1 + ", y1=" + y1);
+//        System.out.println("fx=" + fx + ", fy=" + fy);
+//        System.out.println("h00=" + h00 + ", h10=" + h10 + ", h01=" + h01 + ", h11=" + h11);
+//        System.out.println("h0=" + h0 + ", h1=" + h1 + ", height=" + height);
+//        System.out.println("----- End Debug -----");
+        ////////////
 
         return height;
     }
