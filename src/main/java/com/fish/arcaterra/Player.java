@@ -103,7 +103,7 @@ public class Player implements IDebugWindowPrintRegistry {
 
         if (jumpPressed && (onGround || flyable)) {
             yd = jumpSpeed * delta * speedMultiplier;
-            jumpPressed = false;
+//            jumpPressed = false;
         }
         if (this.y < -64) {
             float groundY = world.getTerrainProvider().getHeight(x, z);
