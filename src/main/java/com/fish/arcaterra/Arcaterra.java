@@ -155,15 +155,15 @@ public class Arcaterra implements IDebugWindowPrintRegistry {
             this.world = new World(demTerrainProvider);
 //        }
 
-        float spawnX = 30;
-        float spawnZ = 50;
+        float spawnX = 0;
+        float spawnZ = 0;
         float groundHeight = world.getTerrainProvider().getHeight(spawnX, spawnZ);
         float spawnY = groundHeight + 1.5f; // 站在地面以上
 
         player = new Player(world);
         player.setPos(spawnX, spawnY, spawnZ);
 
-        demTerrainProvider.prefetchAround(player.x,player.z,Config.DemSampleLodConfig.renderRadius+10);
+        demTerrainProvider.prefetchAround(player.x,player.z,Config.DemSampleLodConfig.renderRadius);
 
 
 
@@ -450,10 +450,10 @@ public class Arcaterra implements IDebugWindowPrintRegistry {
             /// Terrarium
             DEM
         }
-        public static int meterPerBlockXZ = 1000;
+        public static int meterPerBlockXZ = 10;
         public static float meterPerBlockY = 1f;
         public static class DemSampleLodConfig {
-            public static int renderRadius = 500; //单位;chunk
+            public static int renderRadius = 100; //单位;chunk
             public static int sampleStep = Math.max(Chunk.SIZE * renderRadius/200,1);
         }
     }
@@ -516,15 +516,21 @@ public class Arcaterra implements IDebugWindowPrintRegistry {
             float[] vArr = new float[cols * rows * 3];
             int[] iArr = new int[(cols - 1) * (rows - 1) * 6];
 
-            int idx = 0;
-            for (float z = minZ; z <= maxZ; z += step) {
-                for (float x = minX; x <= maxX; x += step) {
-                    float h = world.getTerrainProvider().getHeight(x, z);
-                    vArr[idx++] = x;
-                    vArr[idx++] = h;
-                    vArr[idx++] = z;
-                }
+
+        int idx = 0;
+        for (int zi = 0; zi < rows; zi++) {
+            float z = minZ + zi * step;
+            for (int xi = 0; xi < cols; xi++) {
+                float x = minX + xi * step;
+                // 对齐到区块角
+                float alignedX = (float) (Math.floor(x / Chunk.SIZE) * Chunk.SIZE);
+                float alignedZ = (float) (Math.floor(z / Chunk.SIZE) * Chunk.SIZE);
+                float h = world.getTerrainProvider().getHeight(alignedX, alignedZ);
+                vArr[idx++] = alignedX;
+                vArr[idx++] = h;
+                vArr[idx++] = alignedZ;
             }
+        }
 
             int iIdx = 0;
             for (int r = 0; r < rows - 1; r++) {
