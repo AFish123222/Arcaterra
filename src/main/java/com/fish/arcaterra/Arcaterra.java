@@ -274,8 +274,8 @@ public class Arcaterra {
 //            lodMesh.render();
             ///////////
             boolean pushVituces = true;
-            int radius = 5;
-            int step = 1;
+            int radius = 1000;
+            int step = 10*Chunk.SIZE;
             float minX = player.x - radius * Chunk.SIZE;
             float maxX = player.x + radius * Chunk.SIZE;
             float minZ = player.z - radius * Chunk.SIZE;
@@ -325,7 +325,7 @@ public class Arcaterra {
                 int idx = 0;
                 for (float z = minZ; z <= maxZ; z += step) {
                     for (float x = minX; x <= maxX; x += step) {
-                        float h = world.getTerrainProvider().getHeight(x, z);
+                        float h = world.getTerrainProvider().getHeight(x, z)+0.01f;
                         vArr[idx++] = x;
                         vArr[idx++] = h;
                         vArr[idx++] = z;
