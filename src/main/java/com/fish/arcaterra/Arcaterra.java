@@ -269,7 +269,7 @@ public class Arcaterra {
 
 //            lodMesh.render();
             ///////////
-// ---- 远方高度图 LOD（直接推顶点，无索引） ----
+            boolean pushVituces = true;
             int radius = 100;
             int step = Chunk.SIZE/2;
             float minX = player.x - radius * Chunk.SIZE;
@@ -277,31 +277,40 @@ public class Arcaterra {
             float minZ = player.z - radius * Chunk.SIZE;
             float maxZ = player.z + radius * Chunk.SIZE;
 
-            glColor3f(0.5f, 0.6f, 0.4f);
+// ---- 远方高度图 LOD（直接推顶点，无索引） ----
+            if (pushVituces == false) {
+                glColor3f(0.5f, 0.6f, 0.4f);
 //            glBegin(GL_TRIANGLES);
 
-            glBegin(GL_LINES);
-            glLineWidth(2);
+                glBegin(GL_LINES);
+                glLineWidth(2);
 
-            for (float z = minZ; z < maxZ; z += step) {
-                for (float x = minX; x < maxX; x += step) {
-                    // 四个角的高度
-                    float h00 = world.getTerrainProvider().getHeight(x, z);
-                    float h10 = world.getTerrainProvider().getHeight(x + step, z);
-                    float h01 = world.getTerrainProvider().getHeight(x, z + step);
-                    float h11 = world.getTerrainProvider().getHeight(x + step, z + step);
+                for (float z = minZ; z < maxZ; z += step) {
+                    for (float x = minX; x < maxX; x += step) {
+                        // 四个角的高度
+                        float h00 = world.getTerrainProvider().getHeight(x, z);
+                        float h10 = world.getTerrainProvider().getHeight(x + step, z);
+                        float h01 = world.getTerrainProvider().getHeight(x, z + step);
+                        float h11 = world.getTerrainProvider().getHeight(x + step, z + step);
 
-                    // 三角形1: (x,z) -> (x+step,z) -> (x,z+step)
-                    glVertex3f(x, h00, z);
-                    glVertex3f(x + step, h10, z);
-                    glVertex3f(x, h01, z + step);
-                    // 三角形2: (x+step,z) -> (x+step,z+step) -> (x,z+step)
-                    glVertex3f(x + step, h10, z);
-                    glVertex3f(x + step, h11, z + step);
-                    glVertex3f(x, h01, z + step);
+                        // 三角形1: (x,z) -> (x+step,z) -> (x,z+step)
+                        glVertex3f(x, h00, z);
+                        glVertex3f(x + step, h10, z);
+                        glVertex3f(x, h01, z + step);
+                        // 三角形2: (x+step,z) -> (x+step,z+step) -> (x,z+step)
+                        glVertex3f(x + step, h10, z);
+                        glVertex3f(x + step, h11, z + step);
+                        glVertex3f(x, h01, z + step);
+                    }
                 }
+                glEnd();
+
+
             }
-            glEnd();
+            if (pushVituces == true) {
+
+            }
+
         /////////////
 
             // 渲染玩家所在区块的边界
