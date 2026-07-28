@@ -22,6 +22,9 @@ public class Chunk {
     /// 调试开关：设为 true 则只画线框，false 则正常填充（默认）
     private static final boolean DEBUG_WIREFRAME_ONLY = false;
 
+    /// 高度图采样
+    private static boolean isHeightMapSampleLodOpened = true;
+
     public Chunk(int cx, int cy, int cz, World world) {
         this.cx = cx;
         this.cy = cy;
@@ -204,7 +207,7 @@ public class Chunk {
         glTranslatef(cx * SIZE, cy * SIZE, cz * SIZE);
 
         // ★ 临时禁用剔除，让所有面可见（调试用）
-        glDisable(GL_CULL_FACE);
+//        glDisable(GL_CULL_FACE);
 
         // 填充颜色（灰色）
         glColor3f(0.7f, 0.7f, 0.7f);
