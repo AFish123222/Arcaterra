@@ -109,9 +109,11 @@ public class Arcaterra {
         glLoadIdentity();
         float aspect = (float) WIDTH / HEIGHT;
 
-        Matrix4f projMatrix = new Matrix4f();
-        projMatrix.setPerspective((float) Math.toRadians(70), aspect, 2000f, 0.1f);        // 注意：near 和 far 反过来了！far 在前，near 在后(z冲突->反转深度)
-
+        Matrix4f projMatrix = new Matrix4f().setFrustum(
+                -aspect * 0.1f, aspect * 0.1f,  // left, right
+                -0.1f, 0.1f,                    // bottom, top
+                0.1f, 2000f                     // near, far
+        );
         glDepthFunc(GL_GREATER);  // 原来默认是 GL_LESS
         // 上传到 OpenGL（固定管线）
         FloatBuffer projBuf = BufferUtils.createFloatBuffer(16);
@@ -130,9 +132,16 @@ public class Arcaterra {
         }
 
         // 使用噪声地形
-        if (Config.worldGenMode == Config.WorldGenMode.NOISE) this.world = new World(new NoiseTerrainProvider());
+        if (Config.worldGenMode == Config.WorldGenMode.NOISE) this.world = new World(
+                new NoiseTerrainProvider()
+        );
         // 使用dem
-        if (Config.worldGenMode == Config.WorldGenMode.DEM) this.world = new World(new DemTerrainProvider(107.1, 34.3,1,1));
+        if (Config.worldGenMode == Config.WorldGenMode.DEM) this.world = new World(
+                new DemTerrainProvider(107.1, 34.3,
+                        Config.meterPerBlockXZ,
+                        Config.meterPerBlockY
+                )
+        );
 
 
 
@@ -423,9 +432,11 @@ public class Arcaterra {
             /// Terrarium
             DEM
         }
+        public static int meterPerBlockXZ = 100;
+        public static int meterPerBlockY = 1;
         public static class DemSampleLodConfig {
-            public static int renderRadius = 1000;
-            public static int sampleStep = Chunk.SIZE*10;
+            public static int renderRadius = 100;
+            public static int sampleStep = Chunk.SIZE;
         }
     }
 
