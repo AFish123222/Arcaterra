@@ -251,7 +251,7 @@ public class Arcaterra {
 
             particlePool.render(player.x, player.y, player.z);
 
-            lodMesh.update(player.x, player.z, world.getTerrainProvider(), 8, 4.0f);
+//            lodMesh.update(player.x, player.z, world.getTerrainProvider(), 8, 4.0f);
 
             DebugIndicators.getDebugIndicators().setPlayerPos(player.x, player.y , player.z);
             DebugIndicators.getDebugIndicators().setRotation(player.yRot, player.xRot);
@@ -267,7 +267,64 @@ public class Arcaterra {
                 LODManager.treeWorld.render(player.x, player.y, player.z);
             }
 
-            lodMesh.render();
+//            lodMesh.render();
+            ///////////
+            // 采样参数
+            int radius = 16;           // 区块半径
+            int step = 8;             // 采样步长（格）
+            float minX = player.x - radius * Chunk.SIZE;
+            float maxX = player.x + radius * Chunk.SIZE;
+            float minZ = player.z - radius * Chunk.SIZE;
+            float maxZ = player.z + radius * Chunk.SIZE;
+
+// 计算顶点数量
+            int cols = (int) ((maxX - minX) / step) + 1;
+            int rows = (int) ((maxZ - minZ) / step) + 1;
+
+// 构建顶点和索引
+            List<Float> verts = new ArrayList<>();
+            List<Integer> idxs = new ArrayList<>();
+
+            for (float z = minZ; z <= maxZ; z += step) {
+                for (float x = minX; x <= maxX; x += step) {
+                    float h = world.getTerrainProvider().getHeight(x, z);
+                    verts.add(x);wwwwwwwwwwwwwwww
+                    verts.add(h);
+                    verts.add(z);
+                }
+            }
+
+            for (int r = 0; r < rows - 1; r++) {
+                for (int c = 0; c < cols - 1; c++) {
+                    int i0 = c + r * cols;
+                    int i1 = (c + 1) + r * cols;
+                    int i2 = c + (r + 1) * cols;
+                    int i3 = (c + 1) + (r + 1) * cols;
+                    idxs.add(i0);
+                    idxs.add(i1);
+                    idxs.add(i2);
+                    idxs.add(i1);
+                    idxs.add(i3);
+                    idxs.add(i2);
+                }
+            }
+
+// 转换数组
+            float[] vArr = new float[verts.size()];
+            int[] iArr = new int[idxs.size()];
+            for (int i = 0; i < vArr.length; i++) vArr[i] = verts.get(i);
+            for (int i = 0; i < iArr.length; i++) iArr[i] = idxs.get(i);
+
+// 直接推顶点（立即模式，简单粗暴）
+            glColor3f(0.5f, 0.6f, 0.4f);
+            glBegin(GL_TRIANGLES);
+            for (int idx : iArr) {
+                int base = idx * 3;
+                glVertex3f(vArr[base], vArr[base + 1], vArr[base + 2]);
+            }
+            glEnd();
+        /////////////
+
             // 渲染玩家所在区块的边界
             if (Config.showChunkBoundPlayerAt) {
                 world.getChunk(
@@ -455,7 +512,7 @@ public class Arcaterra {
         }
     }
 
-    private LODMesh lodMesh=new LODMesh();
+//    private LODMesh lodMesh=new LODMesh();
     /**
      * 高度图 LOD 网格，使用一个 VBO 覆盖玩家周围整个区域。
      * 每帧或玩家移动超过阈值时重建。
@@ -479,10 +536,10 @@ public class Arcaterra {
          * @param step 采样步长（格）
          */
         public void update(float playerX, float playerZ, TerrainProvider provider, int radius, float step) {
-            if (Math.abs(playerX - lastPlayerX) < UPDATE_THRESHOLD &&
-                    Math.abs(playerZ - lastPlayerZ) < UPDATE_THRESHOLD) {
-                return; // 位置变化不大，不重建
-            }
+//            if (Math.abs(playerX - lastPlayerX) < UPDATE_THRESHOLD &&
+//                    Math.abs(playerZ - lastPlayerZ) < UPDATE_THRESHOLD) {
+//                return; // 位置变化不大，不重建
+//            }
             lastPlayerX = playerX;
             lastPlayerZ = playerZ;
 
