@@ -246,22 +246,47 @@ public class Arcaterra {
             particlePool.render(player.x, player.y, player.z);
 
             //////////
+            float eyeY = 0;
             glPushMatrix();
-//            glTranslatef(player.x, player.y, player.z);
             glDisable(GL_LIGHTING);
-            glLineWidth(2.0f);
+            glDisable(GL_TEXTURE_2D);
+            glLineWidth(2.5f);
+
+            // X轴（红）
+            glColor3f(1.0f, 0.0f, 0.0f);
             glBegin(GL_LINES);
-            glColor3f(1,0,0);
-            glVertex3f(0,0,0);
-            glVertex3f(1,0,0);
-            glColor3f(0,1,0);
-            glVertex3f(0,0,0);
-            glVertex3f(0,1,0);
-            glColor3f(0,0,1);
-            glVertex3f(0,0,0);
-            glVertex3f(0,0,1);
+            glVertex3f(0, eyeY, 0);
+            glVertex3f(1.2f, eyeY, 0);
             glEnd();
+
+            // Y轴（绿）
+            glColor3f(0.0f, 1.0f, 0.0f);
+            glBegin(GL_LINES);
+            glVertex3f(0, eyeY, 0);
+            glVertex3f(0, eyeY + 1.2f, 0);
+            glEnd();
+
+            // Z轴（蓝）
+            glColor3f(0.0f, 0.0f, 1.0f);
+            glBegin(GL_LINES);
+            glVertex3f(0, eyeY, 0);
+            glVertex3f(0, eyeY, 1.2f);
+            glEnd();
+
+            // 恢复状态
+            glEnable(GL_LIGHTING);
+            glEnable(GL_TEXTURE_2D);
             glPopMatrix();
+
+            glPointSize(6.0f);
+            glBegin(GL_POINTS);
+            glColor3f(1,0,0);
+            glVertex3f(1.2f, eyeY, 0);
+            glColor3f(0,1,0);
+            glVertex3f(0, eyeY + 1.2f, 0);
+            glColor3f(0,0,1);
+            glVertex3f(0, eyeY, 1.2f);
+            glEnd();
             //////////
 
             DebugIndicators.getDebugIndicators().setPlayerPos(player.x, player.y , player.z);
