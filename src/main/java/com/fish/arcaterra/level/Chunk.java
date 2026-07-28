@@ -219,6 +219,21 @@ public class Chunk {
         mesh.render();
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
+        //////////
+        glBegin(GL_LINES);
+        glLineWidth(2.0f);
+        glColor3f(1f,0,0);
+        glVertex3f(px+1, py, pz);
+        glVertex3f(px+2, py, pz);
+        glColor3f(0,1f,0);
+        glVertex3f(px+1, py, pz);
+        glVertex3f(px+1, py+1, pz);
+        glColor3f(0,0,1f);
+        glVertex3f(px+1, py, pz);
+        glVertex3f(px+1, py, pz+1);
+        glEnd();
+        //////////
+
         // 恢复剔除（正式版可保留此行）
         glEnable(GL_CULL_FACE);
 
