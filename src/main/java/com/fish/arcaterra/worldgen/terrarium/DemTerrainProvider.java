@@ -25,7 +25,7 @@ public class DemTerrainProvider implements TerrainProvider {
     private final Path cacheDir;
     private final String cacheRoot = "./terrariumCache";
 
-    private final Map<Long, BufferedImage> cache = new HashMap<>();
+    private final Map<Long, BufferedImage> cache = new ConcurrentHashMap<>();
     private final int zoom;
     private final double originLon;
     private final double originLat;
