@@ -180,11 +180,13 @@ public class Chunk {
                 // 底面，从下方看逆时针：左下→右下→右上→左上
                 faceVerts = new float[][]{{0,0,0}, {1,0,0}, {1,0,1}, {0,0,1}};
                 break;
-            case POS_Z: // 前面（+Z）从 +Z 方向看
-                faceVerts = new float[][]{{0,0,1}, {0,1,1}, {1,1,1}, {1,0,1}};
+            case POS_Z:
+                // 正面（+Z），从 Z 正方向看，逆时针：左下→右下→右上→左上
+                faceVerts = new float[][]{{0,0,1}, {1,0,1}, {1,1,1}, {0,1,1}};
                 break;
-            case NEG_Z: // 后面（-Z），从 -Z 方向看
-                faceVerts = new float[][]{{1,0,0}, {1,1,0}, {0,1,0}, {0,0,0}};
+            case NEG_Z:
+                // 背面（-Z），从 Z 负方向看，逆时针：右下→左下→左上→右上
+                faceVerts = new float[][]{{1,0,0}, {0,0,0}, {0,1,0}, {1,1,0}};
                 break;
             default: return;
         }
