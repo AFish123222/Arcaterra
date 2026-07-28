@@ -251,6 +251,8 @@ public class Arcaterra {
 
             particlePool.render(player.x, player.y, player.z);
 
+            lodMesh.update(player.x, player.z, world.getTerrainProvider(), 8, 4.0f);
+
             DebugIndicators.getDebugIndicators().setPlayerPos(player.x, player.y , player.z);
             DebugIndicators.getDebugIndicators().setRotation(player.yRot, player.xRot);
 
@@ -260,11 +262,12 @@ public class Arcaterra {
                     if (Config.showAllChunkBound) c.renderChunkBounds();
                 } //可见区块渲染
             }
-            
+
             if(Config.renderMode == Config.RenderMode.TREE_LOD){
                 LODManager.treeWorld.render(player.x, player.y, player.z);
             }
 
+            lodMesh.render();
             // 渲染玩家所在区块的边界
             if (Config.showChunkBoundPlayerAt) {
                 world.getChunk(
@@ -273,6 +276,8 @@ public class Arcaterra {
                         player.z
                 ).renderChunkBounds();
             }
+
+
 
 
             Renderer.INSTANCE.drawEyeRay(player.x, player.y, player.z, player.xRot, player.yRot);
