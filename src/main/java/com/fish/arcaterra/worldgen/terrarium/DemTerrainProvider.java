@@ -10,9 +10,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.*;
 
 /**
@@ -35,7 +33,8 @@ public class DemTerrainProvider implements TerrainProvider {
     private final double latPerBlock; // 每个方块对应的纬度增量（度/格）
     private final double meterPerBlockY;
 
-    private final ExecutorService downloadExecutor = Executors.newFixedThreadPool(8);
+    private static final int MAX_THREADS = Math.max(4, Runtime.getRuntime().availableProcessors());
+    private final ExecutorService downloadExecutor = Executors.newFixedThreadPool(MAX_THREADS);
     private final BlockingQueue<int[]> tileQueue = new LinkedBlockingQueue<>();
     private final Set<Long> pendingKeys = ConcurrentHashMap.newKeySet();
     private volatile boolean running = true;
@@ -76,6 +75,45 @@ public class DemTerrainProvider implements TerrainProvider {
         this.meterPerBlockY = meterPerBlockY;
         System.out.println("DemTerrainProvider: zoom=" + zoom + " (meterPerBlockXZ=" + meterPerBlockXZ + ")" + "meterPerBlockY=" + meterPerBlockY);
         startWorker();
+    }
+
+    public void prefetchTiles(List<int[]> tiles) {
+        for (int[] tile : tiles) {
+            int x = tile[0], y = tile[1];
+            long key = ((long) x << 32) | (y & 0xFFFFFFFFL);
+            if (cache.containsKey(key) || pendingKeys.contains(key)) continue;
+            pendingKeys.add(key);
+            downloadExecutor.submit(() -> {
+                try {
+                    BufferedImage img = fetchTile(x, y);
+                    if (img != null) {
+                        cache.put(key, img);
+                    }
+                } finally {
+                    pendingKeys.remove(key);
+                }
+            });
+        }
+    }
+
+    public void prefetchAround(float playerX, float playerZ, int radiusInChunks) {
+        double lng = originLon + playerX * lonPerBlock;
+        double lat = originLat + playerZ * latPerBlock;
+        int[] center = latLngToTile(lat, lng, zoom);
+        int cx = center[0], cy = center[1];
+
+        // 半径转换为瓦片坐标步长（粗略估计，1 个区块 ≈ 16 格，但实际需要根据 zoom 算）
+        // 简单方式：直接使用固定步长（比如 2 个瓦片）
+        int step = radiusInChunks / 4; // 经验值
+        step = Math.max(1, step);
+
+        List<int[]> tiles = new ArrayList<>();
+        for (int dx = -step; dx <= step; dx++) {
+            for (int dy = -step; dy <= step; dy++) {
+                tiles.add(new int[]{cx + dx, cy + dy});
+            }
+        }
+        prefetchTiles(tiles);
     }
 
     /// 启动后台工作线程
