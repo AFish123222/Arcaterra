@@ -326,6 +326,25 @@ public class Chunk {
         }
         glEnd();
 
+        ////
+        // 绘制三色轴 (RGB -> XYZ)
+        glLineWidth(3.0f);
+        glBegin(GL_LINES);
+        // X轴红色
+        glColor3f(1.0f, 0.0f, 0.0f);
+        glVertex3f(0, 0, 0);
+        glVertex3f(, 0, 0);
+        // Y轴绿色
+        glColor3f(0.0f, 1.0f, 0.0f);
+        glVertex3f(0, 0, 0);
+        glVertex3f(0, 1, 0);
+        // Z轴蓝色
+        glColor3f(0.0f, 0.0f, 1.0f);
+        glVertex3f(0, 0, 0);
+        glVertex3f(0, 0, 1);
+        glEnd();
+        ///////
+
         // 顶点标记（红色）
         glPointSize(4.0f);
         glColor4f(1.0f, 0.0f, 0.0f, 0.9f);
