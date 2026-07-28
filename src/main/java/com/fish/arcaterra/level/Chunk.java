@@ -333,15 +333,15 @@ public class Chunk {
         // X轴红色
         glColor3f(1.0f, 0.0f, 0.0f);
         glVertex3f(0, 0, 0);
-        glVertex3f(, 0, 0);
+        glVertex3f(SIZE, 0, 0);
         // Y轴绿色
         glColor3f(0.0f, 1.0f, 0.0f);
         glVertex3f(0, 0, 0);
-        glVertex3f(0, 1, 0);
+        glVertex3f(0, SIZE, 0);
         // Z轴蓝色
         glColor3f(0.0f, 0.0f, 1.0f);
         glVertex3f(0, 0, 0);
-        glVertex3f(0, 0, 1);
+        glVertex3f(0, 0, SIZE);
         glEnd();
         ///////
 
