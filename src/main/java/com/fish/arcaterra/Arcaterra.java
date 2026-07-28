@@ -449,7 +449,7 @@ public class Arcaterra implements IDebugWindowPrintRegistry {
         public static int meterPerBlockXZ = 2;
         public static float meterPerBlockY = 1f;
         public static class DemSampleLodConfig {
-            public static int renderRadius = 500; //单位;chunk
+            public static int renderRadius = 100; //单位;chunk
             public static int sampleStep = Math.max(Chunk.SIZE * renderRadius/400,1);
         }
     }
