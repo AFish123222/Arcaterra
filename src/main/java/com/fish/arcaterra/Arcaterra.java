@@ -13,8 +13,8 @@ import com.fish.arcaterra.tree.TreeNetChunk;
 import com.fish.arcaterra.tree.TreeNetWorld;
 import com.fish.arcaterra.tree.TreePath;
 import com.fish.arcaterra.tree.terrain.NoiseLodTerrainProvider;
-import com.fish.arcaterra.ui.hud.AxesIndicator;
 import com.fish.arcaterra.ui.hud.Crosshair;
+import com.fish.arcaterra.ui.hud.DebugIndicators;
 import com.fish.arcaterra.ui.hud.HudManager;
 import com.fish.arcaterra.worldgen.noise.NoiseTerrainProvider;
 import com.fish.arcaterra.worldgen.terrarium.DemTerrainProvider;
@@ -171,7 +171,7 @@ public class Arcaterra {
         // hud
         hudManager = new HudManager();
         hudManager.add(new Crosshair());
-        hudManager.add(AxesIndicator.getAxesIndicator());
+        hudManager.add(DebugIndicators.getDebugIndicators());
 
         running = true;
         frameTaskStep = 0;
@@ -245,7 +245,8 @@ public class Arcaterra {
 
             particlePool.render(player.x, player.y, player.z);
 
-            AxesIndicator.getAxesIndicator().setRotation(player.yRot, player.xRot);
+            DebugIndicators.getDebugIndicators().setPlayerPos(player.x, player.y , player.z);
+            DebugIndicators.getDebugIndicators().setRotation(player.yRot, player.xRot);
 
             if(Config.renderMode == Config.RenderMode.ORIGINAL){
                 for (Chunk c : world.getVisibleChunks()) {
