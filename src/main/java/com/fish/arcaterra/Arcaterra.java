@@ -258,7 +258,7 @@ public class Arcaterra {
 
             if(Config.renderMode == Config.RenderMode.ORIGINAL){
                 for (Chunk c : world.getVisibleChunks()) {
-                    c.render(player.x, player.y, player.z);
+//                    c.render(player.x, player.y, player.z);
                     if (Config.showAllChunkBound) c.renderChunkBounds();
                 } //可见区块渲染
             }
@@ -269,69 +269,52 @@ public class Arcaterra {
 
 //            lodMesh.render();
             ///////////
-            // 采样参数
-            int radius = 16;           // 区块半径
-            int step = 8;             // 采样步长（格）
+// ---- 远方高度图 LOD（直接推顶点，无索引） ----
+            int radius = 100;
+            int step = Chunk.SIZE/2;
             float minX = player.x - radius * Chunk.SIZE;
             float maxX = player.x + radius * Chunk.SIZE;
             float minZ = player.z - radius * Chunk.SIZE;
             float maxZ = player.z + radius * Chunk.SIZE;
 
-// 计算顶点数量
-            int cols = (int) ((maxX - minX) / step) + 1;
-            int rows = (int) ((maxZ - minZ) / step) + 1;
-
-// 构建顶点和索引
-            List<Float> verts = new ArrayList<>();
-            List<Integer> idxs = new ArrayList<>();
-
-            for (float z = minZ; z <= maxZ; z += step) {
-                for (float x = minX; x <= maxX; x += step) {
-                    float h = world.getTerrainProvider().getHeight(x, z);
-                    verts.add(x);wwwwwwwwwwwwwwww
-                    verts.add(h);
-                    verts.add(z);
-                }
-            }
-
-            for (int r = 0; r < rows - 1; r++) {
-                for (int c = 0; c < cols - 1; c++) {
-                    int i0 = c + r * cols;
-                    int i1 = (c + 1) + r * cols;
-                    int i2 = c + (r + 1) * cols;
-                    int i3 = (c + 1) + (r + 1) * cols;
-                    idxs.add(i0);
-                    idxs.add(i1);
-                    idxs.add(i2);
-                    idxs.add(i1);
-                    idxs.add(i3);
-                    idxs.add(i2);
-                }
-            }
-
-// 转换数组
-            float[] vArr = new float[verts.size()];
-            int[] iArr = new int[idxs.size()];
-            for (int i = 0; i < vArr.length; i++) vArr[i] = verts.get(i);
-            for (int i = 0; i < iArr.length; i++) iArr[i] = idxs.get(i);
-
-// 直接推顶点（立即模式，简单粗暴）
             glColor3f(0.5f, 0.6f, 0.4f);
-            glBegin(GL_TRIANGLES);
-            for (int idx : iArr) {
-                int base = idx * 3;
-                glVertex3f(vArr[base], vArr[base + 1], vArr[base + 2]);
+//            glBegin(GL_TRIANGLES);
+
+            glBegin(GL_LINES);
+            glLineWidth(2);
+
+            for (float z = minZ; z < maxZ; z += step) {
+                for (float x = minX; x < maxX; x += step) {
+                    // 四个角的高度
+                    float h00 = world.getTerrainProvider().getHeight(x, z);
+                    float h10 = world.getTerrainProvider().getHeight(x + step, z);
+                    float h01 = world.getTerrainProvider().getHeight(x, z + step);
+                    float h11 = world.getTerrainProvider().getHeight(x + step, z + step);
+
+                    // 三角形1: (x,z) -> (x+step,z) -> (x,z+step)
+                    glVertex3f(x, h00, z);
+                    glVertex3f(x + step, h10, z);
+                    glVertex3f(x, h01, z + step);
+                    // 三角形2: (x+step,z) -> (x+step,z+step) -> (x,z+step)
+                    glVertex3f(x + step, h10, z);
+                    glVertex3f(x + step, h11, z + step);
+                    glVertex3f(x, h01, z + step);
+                }
             }
             glEnd();
         /////////////
 
             // 渲染玩家所在区块的边界
             if (Config.showChunkBoundPlayerAt) {
+                try{
                 world.getChunk(
                         player.x,
                         player.y,
                         player.z
-                ).renderChunkBounds();
+                ).renderChunkBounds();}catch (NullPointerException e){
+                    System.out.println("player chunk npe");
+                    //todo
+                }
             }
 
 
