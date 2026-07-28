@@ -166,23 +166,23 @@ public class Chunk {
     private void addFace(List<Float> v, List<Integer> i, int x, int y, int z, Direction dir, int offset) {
         float[][] faceVerts;
         switch (dir) {
-            case POS_X:
-                faceVerts = new float[][]{{1,0,0}, {1,0,1}, {1,1,1}, {1,1,0}};
+            case POS_X: // 右面（+X），从 +X 方向看
+                faceVerts = new float[][]{{1,0,1}, {1,0,0}, {1,1,0}, {1,1,1}};
                 break;
-            case NEG_X:
-                faceVerts = new float[][]{{0,0,1}, {0,0,0}, {0,1,0}, {0,1,1}};
+            case NEG_X: // 左面（-X），从 -X 方向看
+                faceVerts = new float[][]{{0,0,0}, {0,0,1}, {0,1,1}, {0,1,0}};
                 break;
-            case POS_Y:
-                faceVerts = new float[][]{{0,1,0}, {1,1,0}, {1,1,1}, {0,1,1}};
+            case POS_Y: // 顶面（+Y），从 +Y 方向看
+                faceVerts = new float[][]{{0,1,0}, {0,1,1}, {1,1,1}, {1,1,0}};
                 break;
-            case NEG_Y:
-                faceVerts = new float[][]{{0,0,0}, {0,0,1}, {1,0,1}, {1,0,0}};
+            case NEG_Y: // 底面（-Y），从 -Y 方向看（即从下方看逆时针）
+                faceVerts = new float[][]{{0,0,0}, {1,0,0}, {1,0,1}, {0,0,1}};
                 break;
-            case POS_Z:
-                faceVerts = new float[][]{{0,0,1}, {1,0,1}, {1,1,1}, {0,1,1}};
+            case POS_Z: // 前面（+Z），从 +Z 方向看
+                faceVerts = new float[][]{{0,0,1}, {0,1,1}, {1,1,1}, {1,0,1}};
                 break;
-            case NEG_Z:
-                faceVerts = new float[][]{{1,0,0}, {0,0,0}, {0,1,0}, {1,1,0}};
+            case NEG_Z: // 后面（-Z），从 -Z 方向看
+                faceVerts = new float[][]{{1,0,0}, {1,1,0}, {0,1,0}, {0,0,0}};
                 break;
             default: return;
         }
