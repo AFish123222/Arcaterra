@@ -131,10 +131,6 @@ public class Arcaterra implements IDebugWindowPrintRegistry {
         Matrix4f viewMatrix = new Matrix4f();
         Frustum frustum = new Frustum(projMatrix, viewMatrix);
 
-
-
-
-
         // 在 init() 中
         if (Config.renderMode == Config.RenderMode.TREE_LOD) {
             LODManager.treeWorld = new TreeNetWorld(new NoiseLodTerrainProvider());
@@ -148,15 +144,15 @@ public class Arcaterra implements IDebugWindowPrintRegistry {
 //        if (Config.worldGenMode == Config.WorldGenMode.DEM) {
             DemTerrainProvider demTerrainProvider = new DemTerrainProvider(//https://lbs.qq.com/getPoint
 //                        107.1, 34.3, //?
-                    107.371805,34.392071 ,// 陕西宝鸡陈仓区 //不能？？？
+                    107.371805,34.392071 ,// 陕西宝鸡陈仓区
                     Config.meterPerBlockXZ,
                     Config.meterPerBlockY
             );
             this.world = new World(demTerrainProvider);
 //        }
 
-        float spawnX = 0;
-        float spawnZ = 0;
+        float spawnX = 50;
+        float spawnZ = 30;
         float groundHeight = world.getTerrainProvider().getHeight(spawnX, spawnZ);
         float spawnY = groundHeight + 1.5f; // 站在地面以上
 
@@ -450,11 +446,11 @@ public class Arcaterra implements IDebugWindowPrintRegistry {
             /// Terrarium
             DEM
         }
-        public static int meterPerBlockXZ = 10;
+        public static int meterPerBlockXZ = 2;
         public static float meterPerBlockY = 1f;
         public static class DemSampleLodConfig {
-            public static int renderRadius = 100; //单位;chunk
-            public static int sampleStep = Math.max(Chunk.SIZE * renderRadius/200,1);
+            public static int renderRadius = 500; //单位;chunk
+            public static int sampleStep = Math.max(Chunk.SIZE * renderRadius/400,1);
         }
     }
 
