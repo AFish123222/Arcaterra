@@ -207,6 +207,10 @@ public class Arcaterra {
     private double lastTime = 0.0;
     private double delta = 0.0;
 
+    private int lodVao = 0;
+    private int lodVbo = 0;
+    private int lodIbo = 0;
+
     private void loop() {
         // 初始化时间
         lastTime = glfwGetTime();
@@ -308,7 +312,74 @@ public class Arcaterra {
 
             }
             if (pushVituces == true) {
+// 在 Arcaterra.loop() 中（每帧执行）
+// ---- 远方高度图 LOD（VBO 推顶点） ----
 
+                int cols = (int) ((maxX - minX) / step) + 1;
+                int rows = (int) ((maxZ - minZ) / step) + 1;
+
+// 分配数组
+                float[] vArr = new float[cols * rows * 3];
+                int[] iArr = new int[(cols - 1) * (rows - 1) * 6];
+
+                int idx = 0;
+                for (float z = minZ; z <= maxZ; z += step) {
+                    for (float x = minX; x <= maxX; x += step) {
+                        float h = world.getTerrainProvider().getHeight(x, z);
+                        vArr[idx++] = x;
+                        vArr[idx++] = h;
+                        vArr[idx++] = z;
+                    }
+                }
+
+                int iIdx = 0;
+                for (int r = 0; r < rows - 1; r++) {
+                    for (int c = 0; c < cols - 1; c++) {
+                        int i0 = c + r * cols;
+                        int i1 = (c + 1) + r * cols;
+                        int i2 = c + (r + 1) * cols;
+                        int i3 = (c + 1) + (r + 1) * cols;
+                        iArr[iIdx++] = i0;
+                        iArr[iIdx++] = i1;
+                        iArr[iIdx++] = i2;
+                        iArr[iIdx++] = i1;
+                        iArr[iIdx++] = i3;
+                        iArr[iIdx++] = i2;
+                    }
+                }
+
+// 上传到 VBO（可复用）
+                if (lodVao == 0) {
+                    lodVao = glGenVertexArrays();
+                    lodVbo = glGenBuffers();
+                    lodIbo = glGenBuffers();
+                }
+
+                glBindVertexArray(lodVao);
+
+// 顶点数据
+                glBindBuffer(GL_ARRAY_BUFFER, lodVbo);
+                FloatBuffer vBuf = MemoryUtil.memAllocFloat(vArr.length);
+                vBuf.put(vArr).flip();
+                glBufferData(GL_ARRAY_BUFFER, vBuf, GL_DYNAMIC_DRAW);
+                MemoryUtil.memFree(vBuf);
+                glVertexAttribPointer(0, 3, GL_FLOAT, false, 12, 0);
+                glEnableVertexAttribArray(0);
+
+// 索引数据
+                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, lodIbo);
+                IntBuffer iBuf = MemoryUtil.memAllocInt(iArr.length);
+                iBuf.put(iArr).flip();
+                glBufferData(GL_ELEMENT_ARRAY_BUFFER, iBuf, GL_DYNAMIC_DRAW);
+                MemoryUtil.memFree(iBuf);
+
+                glBindVertexArray(0);
+
+// 绘制
+                glColor3f(0.5f, 0.6f, 0.4f);
+                glBindVertexArray(lodVao);
+                glDrawElements(GL_TRIANGLES, iArr.length, GL_UNSIGNED_INT, 0);
+                glBindVertexArray(0);
             }
 
         /////////////
@@ -369,6 +440,13 @@ public class Arcaterra {
         glfwFreeCallbacks(window);
         glfwDestroyWindow(window);
         glfwTerminate();
+
+        if (lodVao != 0) {
+            glDeleteVertexArrays(lodVao);
+            glDeleteBuffers(lodVbo);
+            glDeleteBuffers(lodIbo);
+            lodVao = lodVbo = lodIbo = 0;
+        }
 
         // 保留调试窗口，不释放 //todo:support config to chose between sameshut and twiceshut
         System.out.println("游戏已退出，调试窗口仍然保留。");
