@@ -137,7 +137,9 @@ public class Arcaterra {
         );
         // 使用dem
         if (Config.worldGenMode == Config.WorldGenMode.DEM) this.world = new World(
-                new DemTerrainProvider(107.1, 34.3,
+                new DemTerrainProvider(//https://lbs.qq.com/getPoint
+//                        107.1, 34.3, //?
+                        34.392071,107.371805, // 陕西宝鸡陈仓区
                         Config.meterPerBlockXZ,
                         Config.meterPerBlockY
                 )
@@ -432,7 +434,7 @@ public class Arcaterra {
             /// Terrarium
             DEM
         }
-        public static int meterPerBlockXZ = 100;
+        public static int meterPerBlockXZ = 2;
         public static int meterPerBlockY = 1;
         public static class DemSampleLodConfig {
             public static int renderRadius = 100;
