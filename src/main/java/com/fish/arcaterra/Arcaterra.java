@@ -260,45 +260,7 @@ public class Arcaterra {
                     if (Config.showAllChunkBound) c.renderChunkBounds();
                 } //可见区块渲染
             }
-            /////////
-            int halfSize = LOAD_RADIUS * Chunk.SIZE; // 例如 6 * 16 = 96 格
-            float step = 2.0f; // 采样步长（越大顶点越少）
-
-            List<Float> verts = new ArrayList<>();
-            List<Integer> indices = new ArrayList<>();
-
-            // 从玩家位置向四周扩展
-            for (float x = player.x - halfSize; x <= player.x + halfSize; x += step) {
-                for (float z = player.z - halfSize; z <= player.z + halfSize; z += step) {
-                    float h = world.getTerrainProvider().getHeight(x, z);
-                    verts.add(x);
-                    verts.add(h);
-                    verts.add(z);
-                }
-            }
-
-            // 生成索引（连接相邻顶点）
-            int cols = (int)(halfSize * 2 / step) + 1;
-            for (int i = 0; i < cols - 1; i++) {
-                for (int j = 0; j < cols - 1; j++) {
-                    int i0 = i + j * cols;
-                    int i1 = i + 1 + j * cols;
-                    int i2 = i + (j + 1) * cols;
-                    int i3 = i + 1 + (j + 1) * cols;
-                    indices.add(i0);
-                    indices.add(i1);
-                    indices.add(i2);
-                    indices.add(i1);
-                    indices.add(i3);
-                    indices.add(i2);
-                }
-            }
-
-            // 上传 VBO（可复用现有 ChunkMesh 或新建全局 LOD 网格）
-
-            ////////////
-
-
+            
             if(Config.renderMode == Config.RenderMode.TREE_LOD){
                 LODManager.treeWorld.render(player.x, player.y, player.z);
             }
