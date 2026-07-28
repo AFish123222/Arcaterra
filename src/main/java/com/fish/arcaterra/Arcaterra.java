@@ -274,8 +274,8 @@ public class Arcaterra {
 //            lodMesh.render();
             ///////////
             boolean pushVituces = true;
-            int radius = 100;
-            int step = Chunk.SIZE/2;
+            int radius = 5;
+            int step = 1;
             float minX = player.x - radius * Chunk.SIZE;
             float maxX = player.x + radius * Chunk.SIZE;
             float minZ = player.z - radius * Chunk.SIZE;
@@ -379,7 +379,7 @@ public class Arcaterra {
                 // 绘制
 // 绘制
                 glBindVertexArray(lodVao);
-//                glDisable(GL_DEPTH_TEST); // 线框不被遮挡
+                glDisable(GL_DEPTH_TEST); // 线框不被遮挡
 
 // 线框模式
                 glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
