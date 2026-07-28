@@ -2,6 +2,7 @@ package com.fish.arcaterra;
 
 import com.fish.arcaterra.debug.DebugRegistry;
 import com.fish.arcaterra.debug.DebugWindow;
+import com.fish.arcaterra.debug.IDebugWindowPrintRegistry;
 import com.fish.arcaterra.level.World;
 import com.fish.arcaterra.level.Chunk;
 import com.fish.arcaterra.particle.ParticlePool;
@@ -53,7 +54,7 @@ import static org.lwjgl.system.MemoryUtil.NULL;
 /// 本阶段会重新实现并优化Minecraft1.21.5+Fabric+Terrarium+LOD(DH/Voxy/自研文件树LOD)
 ///
 /// 作者会同步学习游戏开发知识 并完善JavaDoc，便利开发
-public class Arcaterra {
+public class Arcaterra implements IDebugWindowPrintRegistry {
     private long window;
     public static final int WIDTH = 1280;
     public static final int HEIGHT = 720;
@@ -80,6 +81,7 @@ public class Arcaterra {
     }
 
     private void init() {
+        debugParamRegister();
 
         GLFWErrorCallback.createPrint(System.err).set();
         if (!glfwInit()) throw new IllegalStateException("GLFW初始化失败");
@@ -142,7 +144,7 @@ public class Arcaterra {
         if (Config.worldGenMode == Config.WorldGenMode.DEM) this.world = new World(
                 new DemTerrainProvider(//https://lbs.qq.com/getPoint
 //                        107.1, 34.3, //?
-                        34.392071,107.371805, // 陕西宝鸡陈仓区 //不能？？？
+                        107.371805,34.392071 ,// 陕西宝鸡陈仓区 //不能？？？
                         Config.meterPerBlockXZ,
                         Config.meterPerBlockY
                 )
@@ -405,6 +407,11 @@ public class Arcaterra {
 
     public static void main(String[] args) {
         new Arcaterra().run();
+    }
+
+    @Override
+    public void debugParamRegister() {
+        DebugRegistry.register("groundHeight",()-> world.getTerrainProvider().getHeight(player.x,player.z));
     }
 
 
