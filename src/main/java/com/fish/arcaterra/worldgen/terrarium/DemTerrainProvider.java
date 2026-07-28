@@ -88,7 +88,7 @@ public class DemTerrainProvider implements TerrainProvider {
                     BufferedImage img = fetchTile(x, y);
                     if (img != null) {
                         cache.put(key, img);
-                    }
+                    }else{System.err.println("null tile" + x + "," + y);}
                 } finally {
                     pendingKeys.remove(key);
                 }
@@ -263,7 +263,10 @@ public class DemTerrainProvider implements TerrainProvider {
             HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
             conn.setConnectTimeout(5000);
             conn.setReadTimeout(5000);
-            System.out.println("successfully fetch tile: " + url);
+//            if (ImageIO.read(conn.getInputStream()) != null ) {
+//                System.out.println("successfully fetch tile: " + url);
+//            }else{System.out.println("failed to fetch tile: " + url);}
+
             return ImageIO.read(conn.getInputStream());
         } catch (Exception e) {
             System.err.println("Failed to fetch tile: " + e.getMessage());
