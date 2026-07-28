@@ -328,7 +328,7 @@ public class Chunk {
 
         ////
         // 绘制三色轴 (RGB -> XYZ)
-        glLineWidth(3.0f);
+        glLineWidth(7.0f);
         glBegin(GL_LINES);
         // X轴红色
         glColor3f(1.0f, 0.0f, 0.0f);
