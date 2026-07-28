@@ -245,6 +245,33 @@ public class Arcaterra {
 
             particlePool.render(player.x, player.y, player.z);
 
+            //////////
+            boolean showDebugAxes = true;
+            if (showDebugAxes) {
+                float eyeY = 0;
+                glPushMatrix();
+                glDisable(GL_LIGHTING);
+                glLineWidth(2.0f);
+
+                glBegin(GL_LINES);
+                // X轴
+                glColor3f(1,0,0);
+                glVertex3f(0, eyeY, 0);
+                glVertex3f(1, eyeY, 0);
+                // Y轴
+                glColor3f(0,1,0);
+                glVertex3f(0, eyeY, 0);
+                glVertex3f(0, eyeY+1, 0);
+                // Z轴
+                glColor3f(0,0,1);
+                glVertex3f(0, eyeY, 0);
+                glVertex3f(0, eyeY, 1);
+                glEnd();
+
+                glPopMatrix();
+            }
+            //////////
+
             DebugIndicators.getDebugIndicators().setPlayerPos(player.x, player.y , player.z);
             DebugIndicators.getDebugIndicators().setRotation(player.yRot, player.xRot);
 
