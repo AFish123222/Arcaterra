@@ -9,6 +9,9 @@ public class ChunkPool {
     public static final int UNLOAD_RADIUS = LOAD_RADIUS + 2;
     public static final int LOAD_DIST_SQ = (LOAD_RADIUS * Chunk.SIZE) * (LOAD_RADIUS * Chunk.SIZE);
     public static final int UNLOAD_DIST_SQ = (UNLOAD_RADIUS * Chunk.SIZE) * (UNLOAD_RADIUS * Chunk.SIZE);
+    public static final int LOD_RADIUS = 10;
+    public static final int LOD_DIST_SQ = (LOD_RADIUS * Chunk.SIZE) * (LOD_RADIUS * Chunk.SIZE);
+
 
     private final Map<Long, Chunk> pool = new HashMap<>();
     private final World world;
@@ -66,19 +69,14 @@ public class ChunkPool {
                 int wz = cz * Chunk.SIZE + z;
                 float height = world.getTerrainProvider().getHeight(wx, wz);
                 int groundY = Math.round(height);
-//                ///////
 //                System.out.println("区块: " + cx + "," + cy + "," + cz + " | Y范围:[" + (cy*Chunk.SIZE) + "," + ((cy+1)*Chunk.SIZE-1) + "] | wx=" + wx + ", wz=" + wz + " | groundY=" + groundY + " | 包含? " + (groundY >= cy*Chunk.SIZE && groundY < (cy+1)*Chunk.SIZE));
-//                /////////////
                 // 如果地面高度落在该区块的 Y 范围内（cy*16 ~ cy*16+15），则有地形
                 if (groundY >= cy * Chunk.SIZE && groundY < (cy + 2) * Chunk.SIZE) {
                     return true;
                 }
                 }
         }
-        ///////////
-//        return true;
         return false;
-        ////////
     }
 
     public Chunk getChunkIfLoaded(int worldX, int worldY, int worldZ) {
