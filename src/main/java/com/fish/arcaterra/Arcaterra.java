@@ -109,11 +109,14 @@ public class Arcaterra {
         glLoadIdentity();
         float aspect = (float) WIDTH / HEIGHT;
 
-        Matrix4f projMatrix = new Matrix4f().setFrustum(
-                -aspect * 0.1f, aspect * 0.1f,  // left, right
-                -0.1f, 0.1f,                    // bottom, top
-                0.1f, 2000f                     // near, far
-        );
+//        Matrix4f projMatrix = new Matrix4f().setFrustum(
+//                -aspect * 0.1f, aspect * 0.1f,  // left, right
+//                -0.1f, 0.1f,                    // bottom, top
+//                0.1f, 2000f                     // near, far
+//        );
+        Matrix4f projMatrix = new Matrix4f();
+        projMatrix.setPerspective((float) Math.toRadians(70), aspect, 2000f, 0.1f);        // 注意：near 和 far 反过来了！far 在前，near 在后(z冲突->反转深度)
+
         glDepthFunc(GL_GREATER);  // 原来默认是 GL_LESS
         // 上传到 OpenGL（固定管线）
         FloatBuffer projBuf = BufferUtils.createFloatBuffer(16);
@@ -139,7 +142,7 @@ public class Arcaterra {
         if (Config.worldGenMode == Config.WorldGenMode.DEM) this.world = new World(
                 new DemTerrainProvider(//https://lbs.qq.com/getPoint
 //                        107.1, 34.3, //?
-                        34.392071,107.371805, // 陕西宝鸡陈仓区
+                        34.392071,107.371805, // 陕西宝鸡陈仓区 //不能？？？
                         Config.meterPerBlockXZ,
                         Config.meterPerBlockY
                 )
@@ -259,10 +262,7 @@ public class Arcaterra {
 
             particlePool.render(player.x, player.y, player.z);
 
-//            lodMesh.update(player.x, player.z, world.getTerrainProvider(), 8, 4.0f);
-
-            DebugIndicators.getDebugIndicators().setPlayerPos(player.x, player.y , player.z);
-            DebugIndicators.getDebugIndicators().setRotation(player.yRot, player.xRot);
+            demSimpleLod();
 
             if(Config.renderMode == Config.RenderMode.ORIGINAL){
                 for (Chunk c : world.getVisibleChunks()) {
@@ -274,7 +274,6 @@ public class Arcaterra {
             if(Config.renderMode == Config.RenderMode.TREE_LOD){
                 LODManager.treeWorld.render(player.x, player.y, player.z);
             }
-            demSimpleLod();
             // 渲染玩家所在区块的边界
             if (Config.showChunkBoundPlayerAt) {
                 try{
@@ -287,9 +286,6 @@ public class Arcaterra {
                     //todo
                 }
             }
-
-
-
 
             Renderer.INSTANCE.drawEyeRay(player.x, player.y, player.z, player.xRot, player.yRot);
 
