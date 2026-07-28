@@ -185,7 +185,7 @@ public class Chunk {
                 faceVerts = new float[][]{{0,0,1}, {1,0,1}, {1,1,1}, {0,1,1}};
                 break;
             case NEG_Z:
-                // 背面（-Z），从 Z 负方向看，逆时针：右下→左下→左上→右上
+                // 背面（-Z），从 Z 负方向看逆时针：右下→左下→左上→右上
                 faceVerts = new float[][]{{1,0,0}, {0,0,0}, {0,1,0}, {1,1,0}};
                 break;
             default: return;
