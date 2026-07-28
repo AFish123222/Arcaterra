@@ -325,7 +325,7 @@ public class Arcaterra {
                 int idx = 0;
                 for (float z = minZ; z <= maxZ; z += step) {
                     for (float x = minX; x <= maxX; x += step) {
-                        float h = world.getTerrainProvider().getHeight(x, z)+100f;
+                        float h = world.getTerrainProvider().getHeight(x, z);
                         vArr[idx++] = x;
                         vArr[idx++] = h;
                         vArr[idx++] = z;
@@ -340,11 +340,11 @@ public class Arcaterra {
                         int i2 = c + (r + 1) * cols;
                         int i3 = (c + 1) + (r + 1) * cols;
                         iArr[iIdx++] = i0;
-                        iArr[iIdx++] = i1;
+                        iArr[iIdx++] = i2;
                         iArr[iIdx++] = i3;
                         iArr[iIdx++] = i0;
                         iArr[iIdx++] = i3;
-                        iArr[iIdx++] = i2;
+                        iArr[iIdx++] = i1;
                     }
                 }
 
@@ -378,6 +378,7 @@ public class Arcaterra {
 // 绘制
                 // 绘制
 // 绘制
+//                glDisable(GL_CULL_FACE);
                 glBindVertexArray(lodVao);
                 glDisable(GL_DEPTH_TEST); // 线框不被遮挡
 
@@ -389,6 +390,7 @@ public class Arcaterra {
 // 恢复状态
                 glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
                 glEnable(GL_DEPTH_TEST);
+                glEnable(GL_CULL_FACE);
                 glBindVertexArray(0);
             }
 
