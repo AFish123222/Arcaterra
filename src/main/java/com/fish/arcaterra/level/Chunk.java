@@ -172,10 +172,12 @@ public class Chunk {
             case NEG_X: // 左面（-X），从 -X 方向看
                 faceVerts = new float[][]{{0,0,0}, {0,0,1}, {0,1,1}, {0,1,0}};
                 break;
-            case POS_Y: // 顶面（+Y），从 +Y 方向看
-                faceVerts = new float[][]{{0,1,0}, {0,1,1}, {1,1,1}, {1,1,0}};
+            case POS_Y:
+                // 顶面，从上方看逆时针：左上→右上→右下→左下
+                faceVerts = new float[][]{{0,1,1}, {1,1,1}, {1,1,0}, {0,1,0}};
                 break;
-            case NEG_Y: // 底面（-Y），从 -Y 方向看（即从下方看逆时针）
+            case NEG_Y:
+                // 底面，从下方看逆时针：左下→右下→右上→左上
                 faceVerts = new float[][]{{0,0,0}, {1,0,0}, {1,0,1}, {0,0,1}};
                 break;
             case POS_Z: // 前面（+Z），从 +Z 方向看
@@ -326,7 +328,6 @@ public class Chunk {
         }
         glEnd();
 
-        ////
         // 绘制三色轴 (RGB -> XYZ)
         glLineWidth(7.0f);
         glBegin(GL_LINES);
@@ -343,7 +344,6 @@ public class Chunk {
         glVertex3f(0, 0, 0);
         glVertex3f(0, 0, SIZE);
         glEnd();
-        ///////
 
         // 顶点标记（红色）
         glPointSize(4.0f);
