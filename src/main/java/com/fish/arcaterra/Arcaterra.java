@@ -255,7 +255,7 @@ public class Arcaterra {
 
             if(Config.renderMode == Config.RenderMode.ORIGINAL){
                 for (Chunk c : world.getVisibleChunks()) {
-//                    c.render(player.x, player.y, player.z);
+                    c.render(player.x, player.y, player.z);
                     if (Config.showAllChunkBound) c.renderChunkBounds();
                 } //可见区块渲染
             }
