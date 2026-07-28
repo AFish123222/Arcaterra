@@ -45,7 +45,7 @@ public class Player implements IDebugWindowPrintRegistry {
         this.world = world;
         this.xRot = 0;
         this.yRot = 0;
-        setPos(30, 100, 50);
+        setPos(0, 0, 50);
         debugParamRegister(); // 自动注册调试信息
     }
 
