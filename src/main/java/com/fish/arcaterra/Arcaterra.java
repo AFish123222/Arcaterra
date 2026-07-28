@@ -2,7 +2,6 @@ package com.fish.arcaterra;
 
 import com.fish.arcaterra.debug.DebugRegistry;
 import com.fish.arcaterra.debug.DebugWindow;
-import com.fish.arcaterra.debug.timer.DebugTimer;
 import com.fish.arcaterra.level.World;
 import com.fish.arcaterra.level.Chunk;
 import com.fish.arcaterra.particle.ParticlePool;
@@ -16,22 +15,29 @@ import com.fish.arcaterra.tree.terrain.NoiseLodTerrainProvider;
 import com.fish.arcaterra.ui.hud.Crosshair;
 import com.fish.arcaterra.ui.hud.DebugIndicators;
 import com.fish.arcaterra.ui.hud.HudManager;
+import com.fish.arcaterra.worldgen.TerrainProvider;
 import com.fish.arcaterra.worldgen.noise.NoiseTerrainProvider;
 import com.fish.arcaterra.worldgen.terrarium.DemTerrainProvider;
-import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix4f;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.opengl.GL;
-import org.lwjgl.system.ffm.FFMReturn;
+import org.lwjgl.system.MemoryUtil;
 
 import javax.swing.*;
 import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+import java.util.ArrayList;
 import java.util.List;
 
+import static com.fish.arcaterra.level.ChunkPool.LOAD_RADIUS;
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
 import static org.lwjgl.glfw.GLFW.*;
+import static org.lwjgl.opengl.ARBVertexArrayObject.glGenVertexArrays;
 import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL15.*;
+import static org.lwjgl.opengl.GL20.*;
+import static org.lwjgl.opengl.GL30.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 /// # 桃源Arcaterra
@@ -126,7 +132,7 @@ public class Arcaterra {
 
 
         // 在 init() 中
-        if (Config.renderMode == Config.RenderMode.LOD) {
+        if (Config.renderMode == Config.RenderMode.TREE_LOD) {
             LODManager.treeWorld = new TreeNetWorld(new NoiseLodTerrainProvider());
         }
 
@@ -205,7 +211,7 @@ public class Arcaterra {
         // 初始化时间
         lastTime = glfwGetTime();
 
-        if (Config.renderMode == Config.RenderMode.LOD){
+        if (Config.renderMode == Config.RenderMode.TREE_LOD){
             TreePath playerPath = LODManager.worldToPath(player.x, player.y, player.z);
             LODManager.treeWorld.updatePlayerPath(playerPath);
         }
@@ -254,7 +260,46 @@ public class Arcaterra {
                     if (Config.showAllChunkBound) c.renderChunkBounds();
                 } //可见区块渲染
             }
-            if(Config.renderMode == Config.RenderMode.LOD){
+            /////////
+            int halfSize = LOAD_RADIUS * Chunk.SIZE; // 例如 6 * 16 = 96 格
+            float step = 2.0f; // 采样步长（越大顶点越少）
+
+            List<Float> verts = new ArrayList<>();
+            List<Integer> indices = new ArrayList<>();
+
+            // 从玩家位置向四周扩展
+            for (float x = player.x - halfSize; x <= player.x + halfSize; x += step) {
+                for (float z = player.z - halfSize; z <= player.z + halfSize; z += step) {
+                    float h = world.getTerrainProvider().getHeight(x, z);
+                    verts.add(x);
+                    verts.add(h);
+                    verts.add(z);
+                }
+            }
+
+            // 生成索引（连接相邻顶点）
+            int cols = (int)(halfSize * 2 / step) + 1;
+            for (int i = 0; i < cols - 1; i++) {
+                for (int j = 0; j < cols - 1; j++) {
+                    int i0 = i + j * cols;
+                    int i1 = i + 1 + j * cols;
+                    int i2 = i + (j + 1) * cols;
+                    int i3 = i + 1 + (j + 1) * cols;
+                    indices.add(i0);
+                    indices.add(i1);
+                    indices.add(i2);
+                    indices.add(i1);
+                    indices.add(i3);
+                    indices.add(i2);
+                }
+            }
+
+            // 上传 VBO（可复用现有 ChunkMesh 或新建全局 LOD 网格）
+
+            ////////////
+
+
+            if(Config.renderMode == Config.RenderMode.TREE_LOD){
                 LODManager.treeWorld.render(player.x, player.y, player.z);
             }
 
@@ -394,7 +439,7 @@ public class Arcaterra {
             /// 运行World,Chunk (com.fish.arcaterra.level)
             ORIGINAL,
             /// 运行com.fish.arcaterra.tree
-            LOD
+            TREE_LOD,
         }
         /// 世界生成器
         public static WorldGenMode worldGenMode = WorldGenMode.DEM;
@@ -440,6 +485,133 @@ public class Arcaterra {
                 size = half;
             }
             return new TreePath(code, depth);
+        }
+    }
+
+    private LODMesh lodMesh=new LODMesh();
+    /**
+     * 高度图 LOD 网格，使用一个 VBO 覆盖玩家周围整个区域。
+     * 每帧或玩家移动超过阈值时重建。
+     */
+    public class LODMesh {
+        private int vao;
+        private int vbo;
+        private int ibo;
+        private int vertexCount;
+        private int indexCount;
+
+        private float lastPlayerX, lastPlayerZ;
+        private static final float UPDATE_THRESHOLD = 8.0f; // 移动超过 8 格才重建
+
+        /**
+         * 根据玩家位置更新网格。
+         * @param playerX 玩家 X
+         * @param playerZ 玩家 Z
+         * @param provider 地形提供者
+         * @param radius 覆盖半径（区块数）
+         * @param step 采样步长（格）
+         */
+        public void update(float playerX, float playerZ, TerrainProvider provider, int radius, float step) {
+            if (Math.abs(playerX - lastPlayerX) < UPDATE_THRESHOLD &&
+                    Math.abs(playerZ - lastPlayerZ) < UPDATE_THRESHOLD) {
+                return; // 位置变化不大，不重建
+            }
+            lastPlayerX = playerX;
+            lastPlayerZ = playerZ;
+
+            // 计算覆盖范围
+            int halfSize = radius * 16; // 假设区块大小为 16
+            float minX = playerX - halfSize;
+            float maxX = playerX + halfSize;
+            float minZ = playerZ - halfSize;
+            float maxZ = playerZ + halfSize;
+
+            int cols = (int) ((maxX - minX) / step) + 1;
+            int rows = (int) ((maxZ - minZ) / step) + 1;
+
+            List<Float> vertices = new ArrayList<>();
+            List<Integer> indices = new ArrayList<>();
+
+            // 1. 生成顶点
+            for (float z = minZ; z <= maxZ; z += step) {
+                for (float x = minX; x <= maxX; x += step) {
+                    float height = provider.getHeight(x, z);
+                    vertices.add(x);
+                    vertices.add(height);
+                    vertices.add(z);
+                }
+            }
+
+            // 2. 生成索引
+            for (int r = 0; r < rows - 1; r++) {
+                for (int c = 0; c < cols - 1; c++) {
+                    int i0 = c + r * cols;
+                    int i1 = (c + 1) + r * cols;
+                    int i2 = c + (r + 1) * cols;
+                    int i3 = (c + 1) + (r + 1) * cols;
+                    indices.add(i0);
+                    indices.add(i1);
+                    indices.add(i2);
+                    indices.add(i1);
+                    indices.add(i3);
+                    indices.add(i2);
+                }
+            }
+
+            vertexCount = vertices.size() / 3;
+            indexCount = indices.size();
+
+            // 转换为数组
+            float[] vArr = new float[vertices.size()];
+            int[] iArr = new int[indices.size()];
+            for (int i = 0; i < vArr.length; i++) vArr[i] = vertices.get(i);
+            for (int i = 0; i < iArr.length; i++) iArr[i] = indices.get(i);
+
+            // 上传到 GPU
+            if (vao == 0) {
+                vao = glGenVertexArrays();
+                vbo = glGenBuffers();
+                ibo = glGenBuffers();
+            }
+
+            glBindVertexArray(vao);
+
+            // 顶点数据
+            glBindBuffer(GL_ARRAY_BUFFER, vbo);
+            FloatBuffer vBuf = MemoryUtil.memAllocFloat(vArr.length);
+            vBuf.put(vArr).flip();
+            glBufferData(GL_ARRAY_BUFFER, vBuf, GL_STATIC_DRAW);
+            MemoryUtil.memFree(vBuf);
+            glVertexAttribPointer(0, 3, GL_FLOAT, false, 12, 0);
+            glEnableVertexAttribArray(0);
+
+            // 索引数据
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+            IntBuffer iBuf = MemoryUtil.memAllocInt(iArr.length);
+            iBuf.put(iArr).flip();
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, iBuf, GL_STATIC_DRAW);
+            MemoryUtil.memFree(iBuf);
+
+            glBindVertexArray(0);
+        }
+
+        /**
+         * 渲染 LOD 网格。
+         */
+        public void render() {
+            if (indexCount == 0) return;
+            glBindVertexArray(vao);
+            glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0);
+            glBindVertexArray(0);
+        }
+
+        public void destroy() {
+            if (vao != 0) {
+                glDeleteVertexArrays(vao);
+                glDeleteBuffers(vbo);
+                glDeleteBuffers(ibo);
+                vao = vbo = ibo = 0;
+            }
         }
     }
 }
