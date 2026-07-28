@@ -115,11 +115,11 @@ public class Arcaterra {
 //        glMatrixMode(GL_MODELVIEW);
 //        Frustum frustum = new Frustum(glGetFloatv());
         // 在 init() 中，不再调用 glFrustum，而是用 JOML 计算并上传
-        Matrix4f projMatrix = new Matrix4f().setFrustum(
-                -aspect * 0.1f, aspect * 0.1f,  // left, right
-                -0.1f, 0.1f,                    // bottom, top
-                0.1f, 2000f                     // near, far
-        );
+// 使用 JOML（推荐）
+        Matrix4f projMatrix = new Matrix4f();
+        projMatrix.setPerspective((float) Math.toRadians(70), aspect, 2000f, 0.1f);
+// 注意：near 和 far 反过来了！far 在前，near 在后
+        glDepthFunc(GL_GREATER);  // 原来默认是 GL_LESS
         // 上传到 OpenGL（固定管线）
         FloatBuffer projBuf = BufferUtils.createFloatBuffer(16);
         projMatrix.get(projBuf);
