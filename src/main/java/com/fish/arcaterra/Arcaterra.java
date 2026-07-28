@@ -341,8 +341,8 @@ public class Arcaterra {
                         int i3 = (c + 1) + (r + 1) * cols;
                         iArr[iIdx++] = i0;
                         iArr[iIdx++] = i1;
-                        iArr[iIdx++] = i2;
-                        iArr[iIdx++] = i1;
+                        iArr[iIdx++] = i3;
+                        iArr[iIdx++] = i0;
                         iArr[iIdx++] = i3;
                         iArr[iIdx++] = i2;
                     }
