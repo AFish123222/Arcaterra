@@ -325,7 +325,7 @@ public class Arcaterra {
                 int idx = 0;
                 for (float z = minZ; z <= maxZ; z += step) {
                     for (float x = minX; x <= maxX; x += step) {
-                        float h = world.getTerrainProvider().getHeight(x, z)+0.01f;
+                        float h = world.getTerrainProvider().getHeight(x, z);
                         vArr[idx++] = x;
                         vArr[idx++] = h;
                         vArr[idx++] = z;
