@@ -17,7 +17,7 @@ public class Player implements IDebugWindowPrintRegistry {
     // ===== 移动参数（可调字段）=====
     public float walkSpeed = 0.1f;          // 地面移动速度
     public float airSpeed = 1f;          // 空中移动速度
-    public float jumpSpeed = 0.08f;          // 跳跃速度
+    public float jumpSpeed = 1f;          // 跳跃速度
     public float gravity = 0.01f;           // 重力加速度
     public float frictionXZ = 0.91f;         // 水平阻尼（每帧）
     public float frictionY = 0.98f;          // 垂直阻尼
