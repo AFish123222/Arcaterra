@@ -3,6 +3,7 @@ package com.fish.arcaterra;
 import com.fish.arcaterra.debug.DebugRegistry;
 import com.fish.arcaterra.debug.DebugWindow;
 import com.fish.arcaterra.debug.IDebugWindowPrintRegistry;
+import com.fish.arcaterra.debug.timer.DebugTimer;
 import com.fish.arcaterra.level.World;
 import com.fish.arcaterra.level.Chunk;
 import com.fish.arcaterra.particle.ParticlePool;
@@ -264,7 +265,10 @@ public class Arcaterra implements IDebugWindowPrintRegistry {
 
             particlePool.render(player.x, player.y, player.z);
 
-            demSimpleLod();
+//            try(DebugTimer timer = new DebugTimer("render")) {
+                demSimpleLod();
+//            }
+
 
             if(Config.renderMode == Config.RenderMode.ORIGINAL){
                 for (Chunk c : world.getVisibleChunks()) {
@@ -437,11 +441,11 @@ public class Arcaterra implements IDebugWindowPrintRegistry {
             /// Terrarium
             DEM
         }
-        public static int meterPerBlockXZ = 2;
-        public static int meterPerBlockY = 1;
+        public static int meterPerBlockXZ = 1000;
+        public static float meterPerBlockY = 1f;
         public static class DemSampleLodConfig {
-            public static int renderRadius = 100;
-            public static int sampleStep = Chunk.SIZE;
+            public static int renderRadius = 500; //单位;chunk
+            public static int sampleStep = Math.max(Chunk.SIZE * renderRadius/200,1);
         }
     }
 
@@ -486,6 +490,8 @@ public class Arcaterra implements IDebugWindowPrintRegistry {
     /// 配置参数：
     /// @see Config.DemSampleLodConfig
     private void demSimpleLod() {
+
+
         int radius = Config.DemSampleLodConfig.renderRadius;
         int step = Config.DemSampleLodConfig.sampleStep;
         float minX = player.x - radius * Chunk.SIZE;
@@ -555,6 +561,7 @@ public class Arcaterra implements IDebugWindowPrintRegistry {
             glBindVertexArray(0);
 
             // 绘制
+            glDisable(GL_CULL_FACE);
             glBindVertexArray(lodVao);
             glDisable(GL_DEPTH_TEST); // 线框不被遮挡
 
