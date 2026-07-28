@@ -15,7 +15,6 @@ import com.fish.arcaterra.tree.terrain.NoiseLodTerrainProvider;
 import com.fish.arcaterra.ui.hud.Crosshair;
 import com.fish.arcaterra.ui.hud.DebugIndicators;
 import com.fish.arcaterra.ui.hud.HudManager;
-import com.fish.arcaterra.worldgen.TerrainProvider;
 import com.fish.arcaterra.worldgen.noise.NoiseTerrainProvider;
 import com.fish.arcaterra.worldgen.terrarium.DemTerrainProvider;
 import org.joml.Matrix4f;
@@ -27,10 +26,8 @@ import org.lwjgl.system.MemoryUtil;
 import javax.swing.*;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-import java.util.ArrayList;
 import java.util.List;
 
-import static com.fish.arcaterra.level.ChunkPool.LOAD_RADIUS;
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.ARBVertexArrayObject.glGenVertexArrays;
@@ -111,14 +108,10 @@ public class Arcaterra {
         glMatrixMode(GL_PROJECTION);
         glLoadIdentity();
         float aspect = (float) WIDTH / HEIGHT;
-//        glFrustum(-aspect * 0.1f, aspect * 0.1f, -0.1f, 0.1f, 0.1f, 2000f);
-//        glMatrixMode(GL_MODELVIEW);
-//        Frustum frustum = new Frustum(glGetFloatv());
-        // 在 init() 中，不再调用 glFrustum，而是用 JOML 计算并上传
-// 使用 JOML（推荐）
+
         Matrix4f projMatrix = new Matrix4f();
-        projMatrix.setPerspective((float) Math.toRadians(70), aspect, 2000f, 0.1f);
-// 注意：near 和 far 反过来了！far 在前，near 在后
+        projMatrix.setPerspective((float) Math.toRadians(70), aspect, 2000f, 0.1f);        // 注意：near 和 far 反过来了！far 在前，near 在后(z冲突->反转深度)
+
         glDepthFunc(GL_GREATER);  // 原来默认是 GL_LESS
         // 上传到 OpenGL（固定管线）
         FloatBuffer projBuf = BufferUtils.createFloatBuffer(16);
@@ -270,132 +263,7 @@ public class Arcaterra {
             if(Config.renderMode == Config.RenderMode.TREE_LOD){
                 LODManager.treeWorld.render(player.x, player.y, player.z);
             }
-
-//            lodMesh.render();
-            ///////////
-            boolean pushVituces = true;
-            int radius = 1000;
-            int step = 10*Chunk.SIZE;
-            float minX = player.x - radius * Chunk.SIZE;
-            float maxX = player.x + radius * Chunk.SIZE;
-            float minZ = player.z - radius * Chunk.SIZE;
-            float maxZ = player.z + radius * Chunk.SIZE;
-
-// ---- 远方高度图 LOD（直接推顶点，无索引） ----
-            if (pushVituces == false) {
-                glColor3f(0.5f, 0.6f, 0.4f);
-//            glBegin(GL_TRIANGLES);
-
-                glBegin(GL_LINES);
-                glLineWidth(2);
-
-                for (float z = minZ; z < maxZ; z += step) {
-                    for (float x = minX; x < maxX; x += step) {
-                        // 四个角的高度
-                        float h00 = world.getTerrainProvider().getHeight(x, z);
-                        float h10 = world.getTerrainProvider().getHeight(x + step, z);
-                        float h01 = world.getTerrainProvider().getHeight(x, z + step);
-                        float h11 = world.getTerrainProvider().getHeight(x + step, z + step);
-
-                        // 三角形1: (x,z) -> (x+step,z) -> (x,z+step)
-                        glVertex3f(x, h00, z);
-                        glVertex3f(x + step, h10, z);
-                        glVertex3f(x, h01, z + step);
-                        // 三角形2: (x+step,z) -> (x+step,z+step) -> (x,z+step)
-                        glVertex3f(x + step, h10, z);
-                        glVertex3f(x + step, h11, z + step);
-                        glVertex3f(x, h01, z + step);
-                    }
-                }
-                glEnd();
-
-
-            }
-            if (pushVituces == true) {
-// 在 Arcaterra.loop() 中（每帧执行）
-// ---- 远方高度图 LOD（VBO 推顶点） ----
-
-                int cols = (int) ((maxX - minX) / step) + 1;
-                int rows = (int) ((maxZ - minZ) / step) + 1;
-
-// 分配数组
-                float[] vArr = new float[cols * rows * 3];
-                int[] iArr = new int[(cols - 1) * (rows - 1) * 6];
-
-                int idx = 0;
-                for (float z = minZ; z <= maxZ; z += step) {
-                    for (float x = minX; x <= maxX; x += step) {
-                        float h = world.getTerrainProvider().getHeight(x, z);
-                        vArr[idx++] = x;
-                        vArr[idx++] = h;
-                        vArr[idx++] = z;
-                    }
-                }
-
-                int iIdx = 0;
-                for (int r = 0; r < rows - 1; r++) {
-                    for (int c = 0; c < cols - 1; c++) {
-                        int i0 = c + r * cols;
-                        int i1 = (c + 1) + r * cols;
-                        int i2 = c + (r + 1) * cols;
-                        int i3 = (c + 1) + (r + 1) * cols;
-                        iArr[iIdx++] = i0;
-                        iArr[iIdx++] = i2;
-                        iArr[iIdx++] = i3;
-                        iArr[iIdx++] = i0;
-                        iArr[iIdx++] = i3;
-                        iArr[iIdx++] = i1;
-                    }
-                }
-
-// 上传到 VBO（可复用）
-                if (lodVao == 0) {
-                    lodVao = glGenVertexArrays();
-                    lodVbo = glGenBuffers();
-                    lodIbo = glGenBuffers();
-                }
-
-                glBindVertexArray(lodVao);
-
-// 顶点数据
-                glBindBuffer(GL_ARRAY_BUFFER, lodVbo);
-                FloatBuffer vBuf = MemoryUtil.memAllocFloat(vArr.length);
-                vBuf.put(vArr).flip();
-                glBufferData(GL_ARRAY_BUFFER, vBuf, GL_DYNAMIC_DRAW);
-                MemoryUtil.memFree(vBuf);
-                glVertexAttribPointer(0, 3, GL_FLOAT, false, 12, 0);
-                glEnableVertexAttribArray(0);
-
-// 索引数据
-                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, lodIbo);
-                IntBuffer iBuf = MemoryUtil.memAllocInt(iArr.length);
-                iBuf.put(iArr).flip();
-                glBufferData(GL_ELEMENT_ARRAY_BUFFER, iBuf, GL_DYNAMIC_DRAW);
-                MemoryUtil.memFree(iBuf);
-
-                glBindVertexArray(0);
-
-// 绘制
-                // 绘制
-// 绘制
-//                glDisable(GL_CULL_FACE);
-                glBindVertexArray(lodVao);
-                glDisable(GL_DEPTH_TEST); // 线框不被遮挡
-
-// 线框模式
-                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-                glColor3f(1.0f, 0.0f, 0.0f); // 红色，确保可见
-                glDrawElements(GL_TRIANGLES, iArr.length, GL_UNSIGNED_INT, 0);
-
-// 恢复状态
-                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-                glEnable(GL_DEPTH_TEST);
-                glEnable(GL_CULL_FACE);
-                glBindVertexArray(0);
-            }
-
-        /////////////
-
+            demSimpleLod();
             // 渲染玩家所在区块的边界
             if (Config.showChunkBoundPlayerAt) {
                 try{
@@ -555,9 +423,13 @@ public class Arcaterra {
             /// Terrarium
             DEM
         }
+        public static class DemSampleLodConfig {
+            public static int renderRadius = 1000;
+            public static int sampleStep = Chunk.SIZE*10;
+        }
     }
 
-    /// LOD
+    /// treeLOD
     static class LODManager {
         // 在 Arcaterra.java 中
         public static TreeNetWorld treeWorld;
@@ -594,130 +466,91 @@ public class Arcaterra {
         }
     }
 
-//    private LODMesh lodMesh=new LODMesh();
-    /**
-     * 高度图 LOD 网格，使用一个 VBO 覆盖玩家周围整个区域。
-     * 每帧或玩家移动超过阈值时重建。
-     */
-    public class LODMesh {
-        private int vao;
-        private int vbo;
-        private int ibo;
-        private int vertexCount;
-        private int indexCount;
-
-        private float lastPlayerX, lastPlayerZ;
-        private static final float UPDATE_THRESHOLD = 8.0f; // 移动超过 8 格才重建
-
-        /**
-         * 根据玩家位置更新网格。
-         * @param playerX 玩家 X
-         * @param playerZ 玩家 Z
-         * @param provider 地形提供者
-         * @param radius 覆盖半径（区块数）
-         * @param step 采样步长（格）
-         */
-        public void update(float playerX, float playerZ, TerrainProvider provider, int radius, float step) {
-//            if (Math.abs(playerX - lastPlayerX) < UPDATE_THRESHOLD &&
-//                    Math.abs(playerZ - lastPlayerZ) < UPDATE_THRESHOLD) {
-//                return; // 位置变化不大，不重建
-//            }
-            lastPlayerX = playerX;
-            lastPlayerZ = playerZ;
-
-            // 计算覆盖范围
-            int halfSize = radius * 16; // 假设区块大小为 16
-            float minX = playerX - halfSize;
-            float maxX = playerX + halfSize;
-            float minZ = playerZ - halfSize;
-            float maxZ = playerZ + halfSize;
+    /// dem采样lod;推顶点；<br>
+    /// 配置参数：
+    /// @see Config.DemSampleLodConfig
+    private void demSimpleLod() {
+        int radius = Config.DemSampleLodConfig.renderRadius;
+        int step = Config.DemSampleLodConfig.sampleStep;
+        float minX = player.x - radius * Chunk.SIZE;
+        float maxX = player.x + radius * Chunk.SIZE;
+        float minZ = player.z - radius * Chunk.SIZE;
+        float maxZ = player.z + radius * Chunk.SIZE;
+        // ---- 远方高度图 LOD（VBO 推顶点） ----
 
             int cols = (int) ((maxX - minX) / step) + 1;
             int rows = (int) ((maxZ - minZ) / step) + 1;
 
-            List<Float> vertices = new ArrayList<>();
-            List<Integer> indices = new ArrayList<>();
+        // 分配数组
+            float[] vArr = new float[cols * rows * 3];
+            int[] iArr = new int[(cols - 1) * (rows - 1) * 6];
 
-            // 1. 生成顶点
+            int idx = 0;
             for (float z = minZ; z <= maxZ; z += step) {
                 for (float x = minX; x <= maxX; x += step) {
-                    float height = provider.getHeight(x, z);
-                    vertices.add(x);
-                    vertices.add(height);
-                    vertices.add(z);
+                    float h = world.getTerrainProvider().getHeight(x, z);
+                    vArr[idx++] = x;
+                    vArr[idx++] = h;
+                    vArr[idx++] = z;
                 }
             }
 
-            // 2. 生成索引
+            int iIdx = 0;
             for (int r = 0; r < rows - 1; r++) {
                 for (int c = 0; c < cols - 1; c++) {
                     int i0 = c + r * cols;
                     int i1 = (c + 1) + r * cols;
                     int i2 = c + (r + 1) * cols;
                     int i3 = (c + 1) + (r + 1) * cols;
-                    indices.add(i0);
-                    indices.add(i1);
-                    indices.add(i2);
-                    indices.add(i1);
-                    indices.add(i3);
-                    indices.add(i2);
+                    iArr[iIdx++] = i0;
+                    iArr[iIdx++] = i2;
+                    iArr[iIdx++] = i3;
+                    iArr[iIdx++] = i0;
+                    iArr[iIdx++] = i3;
+                    iArr[iIdx++] = i1;
                 }
             }
 
-            vertexCount = vertices.size() / 3;
-            indexCount = indices.size();
-
-            // 转换为数组
-            float[] vArr = new float[vertices.size()];
-            int[] iArr = new int[indices.size()];
-            for (int i = 0; i < vArr.length; i++) vArr[i] = vertices.get(i);
-            for (int i = 0; i < iArr.length; i++) iArr[i] = indices.get(i);
-
-            // 上传到 GPU
-            if (vao == 0) {
-                vao = glGenVertexArrays();
-                vbo = glGenBuffers();
-                ibo = glGenBuffers();
+            // 上传到 VBO（可复用）
+            if (lodVao == 0) {
+                lodVao = glGenVertexArrays();
+                lodVbo = glGenBuffers();
+                lodIbo = glGenBuffers();
             }
 
-            glBindVertexArray(vao);
+            glBindVertexArray(lodVao);
 
             // 顶点数据
-            glBindBuffer(GL_ARRAY_BUFFER, vbo);
+            glBindBuffer(GL_ARRAY_BUFFER, lodVbo);
             FloatBuffer vBuf = MemoryUtil.memAllocFloat(vArr.length);
             vBuf.put(vArr).flip();
-            glBufferData(GL_ARRAY_BUFFER, vBuf, GL_STATIC_DRAW);
+            glBufferData(GL_ARRAY_BUFFER, vBuf, GL_DYNAMIC_DRAW);
             MemoryUtil.memFree(vBuf);
             glVertexAttribPointer(0, 3, GL_FLOAT, false, 12, 0);
             glEnableVertexAttribArray(0);
 
             // 索引数据
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, lodIbo);
             IntBuffer iBuf = MemoryUtil.memAllocInt(iArr.length);
             iBuf.put(iArr).flip();
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER, iBuf, GL_STATIC_DRAW);
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, iBuf, GL_DYNAMIC_DRAW);
             MemoryUtil.memFree(iBuf);
 
             glBindVertexArray(0);
-        }
 
-        /**
-         * 渲染 LOD 网格。
-         */
-        public void render() {
-            if (indexCount == 0) return;
-            glBindVertexArray(vao);
-            glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0);
+            // 绘制
+            glBindVertexArray(lodVao);
+            glDisable(GL_DEPTH_TEST); // 线框不被遮挡
+
+            // 线框模式
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+            glColor3f(1.0f, 0.0f, 0.0f); // 红色，确保可见
+            glDrawElements(GL_TRIANGLES, iArr.length, GL_UNSIGNED_INT, 0);
+
+            // 恢复状态
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+            glEnable(GL_DEPTH_TEST);
+//            glEnable(GL_CULL_FACE);
             glBindVertexArray(0);
         }
-
-        public void destroy() {
-            if (vao != 0) {
-                glDeleteVertexArrays(vao);
-                glDeleteBuffers(vbo);
-                glDeleteBuffers(ibo);
-                vao = vbo = ibo = 0;
-            }
-        }
-    }
 }
