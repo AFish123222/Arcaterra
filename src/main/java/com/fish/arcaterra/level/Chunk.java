@@ -161,44 +161,9 @@ public class Chunk {
                 }
             }
         }
-        // 高度图等距采样lod
-//        DemSampleLodRender(verts, indices);
     }
 
-    private void DemSampleLodRender(List<Float> verts, List<Integer> indices) {
-        // ---- 直接高度图采样，生成三角网格 ----
-        int step = SIZE / 2;                // 步长 8
-        int vertsPerEdge = SIZE / step + 1; // 3
 
-        // 1. 生成顶点
-        for (int x = 0; x < vertsPerEdge; x++) {
-            for (int z = 0; z < vertsPerEdge; z++) {
-                int wx = cx * SIZE + x * step;
-                int wz = cz * SIZE + z * step;
-                float height = world.getTerrainProvider().getHeight(wx, wz);
-                verts.add((float) wx);
-                verts.add(height);
-                verts.add((float) wz);
-            }
-        }
-
-        // 2. 生成索引（两个三角形组成一个方格）
-        for (int x = 0; x < vertsPerEdge - 1; x++) {
-            for (int z = 0; z < vertsPerEdge - 1; z++) {
-                int i0 = x + z * vertsPerEdge;
-                int i1 = (x + 1) + z * vertsPerEdge;
-                int i2 = x + (z + 1) * vertsPerEdge;
-                int i3 = (x + 1) + (z + 1) * vertsPerEdge;
-                indices.add(i0);
-                indices.add(i1);
-                indices.add(i2);
-                indices.add(i1);
-                indices.add(i3);
-                indices.add(i2);
-            }
-        }
-        // ---- 结束高度图网格 ----
-    }
 
     private void addFace(List<Float> v, List<Integer> i, int x, int y, int z, Direction dir, int offset) {
         float[][] faceVerts;
