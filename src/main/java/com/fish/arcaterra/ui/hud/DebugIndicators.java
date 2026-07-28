@@ -8,6 +8,7 @@ import static org.lwjgl.opengl.GL11.*;
  * 调试指示器：在屏幕上显示玩家局部坐标轴方向
  * 用三个彩色点表示 X+1, Y+1, Z+1 在屏幕上的投影位置
  */
+@Deprecated
 public class DebugIndicators implements IHudElement {
     private float px, py, pz;
     private float yRot, xRot;
