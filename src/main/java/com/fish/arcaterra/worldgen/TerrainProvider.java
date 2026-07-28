@@ -7,4 +7,5 @@ public interface TerrainProvider {
     default float getMaxX() { return Float.POSITIVE_INFINITY; }
     default float getMinZ() { return Float.NEGATIVE_INFINITY; }
     default float getMaxZ() { return Float.POSITIVE_INFINITY; }
+
 }

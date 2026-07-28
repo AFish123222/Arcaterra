@@ -245,11 +245,12 @@ public class Arcaterra implements IDebugWindowPrintRegistry {
             player.tick((float) delta);
             switch (frameTaskStep) {
                 case 0:
-
                     particlePool.update((float) delta);// 传入 delta
                     break;
                 case 1:
                     world.updateChunks(player.x, player.y, player.z,frustum);
+                    DemTerrainProvider provider = (DemTerrainProvider) world.getTerrainProvider();
+                    provider.update(player.x,player.z,Config.DemSampleLodConfig.renderRadius+2);
                     break;
                 case 2:
                     rebuildSomeDirtyChunks(16);

@@ -12,6 +12,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.*;
 
 /**
  * 从 AWS Terrain Tiles 在线获取 DEM 数据。<br>
@@ -32,6 +34,11 @@ public class DemTerrainProvider implements TerrainProvider {
     private final double lonPerBlock; // 每个方块对应的经度增量（度/格）
     private final double latPerBlock; // 每个方块对应的纬度增量（度/格）
     private final double meterPerBlockY;
+
+    private final ExecutorService downloadExecutor = Executors.newFixedThreadPool(8);
+    private final BlockingQueue<int[]> tileQueue = new LinkedBlockingQueue<>();
+    private final Set<Long> pendingKeys = ConcurrentHashMap.newKeySet();
+    private volatile boolean running = true;
 
     /**
      * 构造器：自动计算最佳 zoom。
@@ -68,6 +75,63 @@ public class DemTerrainProvider implements TerrainProvider {
         this.zoom = z;
         this.meterPerBlockY = meterPerBlockY;
         System.out.println("DemTerrainProvider: zoom=" + zoom + " (meterPerBlockXZ=" + meterPerBlockXZ + ")" + "meterPerBlockY=" + meterPerBlockY);
+        startWorker();
+    }
+
+    /// 启动后台工作线程
+    private void startWorker() {
+        Thread worker = new Thread(() -> {
+            while (running) {
+                try {
+                    int[] tile = tileQueue.poll(100, TimeUnit.MILLISECONDS);
+                    if (tile == null) continue;
+                    int x = tile[0], y = tile[1];
+                    long key = ((long) x << 32) | (y & 0xFFFFFFFFL);
+                    if (cache.containsKey(key) || pendingKeys.contains(key)) continue;
+                    pendingKeys.add(key);
+                    BufferedImage img = fetchTile(x, y);
+                    if (img != null) {
+                        cache.put(key, img);
+                    }
+                    pendingKeys.remove(key);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+        });
+        worker.setDaemon(true);
+        worker.start();
+    }
+
+    /// 加入任务
+    public void enqueueTile(int x, int y) {
+        long key = ((long) x << 32) | (y & 0xFFFFFFFFL);
+        if (cache.containsKey(key) || pendingKeys.contains(key)) return;
+        // 限制队列大小，避免内存爆炸
+        if (tileQueue.size() < 1000) {
+            tileQueue.offer(new int[]{x, y});
+        }
+    }
+
+    public void update(float playerX, float playerZ, int radiusInChunks) {
+        double lng = originLon + playerX * lonPerBlock;
+        double lat = originLat + playerZ * latPerBlock;
+        int[] center = latLngToTile(lat, lng, zoom);
+        int cx = center[0], cy = center[1];
+        int r = radiusInChunks * 2;
+        int submitted = 0;
+        for (int dx = -r; dx <= r && submitted < 20; dx++) {
+            for (int dy = -r; dy <= r && submitted < 20; dy++) {
+                enqueueTile(cx + dx, cy + dy);
+                submitted++;
+            }
+        }
+    }
+
+    public void shutdown() {
+        running = false;
+        downloadExecutor.shutdownNow();
     }
 
     @Override
