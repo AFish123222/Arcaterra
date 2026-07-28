@@ -132,24 +132,39 @@ public class Arcaterra implements IDebugWindowPrintRegistry {
         Frustum frustum = new Frustum(projMatrix, viewMatrix);
 
 
+
+
+
         // 在 init() 中
         if (Config.renderMode == Config.RenderMode.TREE_LOD) {
             LODManager.treeWorld = new TreeNetWorld(new NoiseLodTerrainProvider());
         }
 
         // 使用噪声地形
-        if (Config.worldGenMode == Config.WorldGenMode.NOISE) this.world = new World(
-                new NoiseTerrainProvider()
-        );
+//        if (Config.worldGenMode == Config.WorldGenMode.NOISE) this.world = new World(
+//                new NoiseTerrainProvider()
+//        );
         // 使用dem
-        if (Config.worldGenMode == Config.WorldGenMode.DEM) this.world = new World(
-                new DemTerrainProvider(//https://lbs.qq.com/getPoint
+//        if (Config.worldGenMode == Config.WorldGenMode.DEM) {
+            DemTerrainProvider demTerrainProvider = new DemTerrainProvider(//https://lbs.qq.com/getPoint
 //                        107.1, 34.3, //?
-                        107.371805,34.392071 ,// 陕西宝鸡陈仓区 //不能？？？
-                        Config.meterPerBlockXZ,
-                        Config.meterPerBlockY
-                )
-        );
+                    107.371805,34.392071 ,// 陕西宝鸡陈仓区 //不能？？？
+                    Config.meterPerBlockXZ,
+                    Config.meterPerBlockY
+            );
+            this.world = new World(demTerrainProvider);
+//        }
+
+        float spawnX = 30;
+        float spawnZ = 50;
+        float groundHeight = world.getTerrainProvider().getHeight(spawnX, spawnZ);
+        float spawnY = groundHeight + 1.5f; // 站在地面以上
+
+        player = new Player(world);
+        player.setPos(spawnX, spawnY, spawnZ);
+
+        demTerrainProvider.prefetchAround(player.x,player.z,Config.DemSampleLodConfig.renderRadius+10);
+
 
 
 
@@ -166,13 +181,6 @@ public class Arcaterra implements IDebugWindowPrintRegistry {
 //            world = new World(); // fallback 到噪声
 //        }
 
-        float spawnX = 30;
-        float spawnZ = 50;
-        float groundHeight = world.getTerrainProvider().getHeight(spawnX, spawnZ);
-        float spawnY = groundHeight + 1.5f; // 站在地面以上
-
-        player = new Player(world);
-        player.setPos(spawnX, spawnY, spawnZ);
 
         // 加载并重建周围区块
         world.updateChunks(player.x, player.y, player.z,frustum);
