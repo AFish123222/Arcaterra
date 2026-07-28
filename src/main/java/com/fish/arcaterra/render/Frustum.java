@@ -82,6 +82,7 @@ public class Frustum {
             float z = p[2] > 0 ? maxZ : minZ;
             if (p[0]*x + p[1]*y + p[2]*z + p[3] < 0) {
                 return false;
+//                return true;
             }
         }
         return true;
