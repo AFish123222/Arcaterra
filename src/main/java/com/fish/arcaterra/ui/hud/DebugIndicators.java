@@ -76,7 +76,7 @@ public class DebugIndicators implements IHudElement {
         float near = 0.1f;
         float far = 2000f;
 
-        glPointSize(8.0f);
+        glPointSize(80.0f);
         for (float[] pt : points) {
             float wx = pt[0];
             float wy = pt[1];
