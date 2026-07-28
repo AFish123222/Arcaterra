@@ -221,9 +221,6 @@ public class Arcaterra implements IDebugWindowPrintRegistry {
     private double lastTime = 0.0;
     private double delta = 0.0;
 
-    private int lodVao = 0;
-    private int lodVbo = 0;
-    private int lodIbo = 0;
 
     private void loop() {
         // 初始化时间
@@ -491,34 +488,38 @@ public class Arcaterra implements IDebugWindowPrintRegistry {
         }
     }
 
+
+    private float[] vArr;
+    private int[] iArr;
+    private FloatBuffer vBuf;
+    private IntBuffer iBuf;
+    private int lodVao = 0, lodVbo = 0, lodIbo = 0;
     /// dem采样lod;推顶点；<br>
     /// 配置参数：
     /// @see Config.DemSampleLodConfig
     private void demSimpleLod() {
-
-
         int radius = Config.DemSampleLodConfig.renderRadius;
         int step = Config.DemSampleLodConfig.sampleStep;
         float minX = player.x - radius * Chunk.SIZE;
         float maxX = player.x + radius * Chunk.SIZE;
         float minZ = player.z - radius * Chunk.SIZE;
         float maxZ = player.z + radius * Chunk.SIZE;
-        // ---- 远方高度图 LOD（VBO 推顶点） ----
+        int cols = (int) ((maxX - minX) / step) + 1;
+        int rows = (int) ((maxZ - minZ) / step) + 1;
 
-            int cols = (int) ((maxX - minX) / step) + 1;
-            int rows = (int) ((maxZ - minZ) / step) + 1;
-
-        // 分配数组
-            float[] vArr = new float[cols * rows * 3];
-            int[] iArr = new int[(cols - 1) * (rows - 1) * 6];
-
+        // 复用数组（如果长度变化再重新分配）
+        if (vArr == null || vArr.length != cols * rows * 3) {
+            vArr = new float[cols * rows * 3];
+        }
+        if (iArr == null || iArr.length != (cols - 1) * (rows - 1) * 6) {
+            iArr = new int[(cols - 1) * (rows - 1) * 6];
+        }
 
         int idx = 0;
         for (int zi = 0; zi < rows; zi++) {
             float z = minZ + zi * step;
             for (int xi = 0; xi < cols; xi++) {
                 float x = minX + xi * step;
-                // 对齐到区块角
                 float alignedX = (float) (Math.floor(x / Chunk.SIZE) * Chunk.SIZE);
                 float alignedZ = (float) (Math.floor(z / Chunk.SIZE) * Chunk.SIZE);
                 float h = world.getTerrainProvider().getHeight(alignedX, alignedZ);
@@ -528,63 +529,78 @@ public class Arcaterra implements IDebugWindowPrintRegistry {
             }
         }
 
-            int iIdx = 0;
-            for (int r = 0; r < rows - 1; r++) {
-                for (int c = 0; c < cols - 1; c++) {
-                    int i0 = c + r * cols;
-                    int i1 = (c + 1) + r * cols;
-                    int i2 = c + (r + 1) * cols;
-                    int i3 = (c + 1) + (r + 1) * cols;
-                    iArr[iIdx++] = i0;
-                    iArr[iIdx++] = i2;
-                    iArr[iIdx++] = i3;
-                    iArr[iIdx++] = i0;
-                    iArr[iIdx++] = i3;
-                    iArr[iIdx++] = i1;
-                }
+        int iIdx = 0;
+        for (int r = 0; r < rows - 1; r++) {
+            for (int c = 0; c < cols - 1; c++) {
+                int i0 = c + r * cols;
+                int i1 = (c + 1) + r * cols;
+                int i2 = c + (r + 1) * cols;
+                int i3 = (c + 1) + (r + 1) * cols;
+                iArr[iIdx++] = i0;
+                iArr[iIdx++] = i2;
+                iArr[iIdx++] = i3;
+                iArr[iIdx++] = i0;
+                iArr[iIdx++] = i3;
+                iArr[iIdx++] = i1;
             }
+        }
 
-            // 上传到 VBO（可复用）
-            if (lodVao == 0) {
-                lodVao = glGenVertexArrays();
-                lodVbo = glGenBuffers();
-                lodIbo = glGenBuffers();
-            }
+        // 创建或复用 VBO
+        if (lodVao == 0) {
+            lodVao = glGenVertexArrays();
+            lodVbo = glGenBuffers();
+            lodIbo = glGenBuffers();
+        }
 
-            glBindVertexArray(lodVao);
+        glBindVertexArray(lodVao);
 
-            // 顶点数据
-            glBindBuffer(GL_ARRAY_BUFFER, lodVbo);
-            FloatBuffer vBuf = MemoryUtil.memAllocFloat(vArr.length);
+        // === 顶点数据 ===
+        glBindBuffer(GL_ARRAY_BUFFER, lodVbo);
+        // 复用 FloatBuffer
+        if (vBuf == null || vBuf.capacity() < vArr.length) {
+            if (vBuf != null) MemoryUtil.memFree(vBuf);
+            vBuf = MemoryUtil.memAllocFloat(vArr.length);
             vBuf.put(vArr).flip();
             glBufferData(GL_ARRAY_BUFFER, vBuf, GL_DYNAMIC_DRAW);
-            MemoryUtil.memFree(vBuf);
-            glVertexAttribPointer(0, 3, GL_FLOAT, false, 12, 0);
-            glEnableVertexAttribArray(0);
+        } else {
+            vBuf.clear();
+            vBuf.put(vArr).flip();
+            // 注意：glBufferSubData 需要先分配足够的空间（用 glBufferData 分配过）
+            glBufferSubData(GL_ARRAY_BUFFER, 0, vBuf);
+        }
+        glVertexAttribPointer(0, 3, GL_FLOAT, false, 12, 0);
+        glEnableVertexAttribArray(0);
 
-            // 索引数据
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, lodIbo);
-            IntBuffer iBuf = MemoryUtil.memAllocInt(iArr.length);
+        // === 索引数据 ===
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, lodIbo);
+        if (iBuf == null || iBuf.capacity() < iArr.length) {
+            if (iBuf != null) MemoryUtil.memFree(iBuf);
+            iBuf = MemoryUtil.memAllocInt(iArr.length);
             iBuf.put(iArr).flip();
             glBufferData(GL_ELEMENT_ARRAY_BUFFER, iBuf, GL_DYNAMIC_DRAW);
-            MemoryUtil.memFree(iBuf);
-
-            glBindVertexArray(0);
-
-            // 绘制
-            glDisable(GL_CULL_FACE);
-            glBindVertexArray(lodVao);
-            glDisable(GL_DEPTH_TEST); // 线框不被遮挡
-
-            // 线框模式
-            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-            glColor3f(1.0f, 0.0f, 0.0f); // 红色，确保可见
-            glDrawElements(GL_TRIANGLES, iArr.length, GL_UNSIGNED_INT, 0);
-
-            // 恢复状态
-            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-            glEnable(GL_DEPTH_TEST);
-//            glEnable(GL_CULL_FACE);
-            glBindVertexArray(0);
+        } else {
+            iBuf.clear();
+            iBuf.put(iArr).flip();
+            glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, iBuf);
         }
+
+        glBindVertexArray(0);
+
+        // 绘制
+        renderLodMesh();
+    }
+
+    // 绘制方法（单独抽取）
+    private void renderLodMesh() {
+        if (lodVao == 0 || iArr == null || iArr.length == 0) return;
+        glDisable(GL_CULL_FACE);
+        glBindVertexArray(lodVao);
+        glDisable(GL_DEPTH_TEST);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        glColor3f(1.0f, 0.0f, 0.0f);
+        glDrawElements(GL_TRIANGLES, iArr.length, GL_UNSIGNED_INT, 0);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        glEnable(GL_DEPTH_TEST);
+        glBindVertexArray(0);
+    }
 }
