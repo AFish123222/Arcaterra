@@ -18,6 +18,13 @@ public class DebugTimer implements AutoCloseable {
     private final String tag;
     private final long start;
 
+    /**
+     * 轻量级调试计时器，使用 try-with-resources 自动计时。
+     * 使用方法：
+     * try (DebugTimer timer = new DebugTimer("rebuildMesh")) {
+     *     chunk.rebuildMesh();
+     * }
+     */
     public DebugTimer(String tag) {
         this.tag = tag;
         this.start = System.nanoTime();
