@@ -4,8 +4,12 @@ import com.fish.arcaterra.worldgen.TerrainProvider;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -18,6 +22,8 @@ import java.util.Map;
 public class DemTerrainProvider implements TerrainProvider {
     private static final String TILE_URL =
             "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png";
+    private final Path cacheDir;
+    private final String cacheRoot = "./terrariumCache";
 
     private final Map<Long, BufferedImage> cache = new HashMap<>();
     private final int zoom;
@@ -34,6 +40,13 @@ public class DemTerrainProvider implements TerrainProvider {
      * @param meterPerBlockXZ 每个方块在水平方向对应的实际米数（例如 1.0 表示 1 方块 = 1 米）
      */
     public DemTerrainProvider(double originLon, double originLat, double meterPerBlockXZ, double meterPerBlockY) {
+        this.cacheDir = Paths.get(cacheRoot);
+        try {
+            Files.createDirectories(cacheDir);
+        } catch (IOException e) {
+            System.err.println("无法创建缓存目录: " + cacheRoot);
+        }
+
         this.originLon = originLon;
         this.originLat = originLat;
 
@@ -68,8 +81,18 @@ public class DemTerrainProvider implements TerrainProvider {
         int tileX = tile[0], tileY = tile[1];
 
         long key = ((long) tileX << 32) | (tileY & 0xFFFFFFFFL);
-        BufferedImage img = cache.computeIfAbsent(key, k -> fetchTile(tileX, tileY));
-
+        BufferedImage img = cache.computeIfAbsent(key, k -> {
+            BufferedImage cached = loadFromCache(tileX, tileY);
+            if (cached != null) {
+                System.out.println("load from cache: " + tileX + "/" + tileY);
+                return cached;
+            }
+            BufferedImage fetched = fetchTile(tileX, tileY);
+            if (fetched != null) {
+                saveToCache(tileX, tileY, fetched);
+            }
+            return fetched != null ? fetched : new BufferedImage(256, 256, BufferedImage.TYPE_INT_RGB);
+        });
         // 像素坐标
         double[] pixel = tileToPixel(lat, lng, tileX, tileY, zoom);
         float px = (float) pixel[0];
@@ -101,6 +124,33 @@ public class DemTerrainProvider implements TerrainProvider {
         float height = h0 * (1 - fy) + h1 * fy;
 
         return height;
+    }
+
+    private BufferedImage loadFromCache(int x, int y) {
+        try {
+            Path file = getCacheFile(x, y);
+            if (Files.exists(file)) {
+                return ImageIO.read(file.toFile());
+            }
+        } catch (IOException e) {
+            System.err.println("loadFromCache failed: " + e.getMessage());
+        }
+        return null;
+    }
+
+    private void saveToCache(int x, int y, BufferedImage img) {
+        try {
+            Path file = getCacheFile(x, y);
+            Files.createDirectories(file.getParent());
+            ImageIO.write(img, "png", file.toFile());
+            System.out.println("save to cache: " + file.toFile());
+        } catch (IOException e) {
+            System.err.println("save cache failed: " + e.getMessage());
+        }
+    }
+
+    private Path getCacheFile(int x, int y) {
+        return cacheDir.resolve(zoom + "/" + x + "/" + y + ".png");
     }
 
     private BufferedImage fetchTile(int x, int y) {
