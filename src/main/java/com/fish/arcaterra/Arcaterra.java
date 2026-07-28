@@ -379,7 +379,7 @@ public class Arcaterra {
                 // 绘制
 // 绘制
                 glBindVertexArray(lodVao);
-                glDisable(GL_DEPTH_TEST); // 线框不被遮挡
+//                glDisable(GL_DEPTH_TEST); // 线框不被遮挡
 
 // 线框模式
                 glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
