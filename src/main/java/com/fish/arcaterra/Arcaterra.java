@@ -378,7 +378,8 @@ public class Arcaterra {
 // 绘制
                 glColor3f(0.5f, 0.6f, 0.4f);
                 glBindVertexArray(lodVao);
-                glDrawElements(GL_TRIANGLES, iArr.length, GL_UNSIGNED_INT, 0);
+//                glDrawElements(GL_TRIANGLES, iArr.length, GL_UNSIGNED_INT, 0);
+                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
                 glBindVertexArray(0);
             }
 
