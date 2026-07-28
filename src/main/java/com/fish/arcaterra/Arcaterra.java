@@ -377,12 +377,14 @@ public class Arcaterra {
 
 // 绘制
                 // 绘制
-                glBindVertexArray(lodVao);
-                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-                glColor3f(0.5f, 0.6f, 0.4f); // 线框颜色（红色，方便看清）
-                glDrawElements(GL_TRIANGLES, iArr.length, GL_UNSIGNED_INT, 0);
-                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); // 恢复填充
-                glBindVertexArray(0);
+//                glBindVertexArray(lodVao);
+//                glDisable(GL_DEPTH_TEST); //tofix dont render around
+//                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+//                glColor3f(0.5f, 0.6f, 0.4f); // 线框颜色
+//                glDrawElements(GL_TRIANGLES, iArr.length, GL_UNSIGNED_INT, 0);
+//                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); // 恢复填充
+//                glBindVertexArray(0);
+
             }
 
         /////////////
