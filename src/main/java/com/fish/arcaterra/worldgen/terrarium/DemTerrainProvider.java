@@ -247,6 +247,7 @@ public class DemTerrainProvider implements TerrainProvider {
         try {
             Path file = getCacheFile(x, y);
             Files.createDirectories(file.getParent());
+            System.out.println("try write: " + file.getRoot());
             ImageIO.write(img, "png", file.toFile());
             System.out.println("save to cache: " + file.toFile());
         } catch (IOException e) {
