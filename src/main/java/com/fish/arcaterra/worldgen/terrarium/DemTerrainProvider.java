@@ -50,7 +50,7 @@ public class DemTerrainProvider implements TerrainProvider {
         try {
             Files.createDirectories(cacheDir);
         } catch (IOException e) {
-            System.err.println("Can't : " + cacheRoot + " because "+e.getMessage());
+            System.err.println("Can't Create cache dir: " + cacheRoot + " because "+e.getMessage());
         }
 
         this.originLon = originLon;
