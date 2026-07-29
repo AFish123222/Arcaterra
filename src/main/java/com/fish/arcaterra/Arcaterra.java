@@ -443,11 +443,12 @@ public class Arcaterra implements IDebugWindowPrintRegistry {
             /// Terrarium
             DEM
         }
-        public static int meterPerBlockXZ = 2;
+        // 5 1 100 300 ->9km
+        public static int meterPerBlockXZ = 5;
         public static float meterPerBlockY = 1f;
         public static class DemSampleLodConfig {
             public static int renderRadius = 100; //单位;chunk
-            public static int sampleStep = Math.max(Chunk.SIZE * renderRadius/400,1);
+            public static int sampleStep = Math.max(Chunk.SIZE * renderRadius/300,1);
         }
     }
 
