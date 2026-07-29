@@ -142,7 +142,7 @@ public class Arcaterra implements IDebugWindowPrintRegistry {
 //        );
         // 使用dem
 //        if (Config.worldGenMode == Config.WorldGenMode.DEM) {
-            DemTerrainProvider demTerrainProvider = new DemTerrainProvider(//https://lbs.qq.com/getPoint
+            demTerrainProvider = new DemTerrainProvider(//https://lbs.qq.com/getPoint
 //                        107.1, 34.3, //?
                     107.371805,34.392071 ,// 陕西宝鸡陈仓区
                     Config.meterPerBlockXZ,
@@ -199,6 +199,8 @@ public class Arcaterra implements IDebugWindowPrintRegistry {
 
         particlePool = new ParticlePool(5000); // 最多 5000 个粒子
     }
+
+    private DemTerrainProvider demTerrainProvider;
 
     private HudManager hudManager;
 
@@ -343,6 +345,8 @@ public class Arcaterra implements IDebugWindowPrintRegistry {
             lodVao = lodVbo = lodIbo = 0;
         }
 
+        demTerrainProvider.shutdown();
+
         // 保留调试窗口，不释放 //todo:support config to chose between sameshut and twiceshut
         System.out.println("游戏已退出，调试窗口仍然保留。");
     }
@@ -443,11 +447,11 @@ public class Arcaterra implements IDebugWindowPrintRegistry {
             /// Terrarium
             DEM
         }
-        public static int meterPerBlockXZ = 2;
+        public static int meterPerBlockXZ = 7;
         public static float meterPerBlockY = 1f;
         public static class DemSampleLodConfig {
-            public static int renderRadius = 100; //单位;chunk
-            public static int sampleStep = Math.max(Chunk.SIZE * renderRadius/400,1);
+            public static int renderRadius = 200; //单位;chunk
+            public static int sampleStep = Math.max(Chunk.SIZE * renderRadius/350,1);
         }
     }
 
