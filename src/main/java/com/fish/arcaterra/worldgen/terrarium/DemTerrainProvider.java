@@ -192,7 +192,10 @@ public class DemTerrainProvider implements TerrainProvider {
             BufferedImage fetched = fetchTile(tileX, tileY);
             if (fetched != null) {
                 saveToCache(tileX, tileY, fetched);
-            }else{System.err.println("fetch null tile"+tileX+","+tileY);}
+            }
+            if (fetched == null){
+                System.err.println("fetch null tile"+tileX+","+tileY);
+            }
             return fetched != null ? fetched : new BufferedImage(256, 256, BufferedImage.TYPE_INT_RGB);
         });
         // 像素坐标
