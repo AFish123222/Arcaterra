@@ -190,9 +190,10 @@ public class DemTerrainProvider implements TerrainProvider {
                 return cached;
             }
             BufferedImage fetched = fetchTile(tileX, tileY);
-            if (fetched != null) {
+//            if (fetched != null) {
+                System.out.println(1);
                 saveToCache(tileX, tileY, fetched);
-            }
+//            }
             if (fetched == null){
                 System.err.println("fetch null tile"+tileX+","+tileY);
             }
@@ -235,8 +236,9 @@ public class DemTerrainProvider implements TerrainProvider {
         try {
             Path file = getCacheFile(x, y);
             if (Files.exists(file)) {
+                System.out.println(" cache exist: " + x + "/" + y);
                 return ImageIO.read(file.toFile());
-            }
+            }else{System.out.println("cache not exist: " + x + "/" + y);}
         } catch (IOException e) {
             System.err.println("loadFromCache failed: " + e.getMessage());
         }
@@ -267,11 +269,10 @@ public class DemTerrainProvider implements TerrainProvider {
             HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
             conn.setConnectTimeout(5000);
             conn.setReadTimeout(5000);
-            BufferedImage img = ImageIO.read(conn.getInputStream());
-            if (img!= null ) {
-                System.out.println("successfully fetch tile: " + url);
-            }else{System.out.println("failed to fetch tile(null png): " + url);}
-            return img;
+            //            if (img!= null ) {
+                System.out.println("fetch tile: " + url);
+//            }else{System.out.println("failed to fetch tile(null png): " + url);}
+            return ImageIO.read(conn.getInputStream());
         } catch (Exception e) {
             System.err.println("Failed to fetch tile(err): " + e.getMessage());
 
