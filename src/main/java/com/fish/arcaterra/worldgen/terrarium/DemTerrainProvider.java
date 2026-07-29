@@ -192,7 +192,7 @@ public class DemTerrainProvider implements TerrainProvider {
             BufferedImage fetched = fetchTile(tileX, tileY);
             if (fetched != null) {
                 saveToCache(tileX, tileY, fetched);
-            }
+            }else{System.err.println("fetch null tile"+tileX+","+tileY);}
             return fetched != null ? fetched : new BufferedImage(256, 256, BufferedImage.TYPE_INT_RGB);
         });
         // 像素坐标
@@ -267,7 +267,6 @@ public class DemTerrainProvider implements TerrainProvider {
             if (img!= null ) {
                 System.out.println("successfully fetch tile: " + url);
             }else{System.out.println("failed to fetch tile(null png): " + url);}
-
             return img;
         } catch (Exception e) {
             System.err.println("Failed to fetch tile(err): " + e.getMessage());
