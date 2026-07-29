@@ -263,13 +263,13 @@ public class DemTerrainProvider implements TerrainProvider {
             HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
             conn.setConnectTimeout(5000);
             conn.setReadTimeout(5000);
-//            if (ImageIO.read(conn.getInputStream()) != null ) {
-//                System.out.println("successfully fetch tile: " + url);
-//            }else{System.out.println("failed to fetch tile: " + url);}
+            if (ImageIO.read(conn.getInputStream()) != null ) {
+                System.out.println("successfully fetch tile: " + url);
+            }else{System.out.println("failed to fetch tile(null png): " + url);}
 
             return ImageIO.read(conn.getInputStream());
         } catch (Exception e) {
-            System.err.println("Failed to fetch tile: " + e.getMessage());
+            System.err.println("Failed to fetch tile(err): " + e.getMessage());
 
             return new BufferedImage(256, 256, BufferedImage.TYPE_INT_RGB);
         }
