@@ -131,10 +131,11 @@ public class DemTerrainProvider implements TerrainProvider {
                     long key = ((long) x << 32) | (y & 0xFFFFFFFFL);
                     if (cache.containsKey(key) || pendingKeys.contains(key)) continue;
                     pendingKeys.add(key);
-                    System.out.println(12345);
+//                    System.out.println(12345);
                     BufferedImage img = fetchTile(x, y);
                     if (img != null) {
                         cache.put(key, img);
+                        saveToCache(x, y, img);
                     }
                     pendingKeys.remove(key);
                 } catch (InterruptedException e) {
@@ -254,7 +255,7 @@ public class DemTerrainProvider implements TerrainProvider {
         try {
             Path file = getCacheFile(x, y);
             Files.createDirectories(file.getParent());
-            System.out.println("try write: " + file.getRoot());
+//            System.out.println("try write: " + file.getRoot());
             ImageIO.write(img, "png", file.toFile());
             System.out.println("save to cache: " + file.toFile());
         } catch (IOException e) {
