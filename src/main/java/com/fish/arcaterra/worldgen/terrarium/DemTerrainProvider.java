@@ -85,9 +85,13 @@ public class DemTerrainProvider implements TerrainProvider {
             pendingKeys.add(key);
             downloadExecutor.submit(() -> {
                 try {
+//                    System.out.println(50012);
                     BufferedImage img = fetchTile(x, y);
                     if (img != null) {
                         cache.put(key, img);
+                        ///////
+                        saveToCache(x, y, img);
+                        ////////
                     }else{System.err.println("null tile" + x + "," + y);}
                 } finally {
                     pendingKeys.remove(key);
@@ -127,6 +131,7 @@ public class DemTerrainProvider implements TerrainProvider {
                     long key = ((long) x << 32) | (y & 0xFFFFFFFFL);
                     if (cache.containsKey(key) || pendingKeys.contains(key)) continue;
                     pendingKeys.add(key);
+                    System.out.println(12345);
                     BufferedImage img = fetchTile(x, y);
                     if (img != null) {
                         cache.put(key, img);
@@ -189,9 +194,9 @@ public class DemTerrainProvider implements TerrainProvider {
                 System.out.println("load from cache: " + tileX + "/" + tileY);
                 return cached;
             }
+            System.out.println(3);
             BufferedImage fetched = fetchTile(tileX, tileY);
 //            if (fetched != null) {
-                System.out.println(1);
                 saveToCache(tileX, tileY, fetched);
 //            }
             if (fetched == null){
