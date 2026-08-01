@@ -242,7 +242,7 @@ public final class DemSampleRender {
     /** 主线程每帧调用：执行绘制 */
     public void render() {
         /** 主线程每帧调用：执行绘制 *///        glDisable(GL_CULL_FACE);
-//        glDisable(GL_CULL_FACE);
+        glDisable(GL_CULL_FACE);
         glBindVertexArray(vaoId);
         glDisable(GL_DEPTH_TEST);
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
