@@ -244,7 +244,7 @@ public final class DemSampleRender {
         /** 主线程每帧调用：执行绘制 *///        glDisable(GL_CULL_FACE);
         glDisable(GL_CULL_FACE);
         glBindVertexArray(vaoId);
-//        glDisable(GL_DEPTH_TEST);
+        glDisable(GL_DEPTH_TEST);
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         glColor3f(1.0f, 0.0f, 0.0f);
         glDrawElements(GL_TRIANGLES, current.indices.length, GL_UNSIGNED_INT, 0);

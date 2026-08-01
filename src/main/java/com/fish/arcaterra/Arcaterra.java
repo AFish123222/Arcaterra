@@ -116,7 +116,7 @@ public class Arcaterra implements IDebugWindowPrintRegistry {
 //                0.1f, 2000f                     // near, far
 //        );
         Matrix4f projMatrix = new Matrix4f();
-        projMatrix.setPerspective((float) Math.toRadians(70), aspect, 2000f, 0.1f);        // 注意：near 和 far 反过来了！far 在前，near 在后(z冲突->反转深度)
+        projMatrix.setPerspective((float) Math.toRadians(70), aspect, 20000000f, 0.1f);        // 注意：near 和 far 反过来了！far 在前，near 在后(z冲突->反转深度)
 
         glDepthFunc(GL_GREATER);  // 原来默认是 GL_LESS
         // 上传到 OpenGL（固定管线）
@@ -276,12 +276,12 @@ public class Arcaterra implements IDebugWindowPrintRegistry {
 //            }
 
 
-            if(Config.renderMode == Config.RenderMode.ORIGINAL){
-                for (Chunk c : world.getVisibleChunks()) {
-                    c.render(player.x, player.y, player.z);
-                    if (Config.showAllChunkBound) c.renderChunkBounds();
-                } //可见区块渲染
-            }
+//            if(Config.renderMode == Config.RenderMode.ORIGINAL){
+//                for (Chunk c : world.getVisibleChunks()) {
+//                    c.render(player.x, player.y, player.z);
+//                    if (Config.showAllChunkBound) c.renderChunkBounds();
+//                } //可见区块渲染
+//            }
 
             if(Config.renderMode == Config.RenderMode.TREE_LOD){
                 LODManager.treeWorld.render(player.x, player.y, player.z);
@@ -299,7 +299,7 @@ public class Arcaterra implements IDebugWindowPrintRegistry {
                 }
             }
 
-            Renderer.INSTANCE.drawEyeRay(player.x, player.y, player.z, player.xRot, player.yRot);
+//            Renderer.INSTANCE.drawEyeRay(player.x, player.y, player.z, player.xRot, player.yRot);
 
             Renderer.INSTANCE.endWorldRender();
 
