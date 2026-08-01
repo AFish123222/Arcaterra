@@ -195,7 +195,7 @@ public class DemTerrainProvider implements TerrainProvider {
 //                System.out.println("load from cache: " + tileX + "/" + tileY);
 //                return cached;
 //            }
-            System.out.println(3);
+//            System.out.println(3);
             BufferedImage fetched = fetchTile(tileX, tileY);
 //            if (fetched != null) {
                 saveToCache(tileX, tileY, fetched);

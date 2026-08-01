@@ -12,6 +12,7 @@ import java.nio.IntBuffer;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL15.*;
 import static org.lwjgl.opengl.GL20.*;
+import static org.lwjgl.opengl.GL30.*;
 
 /**
  * DEM 采样 LOD 渲染器（单例）。<br>
@@ -55,6 +56,8 @@ public final class DemSampleRender {
     private LODBuffer bufferB;
     private LODBuffer current;   // 主线程渲染用
     private LODBuffer back;      // 后台线程写入用
+
+    private int vaoId;
 
     // ===== VBO =====
     private int vboVertexId;
@@ -125,6 +128,18 @@ public final class DemSampleRender {
         ready = false;
         rebuildRequested = false;
 
+        // ★ 新增：创建并绑定 VAO
+        int vaoId = glGenVertexArrays();
+        glBindVertexArray(vaoId);
+
+        glBindVertexArray(vaoId);
+
+        glBindBuffer(GL_ARRAY_BUFFER, vboVertexId);
+        glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
+        glEnableVertexAttribArray(0);
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vboIndexId);
+
         // 生成 VBO
         vboVertexId = glGenBuffers();
         vboIndexId = glGenBuffers();
@@ -172,7 +187,9 @@ public final class DemSampleRender {
 
     /** 主线程每帧调用：执行绘制 */
     public void render() {
-        if (!vboInitialized || current.vertexCount == 0) return;
+        if (!vboInitialized || current.vertexCount == 0) {
+            return;
+        };
 
         glBindBuffer(GL_ARRAY_BUFFER, vboVertexId);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vboIndexId);
@@ -180,11 +197,18 @@ public final class DemSampleRender {
         glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
         glEnableVertexAttribArray(0);
 
+        glBindVertexArray(vaoId);
+        glDisable(GL_DEPTH_TEST);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        glColor3f(1.0f, 0.0f, 0.0f);
         glDrawElements(GL_TRIANGLES, current.indexCount, GL_UNSIGNED_INT, 0);
-
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        glEnable(GL_DEPTH_TEST);
+//        glBindVertexArray(0);
         glDisableVertexAttribArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
     }
 
     /** 清理（主类关闭时调用） */

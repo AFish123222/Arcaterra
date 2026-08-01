@@ -15,7 +15,6 @@ import com.fish.arcaterra.tree.TreeNetWorld;
 import com.fish.arcaterra.tree.TreePath;
 import com.fish.arcaterra.tree.terrain.NoiseLodTerrainProvider;
 import com.fish.arcaterra.ui.hud.Crosshair;
-import com.fish.arcaterra.ui.hud.DebugIndicators;
 import com.fish.arcaterra.ui.hud.HudManager;
 import com.fish.arcaterra.worldgen.terrarium.DemTerrainProvider;
 import org.joml.Matrix4f;
@@ -193,7 +192,6 @@ public class Arcaterra implements IDebugWindowPrintRegistry {
         // hud
         hudManager = new HudManager();
         hudManager.add(new Crosshair());
-        hudManager.add(DebugIndicators.getDebugIndicators());
 
         running = true;
         frameTaskStep = 0;
@@ -223,13 +221,12 @@ public class Arcaterra implements IDebugWindowPrintRegistry {
     }
 
     private int frameCounter = 0;
-    private double lastTime = 0.0;
     private double delta = 0.0;
 
 
     private void loop() {
         // 初始化时间
-        lastTime = glfwGetTime();
+        double lastTime = glfwGetTime();
 
         if (Config.renderMode == Config.RenderMode.TREE_LOD){
             TreePath playerPath = LODManager.worldToPath(player.x, player.y, player.z);
@@ -430,6 +427,10 @@ public class Arcaterra implements IDebugWindowPrintRegistry {
         DebugRegistry.register("groundHeight",()-> world.getTerrainProvider().getHeight(player.x,player.z));
     }
 
+    public int getFrameCounter() {
+        return frameCounter;
+    }
+
 
     /// treeLOD
     static class LODManager {
@@ -573,7 +574,7 @@ public class Arcaterra implements IDebugWindowPrintRegistry {
     // 绘制方法（单独抽取）
     private void renderLodMesh() {
         if (lodVao == 0 || iArr == null || iArr.length == 0) return;
-        glDisable(GL_CULL_FACE);
+//        glDisable(GL_CULL_FACE);
         glBindVertexArray(lodVao);
         glDisable(GL_DEPTH_TEST);
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);

@@ -135,17 +135,17 @@ public class ChunkPool {
                     ) continue;
 
                     // 视锥体剔除
-                    if (frustum != null) {
-                        int minX = c.getCx() * Chunk.SIZE;
-                        int maxX = minX + Chunk.SIZE;
-                        int minY = c.getCy() * Chunk.SIZE;
-                        int maxY = minY + Chunk.SIZE;
-                        int minZ = c.getCz() * Chunk.SIZE;
-                        int maxZ = minZ + Chunk.SIZE;
-                        if (!frustum.isAABBVisible(minX, maxX, minY, maxY, minZ, maxZ)) {
-                            continue;
-                        }
-                    }
+//                    if (frustum != null) {
+//                        int minX = c.getCx() * Chunk.SIZE;
+//                        int maxX = minX + Chunk.SIZE;
+//                        int minY = c.getCy() * Chunk.SIZE;
+//                        int maxY = minY + Chunk.SIZE;
+//                        int minZ = c.getCz() * Chunk.SIZE;
+//                        int maxZ = minZ + Chunk.SIZE;
+//                        if (!frustum.isAABBVisible(minX, maxX, minY, maxY, minZ, maxZ)) {
+//                            continue;
+//                        }
+//                    }
                     visibleCache.add(c);
                 }
             }
