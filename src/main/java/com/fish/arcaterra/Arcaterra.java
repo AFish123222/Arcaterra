@@ -143,8 +143,8 @@ public class Arcaterra implements IDebugWindowPrintRegistry {
             demTerrainProvider = new DemTerrainProvider(//https://lbs.qq.com/getPoint
 //                        107.1, 34.3, //?
                     107.371805,34.392071 ,// 陕西宝鸡陈仓区
-                    Config.meterPerBlockXZ,
-                    Config.meterPerBlockY
+                    Config.DEMGeneratorConfig.meterPerBlockXZ,
+                    Config.DEMGeneratorConfig.meterPerBlockY
             );
             this.world = new World(demTerrainProvider);
 //        }

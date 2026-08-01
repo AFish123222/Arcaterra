@@ -28,12 +28,19 @@ public class Config {
         DEM
     }
 
-    public static int meterPerBlockXZ = 7;
-    public static float meterPerBlockY = 1f;
+    public class DEMGeneratorConfig {
+        public static int meterPerBlockXZ = 2;
+        public static float meterPerBlockY = 1f;
+
+        public static boolean demTileLoadLog = false;
+
+    }
 
     public static class DemSampleLodConfig {
-        public static int renderRadius = 100; //单位;chunk
-        public static int sampleStep = Math.max(Chunk.SIZE * renderRadius / 300, 1);
+        public static int renderRadius = 10000; //单位;chunk
+        public static int sampleStep = Math.max(Chunk.SIZE * renderRadius / 1000, 1);
+
+
         /**
          * 后台线程休眠期间的轮询间隔（毫秒）。<br>
          * 后台线程在两次 regenIntervalMs 之间处于休眠状态，<br>

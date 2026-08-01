@@ -1,5 +1,6 @@
 package com.fish.arcaterra.worldgen.terrarium;
 
+import com.fish.arcaterra.Config;
 import com.fish.arcaterra.worldgen.TerrainProvider;
 
 import javax.imageio.ImageIO;
@@ -244,7 +245,7 @@ public class DemTerrainProvider implements TerrainProvider {
             if (Files.exists(file)) {
 //                System.out.println(" cache exist: " + x + "/" + y);
                 return ImageIO.read(file.toFile());
-            }else{System.out.println("cache not exist: " + x + "/" + y);}
+            }else{if(Config.DEMGeneratorConfig.demTileLoadLog) System.out.println("cache not exist: " + x + "/" + y);}
         } catch (IOException e) {
             System.err.println("loadFromCache failed: " + e.getMessage());
         }
@@ -257,7 +258,7 @@ public class DemTerrainProvider implements TerrainProvider {
             Files.createDirectories(file.getParent());
 //            System.out.println("try write: " + file.getRoot());
             ImageIO.write(img, "png", file.toFile());
-            System.out.println("save to cache: " + file.toFile());
+            if (Config.DEMGeneratorConfig.demTileLoadLog)  {System.out.println("save to cache: " + file.toFile());}
         } catch (IOException e) {
             System.err.println("save cache failed: " + e.getMessage());
         }
@@ -274,7 +275,7 @@ public class DemTerrainProvider implements TerrainProvider {
             int tileY = y;
             BufferedImage cached = loadFromCache(tileX, tileY);
             if (cached != null) {
-                System.out.println("load from cache: " + tileX + "/" + tileY);
+                if (Config.DEMGeneratorConfig.demTileLoadLog) {System.out.println("load from cache: " + tileX + "/" + tileY);}
                 return cached;
             }
             String url = TILE_URL.replace("{z}", String.valueOf(zoom))
@@ -284,7 +285,7 @@ public class DemTerrainProvider implements TerrainProvider {
             conn.setConnectTimeout(5000);
             conn.setReadTimeout(5000);
             //            if (img!= null ) {
-                System.out.println("fetch tile: " + url);
+               if(Config.DEMGeneratorConfig.demTileLoadLog) System.out.println("fetch tile: " + url);
 //            }else{System.out.println("failed to fetch tile(null png): " + url);}
             return ImageIO.read(conn.getInputStream());
         } catch (Exception e) {
