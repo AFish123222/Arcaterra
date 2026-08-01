@@ -245,6 +245,10 @@ public class DemTerrainProvider implements TerrainProvider {
         float h1 = h01 * (1 - fx) + h11 * fx;
         float height = h0 * (1 - fy) + h1 * fy;
 
+        // 释放资源
+        img.flush();
+        img=null;
+
         return height;
     }
 
