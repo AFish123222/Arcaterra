@@ -32,8 +32,7 @@ public class Config {
         public static int meterPerBlockXZ = 2;
         public static float meterPerBlockY = 1f;
 
-        public static boolean demTileLoadLog = false;
-
+        public static boolean demTileLoadLog = true;
     }
 
     public static class DemSampleLodConfig {
