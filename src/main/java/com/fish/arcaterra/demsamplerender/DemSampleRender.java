@@ -321,7 +321,7 @@ public final class DemSampleRender {
                     writeBuf.vertices[idxV++] = h;
                     writeBuf.vertices[idxV++] = z;
                 }
-                if (row%200 == 0) System.out.println(row);
+                if (row%100 == 0) System.out.println(row);
 
                 // 每行结束后检查中断
                 if (rebuildRequested) {

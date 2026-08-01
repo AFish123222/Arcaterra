@@ -37,7 +37,7 @@ public class Config {
     }
 
     public static class DemSampleLodConfig {
-        public static int renderRadius = 1200; //单位;chunk
+        public static int renderRadius = 2000; //单位;chunk
         public static int sampleStep = Math.max(Chunk.SIZE * renderRadius / 700, 1);
 
 

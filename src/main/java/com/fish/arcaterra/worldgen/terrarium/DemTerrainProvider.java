@@ -169,8 +169,8 @@ public class DemTerrainProvider implements TerrainProvider {
     }
 
     public void update(float playerX, float playerZ, int radiusInChunks) {
-        double lng = originLon + playerX * lonPerBlock;
-        double lat = originLat + playerZ * latPerBlock;
+        double lat = getLatByPz(playerZ);
+        double lng = getLngByPx(playerX);
         int[] center = latLngToTile(lat, lng, zoom);
         int cx = center[0], cy = center[1];
         int r = radiusInChunks * 2;
