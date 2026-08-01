@@ -278,8 +278,9 @@ public class DemTerrainProvider implements TerrainProvider {
     }
 
     private BufferedImage fetchTile(int x, int y) {
-        try {
 
+        try {
+            if (x<0||y<0) throw new Exception("wrong x z!");
             int tileX = x;
             int tileY = y;
             BufferedImage cached = loadFromCache(tileX, tileY);
