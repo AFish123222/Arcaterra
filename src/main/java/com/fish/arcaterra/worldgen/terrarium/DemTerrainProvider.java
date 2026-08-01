@@ -242,7 +242,7 @@ public class DemTerrainProvider implements TerrainProvider {
         try {
             Path file = getCacheFile(x, y);
             if (Files.exists(file)) {
-                System.out.println(" cache exist: " + x + "/" + y);
+//                System.out.println(" cache exist: " + x + "/" + y);
                 return ImageIO.read(file.toFile());
             }else{System.out.println("cache not exist: " + x + "/" + y);}
         } catch (IOException e) {

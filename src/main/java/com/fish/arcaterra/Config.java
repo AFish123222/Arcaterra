@@ -54,5 +54,7 @@ public class Config {
          * 调大此值可降低 CPU 负载，但地形更新会延迟。<br>
          */
         public static long regenIntervalMs = 20000;
+
+        public static boolean debugWireframe = true;
     }
 }

@@ -9,6 +9,7 @@ import org.lwjgl.system.MemoryUtil;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
+import static com.fish.arcaterra.Config.DemSampleLodConfig.debugWireframe;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL15.*;
 import static org.lwjgl.opengl.GL20.*;
@@ -182,34 +183,36 @@ public final class DemSampleRender {
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, iBuf, GL_STATIC_DRAW);
         MemoryUtil.memFree(iBuf);
 
+        System.out.println("vertices update~");
+
         ready = false;
     }
 
     /** 主线程每帧调用：执行绘制 */
     public void render() {
-        if (!vboInitialized || current.vertexCount == 0) {
-            return;
-            
-        };
+        if (!vboInitialized || current.vertexCount == 0) return;
 
-        glBindBuffer(GL_ARRAY_BUFFER, vboVertexId);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vboIndexId);
-
-        glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
-        glEnableVertexAttribArray(0);
-
+        // 1. 绑定 VAO（属性指针已在 init() 中设置并记录到 VAO）
         glBindVertexArray(vaoId);
-        glDisable(GL_DEPTH_TEST);
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        glColor3f(1.0f, 0.0f, 0.0f);
-        glDrawElements(GL_TRIANGLES, current.indexCount, GL_UNSIGNED_INT, 0);
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        glEnable(GL_DEPTH_TEST);
-//        glBindVertexArray(0);
-        glDisableVertexAttribArray(0);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
+        // 2. 调试线框模式（可选，建议用开关控制）
+        if (debugWireframe) {
+            glDisable(GL_DEPTH_TEST);
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+            glColor3f(1.0f, 0.0f, 0.0f);
+        }
+
+        // 3. 绘制
+        glDrawElements(GL_TRIANGLES, current.indexCount, GL_UNSIGNED_INT, 0);
+
+        // 4. 恢复状态
+        if (debugWireframe) {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+            glEnable(GL_DEPTH_TEST);
+        }
+
+        // 5. 解绑
+        glBindVertexArray(0);
     }
 
     /** 清理（主类关闭时调用） */
