@@ -101,9 +101,18 @@ public class DemTerrainProvider implements TerrainProvider {
         }
     }
 
-    public void prefetchAround(float playerX, float playerZ, int radiusInChunks) {
+    private double getLngByPx(float playerX) {
         double lng = originLon + playerX * lonPerBlock;
+        return lng;
+    }
+    private double getLatByPz(float playerZ) {
         double lat = originLat + playerZ * latPerBlock;
+        return lat;
+    }
+
+    public void prefetchAround(float playerX, float playerZ, int radiusInChunks) {
+        double lat = getLatByPz(playerZ);
+        double lng = getLngByPx(playerX);
         int[] center = latLngToTile(lat, lng, zoom);
         int cx = center[0], cy = center[1];
 

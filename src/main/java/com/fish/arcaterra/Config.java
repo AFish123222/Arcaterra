@@ -29,7 +29,7 @@ public class Config {
     }
 
     public class DEMGeneratorConfig {
-        public static int meterPerBlockXZ = 2;
+        public static int meterPerBlockXZ = 4;
         public static float meterPerBlockY = 1f;
 
         public static boolean demTileLoadLog = false;
@@ -37,8 +37,8 @@ public class Config {
     }
 
     public static class DemSampleLodConfig {
-        public static int renderRadius = 10000; //单位;chunk
-        public static int sampleStep = Math.max(Chunk.SIZE * renderRadius / 1000, 1);
+        public static int renderRadius = 1200; //单位;chunk
+        public static int sampleStep = Math.max(Chunk.SIZE * renderRadius / 700, 1);
 
 
         /**
