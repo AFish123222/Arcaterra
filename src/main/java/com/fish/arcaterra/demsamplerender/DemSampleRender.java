@@ -189,6 +189,7 @@ public final class DemSampleRender {
     public void render() {
         if (!vboInitialized || current.vertexCount == 0) {
             return;
+            
         };
 
         glBindBuffer(GL_ARRAY_BUFFER, vboVertexId);
