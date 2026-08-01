@@ -29,7 +29,7 @@ public class Config {
     }
 
     public class DEMGeneratorConfig {
-        public static int meterPerBlockXZ = 5;
+        public static int meterPerBlockXZ = 2;
         public static float meterPerBlockY = 1f;
 
         public static boolean demTileLoadLog = false;
@@ -37,8 +37,9 @@ public class Config {
     }
 
     public static class DemSampleLodConfig {
-        public static int renderRadius = 400; //单位;chunk
-        public static int sampleStep = Math.max(Chunk.SIZE * renderRadius / 400, 1);
+        public static int renderRadius = 700; //单位;chunk
+        public static int sampleStep = Math.max(Chunk.SIZE * renderRadius / 700, 1);
+//        public static int sampleStep = 1;
 
 
         /**
@@ -60,7 +61,7 @@ public class Config {
          * 调小此值可提高地形更新频率，但会增加 CPU 负载。<br>
          * 调大此值可降低 CPU 负载，但地形更新会延迟。<br>
          */
-        public static long regenIntervalMs = 20000;
+        public static long regenIntervalMs = 5000;
 
         public static boolean debugWireframe = true;
     }

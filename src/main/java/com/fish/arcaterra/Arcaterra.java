@@ -294,7 +294,7 @@ public class Arcaterra implements IDebugWindowPrintRegistry {
                         player.y,
                         player.z
                 ).renderChunkBounds();}catch (NullPointerException e){
-                    System.out.println("player chunk npe");
+//                    System.out.println("player chunk npe");
                     //todo
                 }
             }
