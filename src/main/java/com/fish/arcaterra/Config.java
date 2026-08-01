@@ -64,5 +64,9 @@ public class Config {
         public static long regenIntervalMs = 5000;
 
         public static boolean debugWireframe = true;
+
+        public static int colorR = 255;
+        public static int colorG = 0;
+        public static int colorB = 0;
     }
 }

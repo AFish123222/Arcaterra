@@ -246,7 +246,11 @@ public final class DemSampleRender {
         glBindVertexArray(vaoId);
         glDisable(GL_DEPTH_TEST);
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        glColor3f(1.0f, 0.0f, 0.0f);
+        glColor3i(
+                Config.DemSampleLodConfig.colorR,
+                Config.DemSampleLodConfig.colorG,
+                Config.DemSampleLodConfig.colorB
+        );
         glDrawElements(GL_TRIANGLES, current.indices.length, GL_UNSIGNED_INT, 0);
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         glEnable(GL_DEPTH_TEST);
