@@ -190,11 +190,11 @@ public class DemTerrainProvider implements TerrainProvider {
 
         long key = ((long) tileX << 32) | (tileY & 0xFFFFFFFFL);
         BufferedImage img = cache.computeIfAbsent(key, k -> {
-            BufferedImage cached = loadFromCache(tileX, tileY);
-            if (cached != null) {
-                System.out.println("load from cache: " + tileX + "/" + tileY);
-                return cached;
-            }
+//            BufferedImage cached = loadFromCache(tileX, tileY);
+//            if (cached != null) {
+//                System.out.println("load from cache: " + tileX + "/" + tileY);
+//                return cached;
+//            }
             System.out.println(3);
             BufferedImage fetched = fetchTile(tileX, tileY);
 //            if (fetched != null) {
@@ -269,6 +269,14 @@ public class DemTerrainProvider implements TerrainProvider {
 
     private BufferedImage fetchTile(int x, int y) {
         try {
+
+            int tileX = x;
+            int tileY = y;
+            BufferedImage cached = loadFromCache(tileX, tileY);
+            if (cached != null) {
+                System.out.println("load from cache: " + tileX + "/" + tileY);
+                return cached;
+            }
             String url = TILE_URL.replace("{z}", String.valueOf(zoom))
                     .replace("{x}", String.valueOf(x))
                     .replace("{y}", String.valueOf(y));
