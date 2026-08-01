@@ -65,8 +65,21 @@ public class Config {
 
         public static boolean debugWireframe = true;
 
-        public static int colorR = 255;
-        public static int colorG = 0;
-        public static int colorB = 0;
+//        private static int[] color = {255,0,0}; //纯红
+//        private static int[] color = {180,155,120}; // 苍黄1 沙
+//        private static int[] color = {160,140,110}; // 苍黄2 卡/ 苍2 卡其其
+//        private static int[] color = {61,107,84}; //
+//        private static int[] color = {79,138,107}; //
+//        private static int[] color = {46,90,76}; //
+//        private static int[] color = {58,95,73}; //
+//        private static int[] color = {65,120,70}; //
+        private static int[] color = {65,110,70}; //
+//        private static int[] color = {60,105,65}; //
+
+
+
+        public static float colorR = (float) color[0] /255;
+        public static float colorG = (float) color[1] /255;
+        public static float colorB = (float) color[2] /255;
     }
 }
