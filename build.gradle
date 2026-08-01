@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'com.fish'
-version = 'redev-ALPHA-5'
+version = 'redev-ALPHA-6'
 
 application {
     applicationName = "Arcaterra"
