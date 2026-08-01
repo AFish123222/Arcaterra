@@ -3,7 +3,7 @@ package com.fish.arcaterra;
 import com.fish.arcaterra.debug.DebugRegistry;
 import com.fish.arcaterra.debug.DebugWindow;
 import com.fish.arcaterra.debug.IDebugWindowPrintRegistry;
-import com.fish.arcaterra.debug.timer.DebugTimer;
+import com.fish.arcaterra.demsamplerender.DemSampleRender;
 import com.fish.arcaterra.level.World;
 import com.fish.arcaterra.level.Chunk;
 import com.fish.arcaterra.particle.ParticlePool;
@@ -17,7 +17,6 @@ import com.fish.arcaterra.tree.terrain.NoiseLodTerrainProvider;
 import com.fish.arcaterra.ui.hud.Crosshair;
 import com.fish.arcaterra.ui.hud.DebugIndicators;
 import com.fish.arcaterra.ui.hud.HudManager;
-import com.fish.arcaterra.worldgen.noise.NoiseTerrainProvider;
 import com.fish.arcaterra.worldgen.terrarium.DemTerrainProvider;
 import org.joml.Matrix4f;
 import org.lwjgl.BufferUtils;
@@ -161,6 +160,9 @@ public class Arcaterra implements IDebugWindowPrintRegistry {
 
         demTerrainProvider.prefetchAround(player.x,player.z,Config.DemSampleLodConfig.renderRadius);
 
+        // init()
+        demSampleRender = DemSampleRender.getInstance();
+        demSampleRender.init(world, player);
 
 
 
@@ -201,6 +203,7 @@ public class Arcaterra implements IDebugWindowPrintRegistry {
     }
 
     private DemTerrainProvider demTerrainProvider;
+    private DemSampleRender demSampleRender;
 
     private HudManager hudManager;
 
@@ -270,7 +273,9 @@ public class Arcaterra implements IDebugWindowPrintRegistry {
             particlePool.render(player.x, player.y, player.z);
 
 //            try(DebugTimer timer = new DebugTimer("render")) {
-                demSimpleLod();
+//                demSimpleLod();
+            demSampleRender.updateVerticesIfReady();
+            demSampleRender.render();
 //            }
 
 
@@ -346,6 +351,7 @@ public class Arcaterra implements IDebugWindowPrintRegistry {
         }
 
         demTerrainProvider.shutdown();
+        demSampleRender.shutdown();
 
         // 保留调试窗口，不释放 //todo:support config to chose between sameshut and twiceshut
         System.out.println("游戏已退出，调试窗口仍然保留。");
@@ -424,36 +430,6 @@ public class Arcaterra implements IDebugWindowPrintRegistry {
         DebugRegistry.register("groundHeight",()-> world.getTerrainProvider().getHeight(player.x,player.z));
     }
 
-
-    /// ### 配置类
-    public static class Config {
-        /// 渲染玩家所在区块边界，空黄实绿
-        public static boolean showChunkBoundPlayerAt = true;
-        /// 渲染所有区块边界，空黄实绿
-        public static boolean showAllChunkBound = false;
-        /// 启用lodRender
-        public static RenderMode renderMode = RenderMode.ORIGINAL;
-        public enum RenderMode {
-            /// 运行World,Chunk (com.fish.arcaterra.level)
-            ORIGINAL,
-            /// 运行com.fish.arcaterra.tree
-            TREE_LOD,
-        }
-        /// 世界生成器
-        public static WorldGenMode worldGenMode = WorldGenMode.DEM;
-        public enum WorldGenMode {
-            /// 噪声地形
-            NOISE,
-            /// Terrarium
-            DEM
-        }
-        public static int meterPerBlockXZ = 7;
-        public static float meterPerBlockY = 1f;
-        public static class DemSampleLodConfig {
-            public static int renderRadius = 200; //单位;chunk
-            public static int sampleStep = Math.max(Chunk.SIZE * renderRadius/300,1);
-        }
-    }
 
     /// treeLOD
     static class LODManager {
