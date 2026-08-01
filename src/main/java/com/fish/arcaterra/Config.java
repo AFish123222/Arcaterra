@@ -32,7 +32,7 @@ public class Config {
     public static float meterPerBlockY = 1f;
 
     public static class DemSampleLodConfig {
-        public static int renderRadius = 2; //单位;chunk
+        public static int renderRadius = 100; //单位;chunk
         public static int sampleStep = Math.max(Chunk.SIZE * renderRadius / 300, 1);
         /**
          * 后台线程休眠期间的轮询间隔（毫秒）。<br>

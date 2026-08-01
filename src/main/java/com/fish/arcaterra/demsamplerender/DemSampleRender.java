@@ -186,6 +186,8 @@ public final class DemSampleRender {
         ready = false;
     }
 
+    public void updatePlayer(Player player) {this.player = player;}
+
     /** 主线程每帧调用：执行绘制 */
 //    public void render() {
 //        if (!vboInitialized || current.vertexCount == 0) return;
