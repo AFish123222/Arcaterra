@@ -129,21 +129,19 @@ public final class DemSampleRender {
         ready = false;
         rebuildRequested = false;
 
-        // ★ 新增：创建并绑定 VAO
-        int vaoId = glGenVertexArrays();
-        glBindVertexArray(vaoId);
+        // ★ 关键修正：先生成 VBO，再生成 VAO
+        vboVertexId = glGenBuffers();
+        vboIndexId = glGenBuffers();
+        vaoId = glGenVertexArrays();
 
+        // 绑定 VAO 并设置属性（记录到 VAO）
         glBindVertexArray(vaoId);
-
         glBindBuffer(GL_ARRAY_BUFFER, vboVertexId);
         glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
         glEnableVertexAttribArray(0);
-
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vboIndexId);
+        glBindVertexArray(0); // 解绑，但属性已记录
 
-        // 生成 VBO
-        vboVertexId = glGenBuffers();
-        vboIndexId = glGenBuffers();
         vboInitialized = true;
 
         // 启动后台线程
@@ -189,31 +187,71 @@ public final class DemSampleRender {
     }
 
     /** 主线程每帧调用：执行绘制 */
+//    public void render() {
+//        if (!vboInitialized || current.vertexCount == 0) return;
+//
+//        // 1. 绑定 VAO（属性指针已在 init() 中设置并记录到 VAO）
+//        glBindVertexArray(vaoId);
+//
+//        // 2. 调试线框模式（可选，建议用开关控制）
+//        if (debugWireframe) {
+//            glDisable(GL_DEPTH_TEST);
+//            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+//            glColor3f(1.0f, 0.0f, 0.0f);
+//        }
+//
+//        // 3. 绘制
+//        glDrawElements(GL_TRIANGLES, current.indexCount, GL_UNSIGNED_INT, 0);
+//
+//        // 4. 恢复状态
+//        if (debugWireframe) {
+//            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+//            glEnable(GL_DEPTH_TEST);
+//        }
+//
+//        // 5. 解绑
+//        glBindVertexArray(0);
+//    }
+    /** 主线程每帧调用：执行绘制 */
+//    public void render() {
+//        if (!vboInitialized || current.vertexCount == 0) return;
+//
+//        // 绑定 VAO（属性已记录）
+//        glBindVertexArray(vaoId);
+//
+//        // 调试线框模式（可选）
+//        if (debugWireframe) {
+//            glDisable(GL_DEPTH_TEST);
+//            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+//            glColor3f(1.0f, 0.0f, 0.0f);
+//        }
+//
+//        glDrawElements(GL_TRIANGLES, current.indexCount, GL_UNSIGNED_INT, 0);
+//
+//        // 恢复状态
+//        if (debugWireframe) {
+//            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+//            glEnable(GL_DEPTH_TEST);
+//            glColor3f(1.0f, 1.0f, 1.0f); // 恢复颜色
+//        }
+//
+//        glBindVertexArray(0);
+//    }
+    /** 主线程每帧调用：执行绘制 */
     public void render() {
-        if (!vboInitialized || current.vertexCount == 0) return;
-
-        // 1. 绑定 VAO（属性指针已在 init() 中设置并记录到 VAO）
+        /** 主线程每帧调用：执行绘制 *///        glDisable(GL_CULL_FACE);
+//        glDisable(GL_CULL_FACE);
         glBindVertexArray(vaoId);
-
-        // 2. 调试线框模式（可选，建议用开关控制）
-        if (debugWireframe) {
-            glDisable(GL_DEPTH_TEST);
-            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-            glColor3f(1.0f, 0.0f, 0.0f);
-        }
-
-        // 3. 绘制
-        glDrawElements(GL_TRIANGLES, current.indexCount, GL_UNSIGNED_INT, 0);
-
-        // 4. 恢复状态
-        if (debugWireframe) {
-            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-            glEnable(GL_DEPTH_TEST);
-        }
-
-        // 5. 解绑
+        glDisable(GL_DEPTH_TEST);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        glColor3f(1.0f, 0.0f, 0.0f);
+        glDrawElements(GL_TRIANGLES, current.indices.length, GL_UNSIGNED_INT, 0);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        glEnable(GL_DEPTH_TEST);
         glBindVertexArray(0);
     }
+
+
 
     /** 清理（主类关闭时调用） */
     public void shutdown() {

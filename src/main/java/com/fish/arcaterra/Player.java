@@ -25,7 +25,7 @@ public class Player implements IDebugWindowPrintRegistry {
     public float speedMultiplier = 60f;      // 帧率补偿倍数（用于 delta）
 
     // 坐标
-    public float x, y, z;
+    public volatile float x, y, z;
     public float xo, yo, zo;
     public float xd, yd, zd;
     public float yRot, xRot;
