@@ -32,6 +32,7 @@ I wanna journey in Minecraft,However It's soooooo ka!!! I'll optifine it extreme
 -
 -
 ### 注释
+release下载加速:https://gh-proxy.com/
 本项目被计划为长期的开源项目，而非商业项目，我不希望你赚钱来亵渎这片精神的沃土；；
 最次最次，我就是拿它卖钱，也会留有一份开源版，下班独立开发
 贡献者之名将被刻在游戏内致谢界面或对应模块旁
